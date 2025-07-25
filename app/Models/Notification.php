@@ -37,6 +37,11 @@ class Notification extends Model
         return $query->whereNull('read_at');
     }
 
+    public function scopeRead($query)
+    {
+        return $query->whereNotNull('read_at');
+    }
+
     public function scopeByCategory($query, $category)
     {
         return $query->where('category', $category);
@@ -46,5 +51,10 @@ class Notification extends Model
     public function markAsRead()
     {
         $this->update(['read_at' => now()]);
+    }
+
+    public function isRead()
+    {
+        return !is_null($this->read_at);
     }
 }
