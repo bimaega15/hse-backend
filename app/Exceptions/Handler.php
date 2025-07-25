@@ -161,4 +161,17 @@ class Handler extends ExceptionHandler
             500,
         );
     }
+
+    protected function unauthenticated($request, \Illuminate\Auth\AuthenticationException $exception)
+    {
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+                'timestamp' => now()->toISOString()
+            ], 401);
+        }
+
+        return redirect()->guest(route('login'));
+    }
 }
