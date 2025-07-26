@@ -22,8 +22,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // Authentication routes
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
+
+    // Profile update routes
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/profile', [AuthController::class, 'updateProfile']); // Method spoofing support
+
+    // Profile image specific routes
+    Route::post('/profile/image/upload', [AuthController::class, 'uploadProfileImage']);
+    Route::delete('/profile/image', [AuthController::class, 'deleteProfileImage']);
+
+    // Password change
     Route::put('/change-password', [AuthController::class, 'changePassword']);
 
     // Reports CRUD routes
@@ -52,36 +60,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Reports statistics
     Route::get('/reports-statistics', [ReportController::class, 'statistics']);
 
-    // Alternative: Using apiResource (shorter but less explicit)
-    // Route::apiResource('reports', ReportController::class);
-    // Route::post('/reports/{id}/start-process', [ReportController::class, 'startProcess']);
-    // Route::post('/reports/{id}/complete', [ReportController::class, 'complete']);
-
     // Notifications routes
     Route::prefix('notifications')->group(function () {
-        // List notifications
         Route::get('/', [NotificationController::class, 'index']);
-
-        // Mark specific notification as read
-        Route::put('/{id}/read', [NotificationController::class, 'markAsRead']);
-
-        // Mark all notifications as read
-        Route::put('/mark-all-read', [NotificationController::class, 'markAllAsRead']);
-
-        // Get unread notifications count
-        Route::get('/unread-count', [NotificationController::class, 'unreadCount']);
-
-        // Delete specific notification
-        Route::delete('/{id}', [NotificationController::class, 'destroy']);
+        Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
     });
-});
-
-// Health check (public)
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'OK',
-        'timestamp' => now()->toISOString(),
-        'version' => '1.0.0',
-        'environment' => app()->environment()
-    ]);
 });

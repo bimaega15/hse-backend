@@ -126,5 +126,6 @@ return [
     ],
     'providers' => ServiceProvider::defaultProviders()->merge([
         App\Providers\RouteServiceProvider::class,
+        App\Providers\ImageServiceProvider::class,
     ])->toArray(),
 ];

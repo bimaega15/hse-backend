@@ -5,254 +5,274 @@ namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
+use Illuminate\Support\Facades\Log;
+use Intervention\Image\Laravel\Facades\Image;
 use Exception;
 
 class ImageUploadService
 {
-    const MAX_FILE_SIZE = 5120; // 5MB in KB
-    const ALLOWED_EXTENSIONS = ['jpg', 'jpeg', 'png'];
-    const PROFILE_IMAGE_SIZE = 300; // pixels
-    const REPORT_IMAGE_MAX_SIZE = 1920; // pixels
-
     /**
-     * Upload profile image
+     * Upload and process image
      */
-    public function uploadProfileImage(UploadedFile $file, int $userId): string
+    public function uploadImage(UploadedFile $file, string $directory = 'images', ?int $userId = null): string
     {
-        $this->validateImage($file);
+        try {
+            // Generate unique filename
+            $filename = $this->generateUniqueFilename($file, $directory, $userId);
 
-        $filename = $this->generateFilename('profile', $userId, $file->getClientOriginalExtension());
-        $path = "profile_images/{$filename}";
+            // Create directory if not exists
+            $fullDirectory = $directory;
+            if (!Storage::disk('public')->exists($fullDirectory)) {
+                Storage::disk('public')->makeDirectory($fullDirectory);
+            }
 
-        // Resize and optimize image
-        $image = Image::make($file)
-            ->fit(self::PROFILE_IMAGE_SIZE, self::PROFILE_IMAGE_SIZE)
-            ->encode('jpg', 85);
+            // Store original image
+            $imagePath = $file->storeAs($fullDirectory, $filename, 'public');
 
-        Storage::disk('public')->put($path, $image);
+            // Optimize image if it's a profile image
+            if ($directory === 'profile_images') {
+                $this->optimizeProfileImage($imagePath);
+            }
 
-        return $path;
+            Log::info('Image uploaded successfully', [
+                'path' => $imagePath,
+                'original_name' => $file->getClientOriginalName(),
+                'size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+            ]);
+
+            return $imagePath;
+        } catch (Exception $e) {
+            Log::error('Image upload failed', [
+                'error' => $e->getMessage(),
+                'file_name' => $file->getClientOriginalName(),
+            ]);
+            throw new Exception('Gagal mengupload gambar: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Upload report images
+     * Delete image from storage
      */
-    public function uploadReportImages(array $files): array
+    public function deleteImage(string $imagePath): bool
     {
-        $uploadedPaths = [];
+        try {
+            if (Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
 
-        foreach ($files as $file) {
-            if ($file instanceof UploadedFile) {
-                $this->validateImage($file);
-
-                $filename = $this->generateFilename('report', null, $file->getClientOriginalExtension());
-                $path = "report_images/{$filename}";
-
-                // Resize if image is too large
-                $image = Image::make($file);
-
-                if ($image->width() > self::REPORT_IMAGE_MAX_SIZE || $image->height() > self::REPORT_IMAGE_MAX_SIZE) {
-                    $image->resize(self::REPORT_IMAGE_MAX_SIZE, self::REPORT_IMAGE_MAX_SIZE, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
+                // Also delete thumbnail if exists
+                $thumbnailPath = $this->getThumbnailPath($imagePath);
+                if (Storage::disk('public')->exists($thumbnailPath)) {
+                    Storage::disk('public')->delete($thumbnailPath);
                 }
 
-                $image->encode('jpg', 90);
-                Storage::disk('public')->put($path, $image);
-
-                $uploadedPaths[] = $path;
+                Log::info('Image deleted successfully', ['path' => $imagePath]);
+                return true;
             }
+            return false;
+        } catch (Exception $e) {
+            Log::error('Image deletion failed', [
+                'error' => $e->getMessage(),
+                'path' => $imagePath,
+            ]);
+            return false;
         }
-
-        return $uploadedPaths;
-    }
-
-    /**
-     * Delete image
-     */
-    public function deleteImage(string $path): bool
-    {
-        if (Storage::disk('public')->exists($path)) {
-            return Storage::disk('public')->delete($path);
-        }
-
-        return false;
-    }
-
-    /**
-     * Delete multiple images
-     */
-    public function deleteImages(array $paths): array
-    {
-        $results = [];
-
-        foreach ($paths as $path) {
-            $results[$path] = $this->deleteImage($path);
-        }
-
-        return $results;
     }
 
     /**
      * Get image URL
      */
-    public function getImageUrl(string $path): string
+    public function getImageUrl(string $imagePath): string
     {
-        return Storage::disk('public')->url($path);
-    }
-
-    /**
-     * Validate uploaded image
-     */
-    private function validateImage(UploadedFile $file): void
-    {
-        // Check if file is valid
-        if (!$file->isValid()) {
-            throw new Exception('Invalid file upload');
-        }
-
-        // Check file size
-        if ($file->getSize() > (self::MAX_FILE_SIZE * 1024)) {
-            throw new Exception('File size exceeds maximum allowed size of ' . self::MAX_FILE_SIZE . 'KB');
-        }
-
-        // Check file extension
-        $extension = strtolower($file->getClientOriginalExtension());
-        if (!in_array($extension, self::ALLOWED_EXTENSIONS)) {
-            throw new Exception('File type not allowed. Allowed types: ' . implode(', ', self::ALLOWED_EXTENSIONS));
-        }
-
-        // Check if file is actually an image
-        $imageInfo = getimagesize($file->getPathname());
-        if (!$imageInfo) {
-            throw new Exception('File is not a valid image');
-        }
-
-        // Check image dimensions (minimum)
-        if ($imageInfo[0] < 100 || $imageInfo[1] < 100) {
-            throw new Exception('Image dimensions too small. Minimum 100x100 pixels required');
-        }
-
-        // Check MIME type
-        $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg'];
-        if (!in_array($imageInfo['mime'], $allowedMimes)) {
-            throw new Exception('Invalid image MIME type');
-        }
+        return url('storage/' . $imagePath);
     }
 
     /**
      * Generate unique filename
      */
-    private function generateFilename(string $prefix, ?int $userId = null, string $extension = 'jpg'): string
+    private function generateUniqueFilename(UploadedFile $file, string $directory, ?int $userId = null): string
     {
-        $timestamp = time();
-        $random = uniqid();
+        $extension = strtolower($file->getClientOriginalExtension());
+        $timestamp = now()->format('YmdHis');
+        $random = substr(md5(uniqid()), 0, 8);
+
+        $prefix = $directory === 'profile_images' ? 'profile' : 'img';
         $userPart = $userId ? "_{$userId}" : '';
 
         return "{$prefix}{$userPart}_{$timestamp}_{$random}.{$extension}";
     }
 
     /**
+     * Optimize profile image
+     */
+    private function optimizeProfileImage(string $imagePath): void
+    {
+        try {
+            $fullPath = Storage::disk('public')->path($imagePath);
+
+            // Check if Intervention Image is available
+            if (!class_exists('Intervention\Image\Laravel\Facades\Image')) {
+                Log::info('Intervention Image not available, skipping optimization');
+                return;
+            }
+
+            // Create optimized version
+            $image = Image::read($fullPath);
+
+            // Resize if too large (max 800x800 for profile images)
+            if ($image->width() > 800 || $image->height() > 800) {
+                $image->scale(width: 800, height: 800);
+            }
+
+            // Compress and save
+            $image->toJpeg(85)->save($fullPath);
+
+            // Create thumbnail (150x150)
+            $thumbnailPath = $this->getThumbnailPath($imagePath);
+            $fullThumbnailPath = Storage::disk('public')->path($thumbnailPath);
+
+            $thumbnail = Image::read($fullPath);
+            $thumbnail->cover(150, 150)->save($fullThumbnailPath);
+
+            Log::info('Profile image optimized', [
+                'original_path' => $imagePath,
+                'thumbnail_path' => $thumbnailPath,
+            ]);
+        } catch (Exception $e) {
+            Log::warning('Image optimization failed', [
+                'path' => $imagePath,
+                'error' => $e->getMessage(),
+            ]);
+            // Don't throw exception, optimization is optional
+        }
+    }
+
+    /**
+     * Get thumbnail path
+     */
+    private function getThumbnailPath(string $imagePath): string
+    {
+        $pathInfo = pathinfo($imagePath);
+        return $pathInfo['dirname'] . '/thumb_' . $pathInfo['basename'];
+    }
+
+    /**
      * Get image info
      */
-    public function getImageInfo(string $path): ?array
+    public function getImageInfo(string $imagePath): ?array
     {
-        if (!Storage::disk('public')->exists($path)) {
+        try {
+            if (!Storage::disk('public')->exists($imagePath)) {
+                return null;
+            }
+
+            $fullPath = Storage::disk('public')->path($imagePath);
+            $imageInfo = getimagesize($fullPath);
+
+            if (!$imageInfo) {
+                return null;
+            }
+
+            return [
+                'width' => $imageInfo[0],
+                'height' => $imageInfo[1],
+                'mime_type' => $imageInfo['mime'],
+                'size' => Storage::disk('public')->size($imagePath),
+                'url' => $this->getImageUrl($imagePath),
+                'thumbnail_url' => $this->getThumbnailUrl($imagePath),
+                'created_at' => Storage::disk('public')->lastModified($imagePath)
+            ];
+        } catch (Exception $e) {
+            Log::error('Failed to get image info', [
+                'path' => $imagePath,
+                'error' => $e->getMessage(),
+            ]);
             return null;
         }
+    }
 
-        $fullPath = Storage::disk('public')->path($path);
-        $imageInfo = getimagesize($fullPath);
+    /**
+     * Get thumbnail URL
+     */
+    public function getThumbnailUrl(string $imagePath): ?string
+    {
+        $thumbnailPath = $this->getThumbnailPath($imagePath);
 
-        if (!$imageInfo) {
-            return null;
+        if (Storage::disk('public')->exists($thumbnailPath)) {
+            return url('storage/' . $thumbnailPath);
+        }
+
+        return $this->getImageUrl($imagePath); // Fallback to original
+    }
+
+    /**
+     * Validate image file
+     */
+    public function validateImage(UploadedFile $file, array $rules = []): array
+    {
+        $defaultRules = [
+            'max_size' => 5120, // 5MB in KB
+            'allowed_types' => ['jpeg', 'jpg', 'png', 'webp'],
+            'min_width' => 100,
+            'min_height' => 100,
+            'max_width' => 2000,
+            'max_height' => 2000,
+        ];
+
+        $rules = array_merge($defaultRules, $rules);
+        $errors = [];
+
+        // Check file size
+        if ($file->getSize() > ($rules['max_size'] * 1024)) {
+            $errors[] = "File size exceeds {$rules['max_size']}KB limit";
+        }
+
+        // Check file type
+        $extension = strtolower($file->getClientOriginalExtension());
+        if (!in_array($extension, $rules['allowed_types'])) {
+            $errors[] = "File type '{$extension}' is not allowed";
+        }
+
+        // Check image dimensions
+        try {
+            $imageInfo = getimagesize($file->getRealPath());
+            if ($imageInfo) {
+                $width = $imageInfo[0];
+                $height = $imageInfo[1];
+
+                if ($width < $rules['min_width'] || $height < $rules['min_height']) {
+                    $errors[] = "Image dimensions too small (min: {$rules['min_width']}x{$rules['min_height']})";
+                }
+
+                if ($width > $rules['max_width'] || $height > $rules['max_height']) {
+                    $errors[] = "Image dimensions too large (max: {$rules['max_width']}x{$rules['max_height']})";
+                }
+            }
+        } catch (Exception $e) {
+            $errors[] = "Cannot read image dimensions";
         }
 
         return [
-            'width' => $imageInfo[0],
-            'height' => $imageInfo[1],
-            'mime_type' => $imageInfo['mime'],
-            'size' => Storage::disk('public')->size($path),
-            'url' => $this->getImageUrl($path),
-            'created_at' => Storage::disk('public')->lastModified($path)
+            'valid' => empty($errors),
+            'errors' => $errors,
         ];
     }
 
     /**
-     * Create thumbnail
+     * Get storage info
      */
-    public function createThumbnail(string $imagePath, int $width = 150, int $height = 150): string
+    public function getStorageInfo(): array
     {
-        if (!Storage::disk('public')->exists($imagePath)) {
-            throw new Exception('Original image not found');
-        }
+        $disk = Storage::disk('public');
+        $totalSpace = disk_total_space($disk->path(''));
+        $freeSpace = disk_free_space($disk->path(''));
+        $usedSpace = $totalSpace - $freeSpace;
 
-        $pathInfo = pathinfo($imagePath);
-        $thumbnailPath = $pathInfo['dirname'] . '/thumb_' . $pathInfo['basename'];
-
-        $image = Image::make(Storage::disk('public')->path($imagePath))
-            ->fit($width, $height)
-            ->encode('jpg', 85);
-
-        Storage::disk('public')->put($thumbnailPath, $image);
-
-        return $thumbnailPath;
-    }
-
-    /**
-     * Bulk resize images
-     */
-    public function resizeImages(array $imagePaths, int $maxWidth = 1920, int $maxHeight = 1920): array
-    {
-        $resizedPaths = [];
-
-        foreach ($imagePaths as $path) {
-            if (Storage::disk('public')->exists($path)) {
-                $image = Image::make(Storage::disk('public')->path($path));
-
-                if ($image->width() > $maxWidth || $image->height() > $maxHeight) {
-                    $image->resize($maxWidth, $maxHeight, function ($constraint) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    });
-
-                    $image->encode('jpg', 90);
-                    Storage::disk('public')->put($path, $image);
-                }
-
-                $resizedPaths[] = $path;
-            }
-        }
-
-        return $resizedPaths;
-    }
-
-    /**
-     * Clean up old images (older than specified days)
-     */
-    public function cleanupOldImages(int $days = 30): int
-    {
-        $deletedCount = 0;
-        $cutoffTime = now()->subDays($days)->timestamp;
-
-        $directories = ['profile_images', 'report_images'];
-
-        foreach ($directories as $directory) {
-            $files = Storage::disk('public')->files($directory);
-
-            foreach ($files as $file) {
-                $lastModified = Storage::disk('public')->lastModified($file);
-
-                if ($lastModified < $cutoffTime) {
-                    if (Storage::disk('public')->delete($file)) {
-                        $deletedCount++;
-                    }
-                }
-            }
-        }
-
-        return $deletedCount;
+        return [
+            'total_space' => $totalSpace,
+            'used_space' => $usedSpace,
+            'free_space' => $freeSpace,
+            'usage_percentage' => round(($usedSpace / $totalSpace) * 100, 2),
+        ];
     }
 }
