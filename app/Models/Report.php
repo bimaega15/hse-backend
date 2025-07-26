@@ -1,5 +1,5 @@
 <?php
-// app/Models/Report.php
+// app/Models/Report.php (Updated with master data relations)
 
 namespace App\Models;
 
@@ -11,7 +11,22 @@ class Report extends Model
 {
     use HasFactory, SoftDeletes;
 
-    protected $fillable = ['employee_id', 'hse_staff_id', 'category', 'equipment_type', 'contributing_factor', 'description', 'location', 'images', 'status', 'start_process_at', 'completed_at'];
+    protected $fillable = [
+        'employee_id',
+        'hse_staff_id',
+        'category_id',           // New: Foreign key to categories
+        'contributing_id',       // New: Foreign key to contributings
+        'action_id',            // New: Foreign key to actions
+        'category',             // Keep for backward compatibility
+        'equipment_type',
+        'contributing_factor',  // Keep for backward compatibility
+        'description',
+        'location',
+        'images',
+        'status',
+        'start_process_at',
+        'completed_at'
+    ];
 
     protected $casts = [
         'images' => 'array',
@@ -26,7 +41,7 @@ class Report extends Model
         'status' => 'waiting',
     ];
 
-    // Relationships
+    // Existing relationships
     public function employee()
     {
         return $this->belongsTo(User::class, 'employee_id');
@@ -42,7 +57,23 @@ class Report extends Model
         return $this->hasOne(ObservationForm::class);
     }
 
-    // Scopes
+    // New relationships for master data
+    public function categoryMaster()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
+    }
+
+    public function contributingMaster()
+    {
+        return $this->belongsTo(Contributing::class, 'contributing_id');
+    }
+
+    public function actionMaster()
+    {
+        return $this->belongsTo(Action::class, 'action_id');
+    }
+
+    // Existing scopes
     public function scopeWaiting($query)
     {
         return $query->where('status', 'waiting');
@@ -68,6 +99,22 @@ class Report extends Model
         return $query->where('hse_staff_id', $hseStaffId);
     }
 
+    // New scopes for master data
+    public function scopeByCategory($query, $categoryId)
+    {
+        return $query->where('category_id', $categoryId);
+    }
+
+    public function scopeByContributing($query, $contributingId)
+    {
+        return $query->where('contributing_id', $contributingId);
+    }
+
+    public function scopeByAction($query, $actionId)
+    {
+        return $query->where('action_id', $actionId);
+    }
+
     // Accessors
     public function getImageUrlsAttribute()
     {
@@ -80,58 +127,39 @@ class Report extends Model
         }, $this->images);
     }
 
-    public function getProcessingTimeAttribute()
+    // Get category name (prioritize master data over string field)
+    public function getCategoryNameAttribute()
     {
-        if (!$this->start_process_at || !$this->completed_at) {
-            return null;
+        if ($this->categoryMaster) {
+            return $this->categoryMaster->name;
         }
-
-        return $this->start_process_at->diffInHours($this->completed_at);
+        return $this->category; // Fallback to string field
     }
 
-    // Methods
-    public function canBeModified()
+    // Get contributing name (prioritize master data over string field)
+    public function getContributingNameAttribute()
     {
-        return $this->status === 'waiting';
+        if ($this->contributingMaster) {
+            return $this->contributingMaster->name;
+        }
+        return $this->contributing_factor; // Fallback to string field
     }
 
-    public function canBeProcessed()
+    // Get action name
+    public function getActionNameAttribute()
     {
-        return $this->status === 'waiting';
+        if ($this->actionMaster) {
+            return $this->actionMaster->name;
+        }
+        return null;
     }
 
-    public function canBeCompleted()
+    // Get full hierarchy name
+    public function getFullHierarchyAttribute()
     {
-        return $this->status === 'in-progress';
-    }
-
-    public function isOwnedBy(User $user)
-    {
-        return $this->employee_id === $user->id;
-    }
-
-    public function isAssignedTo(User $user)
-    {
-        return $this->hse_staff_id === $user->id;
-    }
-
-    public function getStatusColorAttribute()
-    {
-        return match ($this->status) {
-            'waiting' => 'warning',
-            'in-progress' => 'info',
-            'done' => 'success',
-            default => 'secondary',
-        };
-    }
-
-    public function getStatusLabelAttribute()
-    {
-        return match ($this->status) {
-            'waiting' => 'Menunggu',
-            'in-progress' => 'Diproses',
-            'done' => 'Selesai',
-            default => 'Unknown',
-        };
+        if ($this->categoryMaster && $this->contributingMaster && $this->actionMaster) {
+            return $this->categoryMaster->name . ' → ' . $this->contributingMaster->name . ' → ' . $this->actionMaster->name;
+        }
+        return $this->category . ' → ' . $this->contributing_factor;
     }
 }

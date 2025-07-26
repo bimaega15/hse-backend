@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\NotificationController;
+use App\Http\Controllers\API\MasterDataController;
 
 /*
 |--------------------------------------------------------------------------
@@ -66,4 +67,28 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
     });
+});
+
+// Master Data Routes
+Route::middleware('auth:sanctum')->group(function () {
+    // Get hierarchical master data (categories -> contributings -> actions)
+    Route::get('/master-data/hierarchical', [MasterDataController::class, 'getHierarchicalData']);
+
+    // Get categories
+    Route::get('/master-data/categories', [MasterDataController::class, 'getCategories']);
+
+    // Get contributings by category
+    Route::get('/master-data/categories/{categoryId}/contributings', [MasterDataController::class, 'getContributingsByCategory']);
+
+    // Get actions by contributing
+    Route::get('/master-data/contributings/{contributingId}/actions', [MasterDataController::class, 'getActionsByContributing']);
+
+    // Get actions by category (all actions under a category)
+    Route::get('/master-data/categories/{categoryId}/actions', [MasterDataController::class, 'getActionsByCategory']);
+
+    // Search master data
+    Route::get('/master-data/search', [MasterDataController::class, 'search']);
+
+    // Get full path for an action
+    Route::get('/master-data/actions/{actionId}/path', [MasterDataController::class, 'getActionPath']);
 });

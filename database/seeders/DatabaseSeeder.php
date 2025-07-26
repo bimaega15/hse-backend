@@ -12,6 +12,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $this->call([UserSeeder::class, ReportSeeder::class]);
+        $this->call([
+            // Seed master data first
+            MasterDataSeeder::class,
+
+            // Then seed users
+            UserSeeder::class,
+
+            // Finally seed reports (depends on users)
+            ReportSeeder::class,
+        ]);
     }
 }
