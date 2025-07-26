@@ -1,5 +1,4 @@
 <?php
-// app/Exceptions/Handler.php
 
 namespace App\Exceptions;
 
@@ -50,10 +49,11 @@ class Handler extends ExceptionHandler
 
     /**
      * Render an exception into an HTTP response.
+     * PERBAIKAN: Prioritaskan API response handling
      */
     public function render($request, Throwable $e)
     {
-        // Handle API routes with JSON responses
+        // CRITICAL: Handle API routes FIRST
         if ($request->is('api/*') || $request->expectsJson()) {
             return $this->handleApiException($request, $e);
         }
@@ -63,115 +63,95 @@ class Handler extends ExceptionHandler
 
     /**
      * Handle API exceptions and return JSON responses
+     * PERBAIKAN: Comprehensive API exception handling
      */
     private function handleApiException($request, Throwable $e)
     {
+        // Authentication Exception - HIGHEST PRIORITY
         if ($e instanceof AuthenticationException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Unauthenticated. Please login.',
-                    'error_code' => 'UNAUTHENTICATED',
-                ],
-                401,
-            );
-        }
-
-        if ($e instanceof ValidationException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Validation failed',
-                    'errors' => $e->errors(),
-                    'error_code' => 'VALIDATION_ERROR',
-                ],
-                422,
-            );
-        }
-
-        if ($e instanceof ModelNotFoundException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Resource not found',
-                    'error_code' => 'RESOURCE_NOT_FOUND',
-                ],
-                404,
-            );
-        }
-
-        if ($e instanceof NotFoundHttpException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Endpoint not found',
-                    'error_code' => 'ENDPOINT_NOT_FOUND',
-                ],
-                404,
-            );
-        }
-
-        if ($e instanceof MethodNotAllowedHttpException) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Method not allowed',
-                    'error_code' => 'METHOD_NOT_ALLOWED',
-                ],
-                405,
-            );
-        }
-
-        // Handle general exceptions
-        $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
-
-        if ($statusCode === 403) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Access denied. Insufficient permissions.',
-                    'error_code' => 'ACCESS_DENIED',
-                ],
-                403,
-            );
-        }
-
-        // For development, show detailed error
-        if (config('app.debug')) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => $e->getMessage(),
-                    'error_code' => 'INTERNAL_SERVER_ERROR',
-                    'file' => $e->getFile(),
-                    'line' => $e->getLine(),
-                    'trace' => $e->getTraceAsString(),
-                ],
-                $statusCode >= 100 && $statusCode < 600 ? $statusCode : 500,
-            );
-        }
-
-        // For production, show generic error
-        return response()->json(
-            [
-                'success' => false,
-                'message' => 'Internal server error',
-                'error_code' => 'INTERNAL_SERVER_ERROR',
-            ],
-            500,
-        );
-    }
-
-    protected function unauthenticated($request, \Illuminate\Auth\AuthenticationException $exception)
-    {
-        if ($request->expectsJson() || $request->is('api/*')) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthenticated',
+                'message' => 'Unauthenticated. Please provide valid Bearer token.',
+                'error_code' => 'UNAUTHENTICATED',
                 'timestamp' => now()->toISOString()
             ], 401);
         }
 
+        // Validation Exception
+        if ($e instanceof ValidationException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $e->errors(),
+                'error_code' => 'VALIDATION_ERROR',
+                'timestamp' => now()->toISOString()
+            ], 422);
+        }
+
+        // Model Not Found Exception
+        if ($e instanceof ModelNotFoundException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Resource not found',
+                'error_code' => 'MODEL_NOT_FOUND',
+                'timestamp' => now()->toISOString()
+            ], 404);
+        }
+
+        // HTTP Not Found Exception
+        if ($e instanceof NotFoundHttpException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Endpoint not found',
+                'error_code' => 'ENDPOINT_NOT_FOUND',
+                'timestamp' => now()->toISOString()
+            ], 404);
+        }
+
+        // Method Not Allowed Exception
+        if ($e instanceof MethodNotAllowedHttpException) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Method not allowed',
+                'error_code' => 'METHOD_NOT_ALLOWED',
+                'timestamp' => now()->toISOString()
+            ], 405);
+        }
+
+        // Generic Exception
+        $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
+        $message = $e->getMessage() ?: 'Internal server error';
+
+        // Don't expose sensitive info in production
+        if (app()->environment('production')) {
+            $message = $statusCode === 500 ? 'Internal server error' : $message;
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'error_code' => 'INTERNAL_SERVER_ERROR',
+            'timestamp' => now()->toISOString()
+        ], $statusCode);
+    }
+
+    /**
+     * Convert an authentication exception into a response.
+     * BACKUP: Jika render method tidak catch AuthenticationException
+     */
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        // API request handling
+        if ($request->is('api/*') || $request->expectsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated. Please provide valid Bearer token.',
+                'error_code' => 'UNAUTHENTICATED',
+                'timestamp' => now()->toISOString()
+            ], 401);
+        }
+
+        // Web request - redirect to login
         return redirect()->guest(route('login'));
     }
 }
