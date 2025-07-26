@@ -1,11 +1,11 @@
 <?php
-// app/Http/Requests/StoreReportRequest.php (Updated)
+// app/Http/Requests/UpdateReportRequest.php
 
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreReportRequest extends FormRequest
+class UpdateReportRequest extends FormRequest
 {
     public function authorize()
     {
@@ -20,11 +20,9 @@ class StoreReportRequest extends FormRequest
             'contributing_id' => 'required|exists:contributings,id',
             'action_id' => 'required|exists:actions,id',
 
-            // New fields
+            // Report fields
             'severity_rating' => 'required|in:low,medium,high,critical',
             'action_taken' => 'nullable|string|max:1000',
-
-            // Existing fields
             'description' => 'required|string|max:1000',
             'location' => 'required|string|max:255',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
@@ -42,12 +40,10 @@ class StoreReportRequest extends FormRequest
             'action_id.required' => 'Action harus dipilih',
             'action_id.exists' => 'Action yang dipilih tidak valid',
 
-            // New fields validation messages
+            // Report fields validation messages
             'severity_rating.required' => 'Tingkat keparahan harus dipilih',
             'severity_rating.in' => 'Tingkat keparahan harus berupa: low, medium, high, atau critical',
             'action_taken.max' => 'Aksi yang diambil maksimal 1000 karakter',
-
-            // Existing fields validation messages
             'description.required' => 'Deskripsi tidak boleh kosong',
             'description.max' => 'Deskripsi maksimal 1000 karakter',
             'location.required' => 'Lokasi tidak boleh kosong',

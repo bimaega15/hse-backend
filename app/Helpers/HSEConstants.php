@@ -1,25 +1,39 @@
 <?php
-// app/Helpers/HSEConstants.php
+// app/Helpers/HSEConstants.php (Updated)
 
 namespace App\Helpers;
 
 class HSEConstants
 {
-    const CATEGORIES = ['Life Safety Equipment', 'Emergency Equipment', 'Electrical Equipment', 'Mechanical Equipment', 'Others'];
+    // Severity ratings for reports
+    const SEVERITY_RATINGS = ['low', 'medium', 'high', 'critical'];
 
-    const EQUIPMENT_TYPES = ['Fire Extinguisher', 'Emergency Light', 'Smoke Detector', 'Fire Alarm', 'Others'];
-
-    const CONTRIBUTING_FACTORS = ['Defective machinery/equipment', 'Life Safety Equipment', 'Improper procedure', 'Lack of maintenance', 'Others'];
-
+    // Report status
     const REPORT_STATUS = [
         'waiting' => 'Menunggu',
         'in-progress' => 'Diproses',
         'done' => 'Selesai',
     ];
 
+    // Notification types and categories
     const NOTIFICATION_TYPES = ['info', 'warning', 'error', 'success'];
-
     const NOTIFICATION_CATEGORIES = ['reports', 'reminders', 'system', 'urgent'];
+
+    // Severity rating labels
+    const SEVERITY_LABELS = [
+        'low' => 'Rendah',
+        'medium' => 'Sedang',
+        'high' => 'Tinggi',
+        'critical' => 'Kritis'
+    ];
+
+    // Severity rating colors
+    const SEVERITY_COLORS = [
+        'low' => '#4CAF50',      // Green
+        'medium' => '#FF9800',   // Orange
+        'high' => '#F44336',     // Red
+        'critical' => '#212121'  // Dark
+    ];
 
     public static function getStatusColor($status)
     {
@@ -37,19 +51,19 @@ class HSEConstants
         return self::REPORT_STATUS[$status] ?? $status;
     }
 
-    public static function isValidCategory($category)
+    public static function getSeverityColor($severity)
     {
-        return in_array($category, self::CATEGORIES);
+        return self::SEVERITY_COLORS[$severity] ?? '#9E9E9E';
     }
 
-    public static function isValidEquipmentType($equipmentType)
+    public static function getSeverityText($severity)
     {
-        return in_array($equipmentType, self::EQUIPMENT_TYPES);
+        return self::SEVERITY_LABELS[$severity] ?? ucfirst($severity);
     }
 
-    public static function isValidContributingFactor($factor)
+    public static function isValidSeverity($severity)
     {
-        return in_array($factor, self::CONTRIBUTING_FACTORS);
+        return in_array($severity, self::SEVERITY_RATINGS);
     }
 
     public static function isValidNotificationType($type)
@@ -60,5 +74,54 @@ class HSEConstants
     public static function isValidNotificationCategory($category)
     {
         return in_array($category, self::NOTIFICATION_CATEGORIES);
+    }
+
+    public static function getSeverityPriority($severity)
+    {
+        $priorities = [
+            'low' => 1,
+            'medium' => 2,
+            'high' => 3,
+            'critical' => 4
+        ];
+
+        return $priorities[$severity] ?? 0;
+    }
+
+    public static function getHighPrioritySeverities()
+    {
+        return ['high', 'critical'];
+    }
+
+    public static function getLowPrioritySeverities()
+    {
+        return ['low', 'medium'];
+    }
+
+    // Get all severity options for dropdowns
+    public static function getSeverityOptions()
+    {
+        $options = [];
+        foreach (self::SEVERITY_RATINGS as $severity) {
+            $options[] = [
+                'value' => $severity,
+                'label' => self::getSeverityText($severity),
+                'color' => self::getSeverityColor($severity),
+                'priority' => self::getSeverityPriority($severity)
+            ];
+        }
+        return $options;
+    }
+
+    // Check if severity is high priority
+    public static function isHighPriority($severity)
+    {
+        return in_array($severity, self::getHighPrioritySeverities());
+    }
+
+    // Check if severity is low priority  
+    public static function isLowPriority($severity)
+    {
+        return in_array($severity, self::getLowPrioritySeverities());
     }
 }

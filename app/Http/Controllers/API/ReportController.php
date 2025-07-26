@@ -1,12 +1,12 @@
 <?php
-// app/Http/Controllers/API/ReportController.php
+// app/Http/Controllers/API/ReportController.php (Updated - Removed ObservationForm)
 
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Report;
-use App\Models\ObservationForm;
 use App\Models\User;
+use App\Http\Requests\StoreReportRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -14,10 +14,19 @@ use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
+    /**
+     * Display a listing of reports with filtering, search, and pagination
+     */
     public function index(Request $request)
     {
         $user = $request->user();
-        $query = Report::with(['employee', 'hseStaff', 'observationForm']);
+        $query = Report::with([
+            'employee',
+            'hseStaff',
+            'categoryMaster',
+            'contributingMaster',
+            'actionMaster'
+        ]);
 
         // Filter by user role
         if ($user->role === 'employee') {
@@ -34,14 +43,38 @@ class ReportController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Filter by severity
+        if ($request->has('severity') && $request->severity !== 'all') {
+            $query->where('severity_rating', $request->severity);
+        }
+
+        // Filter by category
+        if ($request->has('category_id') && $request->category_id !== 'all') {
+            $query->where('category_id', $request->category_id);
+        }
+
+        // Filter by contributing
+        if ($request->has('contributing_id') && $request->contributing_id !== 'all') {
+            $query->where('contributing_id', $request->contributing_id);
+        }
+
         // Search functionality
         if ($request->has('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('category', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%")
+                $q->where('description', 'like', "%{$search}%")
                     ->orWhere('location', 'like', "%{$search}%")
+                    ->orWhere('action_taken', 'like', "%{$search}%")
                     ->orWhereHas('employee', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('categoryMaster', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('contributingMaster', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('actionMaster', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     });
             });
@@ -60,78 +93,103 @@ class ReportController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created report
+     */
+    public function store(StoreReportRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'category' => 'required|string',
-            'equipment_type' => 'required|string',
-            'contributing_factor' => 'required|string',
-            'description' => 'required|string',
-            'location' => 'required|string',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:5120', // 5MB max
-        ]);
+        try {
+            $user = $request->user();
 
-        if ($validator->fails()) {
-            return response()->json(
-                [
+            // Check if user is employee
+            if ($user->role !== 'employee') {
+                return response()->json([
                     'success' => false,
-                    'message' => 'Validation Error',
-                    'errors' => $validator->errors(),
-                ],
-                422,
-            );
-        }
-
-        $data = $request->only(['category', 'equipment_type', 'contributing_factor', 'description', 'location']);
-        $data['employee_id'] = $request->user()->id;
-
-        // Handle image uploads
-        $imagePaths = [];
-        if ($request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $imagePath = $image->storeAs('report_images', $imageName, 'public');
-                $imagePaths[] = $imagePath;
+                    'message' => 'Hanya karyawan yang dapat membuat laporan'
+                ], 403);
             }
-        }
-        $data['images'] = $imagePaths;
 
-        $report = Report::create($data);
-        $report->load(['employee', 'hseStaff']);
+            // Prepare report data
+            $reportData = [
+                'employee_id' => $user->id,
+                'category_id' => $request->category_id,
+                'contributing_id' => $request->contributing_id,
+                'action_id' => $request->action_id,
+                'severity_rating' => $request->severity_rating,
+                'action_taken' => $request->action_taken,
+                'description' => $request->description,
+                'location' => $request->location,
+                'status' => 'waiting'
+            ];
 
-        // Create notification for HSE staff
-        $this->createReportNotification($report);
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                $imagePaths = $this->uploadReportImages($request->file('images'));
+                $reportData['images'] = $imagePaths;
+            }
 
-        return response()->json(
-            [
+            // Create the report
+            $report = Report::create($reportData);
+            $report->load([
+                'employee',
+                'categoryMaster',
+                'contributingMaster',
+                'actionMaster'
+            ]);
+
+            Log::info('Report created successfully', [
+                'report_id' => $report->id,
+                'employee_id' => $user->id,
+                'category_id' => $request->category_id,
+                'severity_rating' => $request->severity_rating
+            ]);
+
+            return response()->json([
                 'success' => true,
                 'message' => 'Laporan berhasil dibuat',
-                'data' => $report,
-            ],
-            201,
-        );
+                'data' => $report
+            ], 201);
+        } catch (\Exception $e) {
+            Log::error('Report creation failed', [
+                'user_id' => $request->user()->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat membuat laporan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
-    public function show($id)
+    /**
+     * Display the specified report
+     */
+    public function show(Request $request, $id)
     {
-        $report = Report::with(['employee', 'hseStaff', 'observationForm'])->find($id);
+        $report = Report::with([
+            'employee',
+            'hseStaff',
+            'categoryMaster',
+            'contributingMaster',
+            'actionMaster'
+        ])->find($id);
 
         if (!$report) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Laporan tidak ditemukan',
-                ],
-                404,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan tidak ditemukan'
+            ], 404);
         }
 
-        // Check access permission
-        $user = request()->user();
+        $user = $request->user();
+
+        // Authorization check
         if ($user->role === 'employee' && $report->employee_id !== $user->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Anda hanya dapat melihat laporan yang Anda buat sendiri.',
+                'message' => 'Anda tidak memiliki akses ke laporan ini',
                 'error_code' => 'FORBIDDEN'
             ], 403);
         }
@@ -143,13 +201,11 @@ class ReportController extends Controller
     }
 
     /**
-     * Update the specified report in storage.
-     * Only employee who created the report can update it, and only if status is 'waiting'
+     * Update the specified report
      */
     public function update(Request $request, $id)
     {
         try {
-            // Find the report
             $report = Report::with(['employee'])->find($id);
 
             if (!$report) {
@@ -179,11 +235,13 @@ class ReportController extends Controller
 
             // Validate input data
             $validator = Validator::make($request->all(), [
-                'category' => 'required|string',
-                'equipment_type' => 'required|string',
-                'contributing_factor' => 'required|string',
-                'description' => 'required|string',
-                'location' => 'required|string',
+                'category_id' => 'required|exists:categories,id',
+                'contributing_id' => 'required|exists:contributings,id',
+                'action_id' => 'required|exists:actions,id',
+                'severity_rating' => 'required|in:low,medium,high,critical',
+                'action_taken' => 'nullable|string|max:1000',
+                'description' => 'required|string|max:1000',
+                'location' => 'required|string|max:255',
                 'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
             ]);
 
@@ -197,7 +255,15 @@ class ReportController extends Controller
             }
 
             // Prepare update data
-            $updateData = $request->only(['category', 'equipment_type', 'contributing_factor', 'description', 'location']);
+            $updateData = $request->only([
+                'category_id',
+                'contributing_id',
+                'action_id',
+                'severity_rating',
+                'action_taken',
+                'description',
+                'location'
+            ]);
 
             // Handle image uploads if new images are provided
             if ($request->hasFile('images')) {
@@ -205,12 +271,7 @@ class ReportController extends Controller
                 $this->deleteReportImages($report);
 
                 // Upload new images
-                $imagePaths = [];
-                foreach ($request->file('images') as $image) {
-                    $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                    $imagePath = $image->storeAs('report_images', $imageName, 'public');
-                    $imagePaths[] = $imagePath;
-                }
+                $imagePaths = $this->uploadReportImages($request->file('images'));
                 $updateData['images'] = $imagePaths;
 
                 Log::info('Report images updated', [
@@ -222,7 +283,13 @@ class ReportController extends Controller
 
             // Update the report
             $report->update($updateData);
-            $report->load(['employee', 'hseStaff']);
+            $report->load([
+                'employee',
+                'hseStaff',
+                'categoryMaster',
+                'contributingMaster',
+                'actionMaster'
+            ]);
 
             Log::info('Report updated successfully', [
                 'report_id' => $report->id,
@@ -251,13 +318,11 @@ class ReportController extends Controller
     }
 
     /**
-     * Remove the specified report from storage.
-     * Only employee who created the report can delete it, and only if status is 'waiting'
+     * Remove the specified report from storage
      */
     public function destroy($id)
     {
         try {
-            // Find the report
             $report = Report::with(['employee'])->find($id);
 
             if (!$report) {
@@ -294,7 +359,7 @@ class ReportController extends Controller
             Log::info('Report deleted successfully', [
                 'report_id' => $report->id,
                 'deleted_by' => $user->id,
-                'category' => $report->category,
+                'category_id' => $report->category_id,
                 'location' => $report->location
             ]);
 
@@ -317,125 +382,140 @@ class ReportController extends Controller
         }
     }
 
+    /**
+     * HSE Staff starts processing a report
+     */
     public function startProcess(Request $request, $id)
     {
+        $validator = Validator::make($request->all(), [
+            'action_taken' => 'nullable|string|max:1000'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         $report = Report::find($id);
 
         if (!$report) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Laporan tidak ditemukan',
-                ],
-                404,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan tidak ditemukan',
+            ], 404);
         }
 
         if ($report->status !== 'waiting') {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Laporan sudah diproses',
-                ],
-                400,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan harus dalam status waiting',
+            ], 400);
         }
 
         if ($request->user()->role !== 'hse_staff') {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Hanya HSE staff yang dapat memproses laporan',
-                ],
-                403,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya HSE staff yang dapat memproses laporan',
+            ], 403);
         }
 
-        $report->update([
+        // Update report status and assign HSE staff
+        $updateData = [
             'status' => 'in-progress',
             'start_process_at' => now(),
             'hse_staff_id' => $request->user()->id,
+        ];
+
+        // Add action taken if provided
+        if ($request->filled('action_taken')) {
+            $updateData['action_taken'] = $request->action_taken;
+        }
+
+        $report->update($updateData);
+        $report->load([
+            'employee',
+            'hseStaff',
+            'categoryMaster',
+            'contributingMaster',
+            'actionMaster'
         ]);
 
-        $report->load(['employee', 'hseStaff']);
+        Log::info('Report processing started', [
+            'report_id' => $report->id,
+            'hse_staff_id' => $request->user()->id,
+            'severity_rating' => $report->severity_rating
+        ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Penanganan laporan dimulai',
+            'message' => 'Laporan mulai diproses',
             'data' => $report,
         ]);
     }
 
+    /**
+     * HSE Staff completes a report
+     */
     public function complete(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'at_risk_behavior' => 'required|integer|min:0',
-            'nearmiss_incident' => 'required|integer|min:0',
-            'informasi_risk_mgmt' => 'required|integer|min:0',
-            'sim_k3' => 'required|integer|min:0',
-            'notes' => 'nullable|string',
+            'action_taken' => 'required|string|max:1000',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Validation Error',
-                    'errors' => $validator->errors(),
-                ],
-                422,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors(),
+            ], 422);
         }
 
         $report = Report::find($id);
 
         if (!$report) {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Laporan tidak ditemukan',
-                ],
-                404,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan tidak ditemukan',
+            ], 404);
         }
 
         if ($report->status !== 'in-progress') {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Laporan harus dalam status in-progress',
-                ],
-                400,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Laporan harus dalam status in-progress',
+            ], 400);
         }
 
         if ($request->user()->role !== 'hse_staff') {
-            return response()->json(
-                [
-                    'success' => false,
-                    'message' => 'Hanya HSE staff yang dapat menyelesaikan laporan',
-                ],
-                403,
-            );
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya HSE staff yang dapat menyelesaikan laporan',
+            ], 403);
         }
 
-        // Update report status
+        // Update report status and action taken
         $report->update([
             'status' => 'done',
             'completed_at' => now(),
+            'action_taken' => $request->action_taken,
         ]);
 
-        // Create observation form
-        ObservationForm::create([
+        $report->load([
+            'employee',
+            'hseStaff',
+            'categoryMaster',
+            'contributingMaster',
+            'actionMaster'
+        ]);
+
+        Log::info('Report completed', [
             'report_id' => $report->id,
-            'at_risk_behavior' => $request->at_risk_behavior,
-            'nearmiss_incident' => $request->nearmiss_incident,
-            'informasi_risk_mgmt' => $request->informasi_risk_mgmt,
-            'sim_k3' => $request->sim_k3,
-            'notes' => $request->notes,
+            'hse_staff_id' => $request->user()->id,
+            'completion_time_hours' => $report->processing_time_hours
         ]);
-
-        $report->load(['employee', 'hseStaff', 'observationForm']);
 
         return response()->json([
             'success' => true,
@@ -444,6 +524,9 @@ class ReportController extends Controller
         ]);
     }
 
+    /**
+     * Get reports statistics
+     */
     public function statistics(Request $request)
     {
         $user = $request->user();
@@ -454,58 +537,126 @@ class ReportController extends Controller
             $query->where('employee_id', $user->id);
         }
 
-        $total = $query->count();
-        $waiting = $query->clone()->where('status', 'waiting')->count();
-        $inProgress = $query->clone()->where('status', 'in-progress')->count();
-        $done = $query->clone()->where('status', 'done')->count();
+        $totalReports = $query->count();
+        $waitingReports = (clone $query)->where('status', 'waiting')->count();
+        $inProgressReports = (clone $query)->where('status', 'in-progress')->count();
+        $completedReports = (clone $query)->where('status', 'done')->count();
+
+        // Severity statistics
+        $severityStats = (clone $query)
+            ->selectRaw('severity_rating, COUNT(*) as count')
+            ->groupBy('severity_rating')
+            ->pluck('count', 'severity_rating')
+            ->toArray();
+
+        // Category statistics with master data
+        $categoryStats = (clone $query)
+            ->join('categories', 'reports.category_id', '=', 'categories.id')
+            ->selectRaw('categories.name as category_name, COUNT(*) as count')
+            ->groupBy('categories.id', 'categories.name')
+            ->pluck('count', 'category_name')
+            ->toArray();
+
+        // Monthly reports data
+        $monthlyData = $this->getMonthlyReportsData($user);
 
         return response()->json([
             'success' => true,
             'data' => [
-                'total' => $total,
-                'waiting' => $waiting,
-                'in_progress' => $inProgress,
-                'done' => $done,
+                'total_reports' => $totalReports,
+                'waiting_reports' => $waitingReports,
+                'in_progress_reports' => $inProgressReports,
+                'completed_reports' => $completedReports,
+                'completion_rate' => $totalReports > 0 ? round(($completedReports / $totalReports) * 100, 1) : 0,
+                'severity_statistics' => $severityStats,
+                'category_statistics' => $categoryStats,
+                'monthly_data' => $monthlyData,
+                'average_completion_time' => $this->getAverageCompletionTime($user),
             ],
         ]);
     }
 
     /**
-     * Helper method to delete report images from storage
+     * Upload report images
+     */
+    private function uploadReportImages($images)
+    {
+        $imagePaths = [];
+
+        if ($images) {
+            foreach ($images as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('report_images', $imageName, 'public');
+                $imagePaths[] = $imagePath;
+            }
+        }
+
+        return $imagePaths;
+    }
+
+    /**
+     * Delete report images
      */
     private function deleteReportImages(Report $report)
     {
-        if ($report->images && is_array($report->images)) {
+        if ($report->images) {
             foreach ($report->images as $imagePath) {
                 if (Storage::disk('public')->exists($imagePath)) {
                     Storage::disk('public')->delete($imagePath);
-                    Log::info('Report image deleted', ['path' => $imagePath]);
                 }
             }
         }
     }
 
     /**
-     * Helper method to create notification for HSE staff when new report is created
+     * Get average completion time in hours
      */
-    private function createReportNotification(Report $report)
+    private function getAverageCompletionTime(User $user)
     {
-        // Get all HSE staff
-        $hseStaffs = User::where('role', 'hse_staff')->where('is_active', true)->get();
+        $query = Report::where('status', 'done')
+            ->whereNotNull('start_process_at')
+            ->whereNotNull('completed_at');
 
-        foreach ($hseStaffs as $staff) {
-            $staff->notifications()->create([
-                'title' => 'Laporan Baru Diterima',
-                'message' => "Ada laporan keselamatan baru dari {$report->employee->name} di {$report->location}",
-                'type' => 'warning',
-                'category' => 'reports',
-                'data' => [
-                    'report_id' => $report->id,
-                    'action' => 'new_report',
-                    'employee_name' => $report->employee->name,
-                    'location' => $report->location,
-                ],
-            ]);
+        if ($user->role === 'employee') {
+            $query->where('employee_id', $user->id);
         }
+
+        $completedReports = $query->get();
+
+        if ($completedReports->isEmpty()) {
+            return 0;
+        }
+
+        $totalHours = 0;
+        foreach ($completedReports as $report) {
+            $hours = $report->start_process_at->diffInHours($report->completed_at);
+            $totalHours += $hours;
+        }
+
+        return round($totalHours / $completedReports->count(), 1);
+    }
+
+    /**
+     * Get monthly reports data
+     */
+    private function getMonthlyReportsData(User $user, int $months = 6)
+    {
+        $query = Report::query();
+
+        if ($user->role === 'employee') {
+            $query->where('employee_id', $user->id);
+        }
+
+        return $query
+            ->selectRaw('YEAR(created_at) as year, MONTH(created_at) as month, COUNT(*) as count')
+            ->where('created_at', '>=', now()->subMonths($months))
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $item->month_name = date('F Y', mktime(0, 0, 0, $item->month, 1, $item->year));
+                return $item;
+            });
     }
 }

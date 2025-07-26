@@ -35,6 +35,36 @@ Route::middleware('auth:sanctum')->group(function () {
     // Password change
     Route::put('/change-password', [AuthController::class, 'changePassword']);
 
+    // Master Data Routes
+    Route::prefix('master-data')->group(function () {
+        // Get all master data (categories separate, contributings with actions)
+        Route::get('/all', [MasterDataController::class, 'getAllMasterData']);
+
+        // Get categories (standalone)
+        Route::get('/categories', [MasterDataController::class, 'getCategories']);
+
+        // Get contributings with their actions
+        Route::get('/contributings', [MasterDataController::class, 'getContributings']);
+
+        // Get specific contributing detail with actions
+        Route::get('/contributings/{contributingId}', [MasterDataController::class, 'getContributingDetail']);
+
+        // Get actions by contributing
+        Route::get('/contributings/{contributingId}/actions', [MasterDataController::class, 'getActionsByContributing']);
+
+        // Get all actions
+        Route::get('/actions', [MasterDataController::class, 'getActions']);
+
+        // Search master data
+        Route::get('/search', [MasterDataController::class, 'search']);
+
+        // Get full path for an action (contributing → action)
+        Route::get('/actions/{actionId}/path', [MasterDataController::class, 'getActionPath']);
+
+        // Get master data statistics
+        Route::get('/statistics', [MasterDataController::class, 'getStatistics']);
+    });
+
     // Reports CRUD routes
     Route::prefix('reports')->group(function () {
         // List reports (with filtering, search, pagination)
@@ -56,10 +86,10 @@ Route::middleware('auth:sanctum')->group(function () {
         // HSE Staff specific actions
         Route::post('/{id}/start-process', [ReportController::class, 'startProcess']);
         Route::post('/{id}/complete', [ReportController::class, 'complete']);
-    });
 
-    // Reports statistics
-    Route::get('/reports-statistics', [ReportController::class, 'statistics']);
+        // Reports statistics
+        Route::get('/statistics/dashboard', [ReportController::class, 'statistics']);
+    });
 
     // Notifications routes
     Route::prefix('notifications')->group(function () {
@@ -67,34 +97,4 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{id}/read', [NotificationController::class, 'markAsRead']);
         Route::post('/read-all', [NotificationController::class, 'markAllAsRead']);
     });
-});
-
-// Master Data Routes
-Route::middleware('auth:sanctum')->group(function () {
-    // Get all master data (categories separate, contributings with actions)
-    Route::get('/master-data/all', [MasterDataController::class, 'getAllMasterData']);
-
-    // Get categories (standalone)
-    Route::get('/master-data/categories', [MasterDataController::class, 'getCategories']);
-
-    // Get contributings with their actions
-    Route::get('/master-data/contributings', [MasterDataController::class, 'getContributings']);
-
-    // Get specific contributing detail with actions
-    Route::get('/master-data/contributings/{contributingId}', [MasterDataController::class, 'getContributingDetail']);
-
-    // Get actions by contributing
-    Route::get('/master-data/contributings/{contributingId}/actions', [MasterDataController::class, 'getActionsByContributing']);
-
-    // Get all actions
-    Route::get('/master-data/actions', [MasterDataController::class, 'getActions']);
-
-    // Search master data
-    Route::get('/master-data/search', [MasterDataController::class, 'search']);
-
-    // Get full path for an action (contributing → action)
-    Route::get('/master-data/actions/{actionId}/path', [MasterDataController::class, 'getActionPath']);
-
-    // Get master data statistics
-    Route::get('/master-data/statistics', [MasterDataController::class, 'getStatistics']);
 });
