@@ -12,31 +12,32 @@ use Illuminate\Http\Request;
 class MasterDataController extends Controller
 {
     /**
-     * Get all categories with their contributings and actions (hierarchical)
+     * Get all master data (categories separate, contributings with actions)
      */
-    public function getHierarchicalData()
+    public function getAllMasterData()
     {
-        $categories = Category::active()
+        $categories = Category::active()->get();
+
+        $contributings = Contributing::active()
             ->with([
-                'contributings' => function ($query) {
-                    $query->active()->with([
-                        'actions' => function ($subQuery) {
-                            $subQuery->active();
-                        }
-                    ]);
+                'actions' => function ($query) {
+                    $query->active();
                 }
             ])
             ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $categories,
+            'data' => [
+                'categories' => $categories,
+                'contributings' => $contributings
+            ],
             'message' => 'Master data retrieved successfully'
         ]);
     }
 
     /**
-     * Get all categories
+     * Get all categories (standalone)
      */
     public function getCategories()
     {
@@ -50,13 +51,16 @@ class MasterDataController extends Controller
     }
 
     /**
-     * Get contributings by category
+     * Get all contributings with their actions
      */
-    public function getContributingsByCategory($categoryId)
+    public function getContributings()
     {
         $contributings = Contributing::active()
-            ->where('category_id', $categoryId)
-            ->with('category')
+            ->with([
+                'actions' => function ($query) {
+                    $query->active();
+                }
+            ])
             ->get();
 
         return response()->json([
@@ -73,7 +77,7 @@ class MasterDataController extends Controller
     {
         $actions = Action::active()
             ->where('contributing_id', $contributingId)
-            ->with(['contributing.category'])
+            ->with('contributing')
             ->get();
 
         return response()->json([
@@ -84,21 +88,18 @@ class MasterDataController extends Controller
     }
 
     /**
-     * Get actions by category (all actions under a category)
+     * Get all actions
      */
-    public function getActionsByCategory($categoryId)
+    public function getActions()
     {
         $actions = Action::active()
-            ->whereHas('contributing', function ($query) use ($categoryId) {
-                $query->where('category_id', $categoryId);
-            })
-            ->with(['contributing.category'])
+            ->with('contributing')
             ->get();
 
         return response()->json([
             'success' => true,
             'data' => $actions,
-            'message' => 'Actions by category retrieved successfully'
+            'message' => 'All actions retrieved successfully'
         ]);
     }
 
@@ -122,12 +123,12 @@ class MasterDataController extends Controller
 
         $contributings = Contributing::active()
             ->where('name', 'like', "%{$query}%")
-            ->with('category')
+            ->with('actions')
             ->get();
 
         $actions = Action::active()
             ->where('name', 'like', "%{$query}%")
-            ->with(['contributing.category'])
+            ->with('contributing')
             ->get();
 
         return response()->json([
@@ -142,11 +143,11 @@ class MasterDataController extends Controller
     }
 
     /**
-     * Get full path for a specific action
+     * Get full path for a specific action (contributing → action)
      */
     public function getActionPath($actionId)
     {
-        $action = Action::with(['contributing.category'])->find($actionId);
+        $action = Action::with('contributing')->find($actionId);
 
         if (!$action) {
             return response()->json([
@@ -160,13 +161,62 @@ class MasterDataController extends Controller
             'data' => [
                 'action' => $action,
                 'path' => [
-                    'category' => $action->contributing->category,
                     'contributing' => $action->contributing,
                     'action' => $action
                 ],
                 'full_path' => $action->full_name
             ],
             'message' => 'Action path retrieved successfully'
+        ]);
+    }
+
+    /**
+     * Get specific contributing with its actions
+     */
+    public function getContributingDetail($contributingId)
+    {
+        $contributing = Contributing::active()
+            ->with([
+                'actions' => function ($query) {
+                    $query->active();
+                }
+            ])
+            ->find($contributingId);
+
+        if (!$contributing) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Contributing not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $contributing,
+            'message' => 'Contributing details retrieved successfully'
+        ]);
+    }
+
+    /**
+     * Get statistics for master data
+     */
+    public function getStatistics()
+    {
+        $stats = [
+            'total_categories' => Category::active()->count(),
+            'total_contributings' => Contributing::active()->count(),
+            'total_actions' => Action::active()->count(),
+            'contributings_with_most_actions' => Contributing::active()
+                ->withCount('actions')
+                ->orderBy('actions_count', 'desc')
+                ->take(5)
+                ->get(),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats,
+            'message' => 'Master data statistics retrieved successfully'
         ]);
     }
 }

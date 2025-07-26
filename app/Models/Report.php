@@ -14,9 +14,9 @@ class Report extends Model
     protected $fillable = [
         'employee_id',
         'hse_staff_id',
-        'category_id',           // New: Foreign key to categories
-        'contributing_id',       // New: Foreign key to contributings
-        'action_id',            // New: Foreign key to actions
+        'category_id',           // Foreign key to categories (standalone)
+        'contributing_id',       // Foreign key to contributings
+        'action_id',            // Foreign key to actions
         'category',             // Keep for backward compatibility
         'equipment_type',
         'contributing_factor',  // Keep for backward compatibility
@@ -154,12 +154,12 @@ class Report extends Model
         return null;
     }
 
-    // Get full hierarchy name
-    public function getFullHierarchyAttribute()
+    // Get contributing → action hierarchy
+    public function getContributingActionHierarchyAttribute()
     {
-        if ($this->categoryMaster && $this->contributingMaster && $this->actionMaster) {
-            return $this->categoryMaster->name . ' → ' . $this->contributingMaster->name . ' → ' . $this->actionMaster->name;
+        if ($this->contributingMaster && $this->actionMaster) {
+            return $this->contributingMaster->name . ' → ' . $this->actionMaster->name;
         }
-        return $this->category . ' → ' . $this->contributing_factor;
+        return $this->contributing_factor;
     }
 }

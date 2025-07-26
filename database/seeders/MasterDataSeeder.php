@@ -12,7 +12,15 @@ class MasterDataSeeder extends Seeder
 {
     public function run()
     {
-        // Seed Categories
+        // Seed Categories (standalone)
+        $this->seedCategories();
+
+        // Seed Contributings with their Actions
+        $this->seedContributingsWithActions();
+    }
+
+    private function seedCategories()
+    {
         $categories = [
             [
                 'name' => 'UNSAFE CONDITION',
@@ -25,23 +33,23 @@ class MasterDataSeeder extends Seeder
             [
                 'name' => 'ENVIRONMENTAL HAZARD',
                 'description' => 'Bahaya lingkungan yang dapat mempengaruhi keselamatan kerja'
+            ],
+            [
+                'name' => 'EQUIPMENT FAILURE',
+                'description' => 'Kegagalan peralatan dan mesin'
+            ],
+            [
+                'name' => 'EMERGENCY SITUATION',
+                'description' => 'Situasi darurat yang memerlukan penanganan khusus'
             ]
         ];
 
         foreach ($categories as $categoryData) {
-            $category = Category::create($categoryData);
-
-            if ($category->name === 'UNSAFE CONDITION') {
-                $this->seedUnsafeCondition($category);
-            } elseif ($category->name === 'UNSAFE BEHAVIOR') {
-                $this->seedUnsafeBehavior($category);
-            } elseif ($category->name === 'ENVIRONMENTAL HAZARD') {
-                $this->seedEnvironmentalHazard($category);
-            }
+            Category::create($categoryData);
         }
     }
 
-    private function seedUnsafeCondition($category)
+    private function seedContributingsWithActions()
     {
         $contributings = [
             [
@@ -69,7 +77,9 @@ class MasterDataSeeder extends Seeder
                     'APD tidak sesuai ukuran',
                     'APD rusak atau cacat',
                     'APD kadaluarsa',
-                    'APD tidak sesuai jenis pekerjaan'
+                    'APD tidak sesuai jenis pekerjaan',
+                    'APD tidak nyaman digunakan',
+                    'APD tidak tersedia dalam jumlah cukup'
                 ]
             ],
             [
@@ -80,31 +90,11 @@ class MasterDataSeeder extends Seeder
                     'Pengaman tidak berfungsi',
                     'Pengaman mudah dilepas',
                     'Pengaman tidak standar',
-                    'Sistem alarm tidak bekerja'
+                    'Sistem alarm tidak bekerja',
+                    'Guard tidak terpasang dengan benar',
+                    'Emergency stop tidak berfungsi'
                 ]
-            ]
-        ];
-
-        foreach ($contributings as $contributingData) {
-            $contributing = Contributing::create([
-                'category_id' => $category->id,
-                'name' => $contributingData['name'],
-                'description' => $contributingData['description']
-            ]);
-
-            foreach ($contributingData['actions'] as $actionName) {
-                Action::create([
-                    'contributing_id' => $contributing->id,
-                    'name' => $actionName,
-                    'description' => 'Aksi terkait ' . $actionName
-                ]);
-            }
-        }
-    }
-
-    private function seedUnsafeBehavior($category)
-    {
-        $contributings = [
+            ],
             [
                 'name' => 'Mengoperasikan peralatan tanpa wewenang',
                 'description' => 'Menggunakan peralatan tanpa izin atau sertifikasi',
@@ -112,7 +102,9 @@ class MasterDataSeeder extends Seeder
                     'Tidak memiliki sertifikat operator',
                     'Menggunakan alat bukan tugasnya',
                     'Mengoperasikan mesin saat maintenance',
-                    'Mengabaikan prosedur start-up'
+                    'Mengabaikan prosedur start-up',
+                    'Tidak mendapat training yang cukup',
+                    'Melanggar work permit system'
                 ]
             ],
             [
@@ -123,7 +115,9 @@ class MasterDataSeeder extends Seeder
                     'Tidak memakai safety shoes',
                     'Tidak memakai sarung tangan',
                     'Tidak memakai kacamata pelindung',
-                    'Melepas APD saat bekerja'
+                    'Melepas APD saat bekerja',
+                    'Tidak memakai ear plug',
+                    'Tidak menggunakan safety harness'
                 ]
             ],
             [
@@ -133,31 +127,11 @@ class MasterDataSeeder extends Seeder
                     'Skip safety briefing',
                     'Tidak melakukan lock out tag out',
                     'Mengabaikan rambu peringatan',
-                    'Tidak melakukan inspeksi pre-use'
+                    'Tidak melakukan inspeksi pre-use',
+                    'Tidak mengikuti JSA (Job Safety Analysis)',
+                    'Mengabaikan work permit requirements'
                 ]
-            ]
-        ];
-
-        foreach ($contributings as $contributingData) {
-            $contributing = Contributing::create([
-                'category_id' => $category->id,
-                'name' => $contributingData['name'],
-                'description' => $contributingData['description']
-            ]);
-
-            foreach ($contributingData['actions'] as $actionName) {
-                Action::create([
-                    'contributing_id' => $contributing->id,
-                    'name' => $actionName,
-                    'description' => 'Aksi terkait ' . $actionName
-                ]);
-            }
-        }
-    }
-
-    private function seedEnvironmentalHazard($category)
-    {
-        $contributings = [
+            ],
             [
                 'name' => 'Kondisi pencahayaan yang buruk',
                 'description' => 'Pencahayaan tidak memadai untuk aktivitas kerja',
@@ -165,7 +139,9 @@ class MasterDataSeeder extends Seeder
                     'Lampu mati atau redup',
                     'Silau berlebihan',
                     'Bayangan yang mengganggu',
-                    'Kontras warna yang buruk'
+                    'Kontras warna yang buruk',
+                    'Pencahayaan tidak merata',
+                    'Emergency lighting tidak berfungsi'
                 ]
             ],
             [
@@ -175,7 +151,9 @@ class MasterDataSeeder extends Seeder
                     'Ventilasi tersumbat',
                     'Kipas angin tidak berfungsi',
                     'AC tidak bekerja optimal',
-                    'Kualitas udara buruk'
+                    'Kualitas udara buruk',
+                    'Kadar oksigen rendah',
+                    'Gas beracun terjebak di area kerja'
                 ]
             ],
             [
@@ -185,14 +163,27 @@ class MasterDataSeeder extends Seeder
                     'Mesin berisik tidak di-maintenance',
                     'Tidak ada peredam suara',
                     'Area kerja terlalu berdekatan',
-                    'Getaran berlebihan'
+                    'Getaran berlebihan',
+                    'Suara peralatan melebihi 85 dB',
+                    'Tidak ada warning sign untuk noise area'
+                ]
+            ],
+            [
+                'name' => 'Kegagalan sistem mekanik',
+                'description' => 'Kerusakan pada sistem mekanik peralatan',
+                'actions' => [
+                    'Bearing rusak',
+                    'Belt putus atau kendor',
+                    'Coupling tidak alignment',
+                    'Overheating pada motor',
+                    'Kebocoran oli hydraulik',
+                    'Pressure relief valve tidak berfungsi'
                 ]
             ]
         ];
 
         foreach ($contributings as $contributingData) {
             $contributing = Contributing::create([
-                'category_id' => $category->id,
                 'name' => $contributingData['name'],
                 'description' => $contributingData['description']
             ]);

@@ -11,13 +11,10 @@ return new class extends Migration
     {
         Schema::create('contributings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')->constrained()->onDelete('cascade');
             $table->string('name');
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-
-            $table->index('category_id');
         });
     }
 

@@ -29,11 +29,6 @@ class Action extends Model
         return $this->belongsTo(Contributing::class);
     }
 
-    public function category()
-    {
-        return $this->hasOneThrough(Category::class, Contributing::class, 'id', 'id', 'contributing_id', 'category_id');
-    }
-
     // Scopes
     public function scopeActive($query)
     {
@@ -45,22 +40,10 @@ class Action extends Model
         return $query->where('contributing_id', $contributingId);
     }
 
-    public function scopeByCategory($query, $categoryId)
-    {
-        return $query->whereHas('contributing', function ($q) use ($categoryId) {
-            $q->where('category_id', $categoryId);
-        });
-    }
-
     // Accessors
     public function getFullNameAttribute()
     {
-        return $this->contributing->category->name . ' - ' . $this->contributing->name . ' - ' . $this->name;
-    }
-
-    public function getCategoryNameAttribute()
-    {
-        return $this->contributing->category->name;
+        return $this->contributing->name . ' - ' . $this->name;
     }
 
     public function getContributingNameAttribute()

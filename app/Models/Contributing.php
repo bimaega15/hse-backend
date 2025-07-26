@@ -11,7 +11,6 @@ class Contributing extends Model
     use HasFactory;
 
     protected $fillable = [
-        'category_id',
         'name',
         'description',
         'is_active'
@@ -24,11 +23,6 @@ class Contributing extends Model
     ];
 
     // Relationships
-    public function category()
-    {
-        return $this->belongsTo(Category::class);
-    }
-
     public function actions()
     {
         return $this->hasMany(Action::class, 'contributing_id');
@@ -45,11 +39,6 @@ class Contributing extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeByCategory($query, $categoryId)
-    {
-        return $query->where('category_id', $categoryId);
-    }
-
     // Accessors
     public function getActionsCountAttribute()
     {
@@ -59,10 +48,5 @@ class Contributing extends Model
     public function getActiveActionsCountAttribute()
     {
         return $this->activeActions()->count();
-    }
-
-    public function getFullNameAttribute()
-    {
-        return $this->category->name . ' - ' . $this->name;
     }
 }

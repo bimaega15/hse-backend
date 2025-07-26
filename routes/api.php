@@ -71,24 +71,30 @@ Route::middleware('auth:sanctum')->group(function () {
 
 // Master Data Routes
 Route::middleware('auth:sanctum')->group(function () {
-    // Get hierarchical master data (categories -> contributings -> actions)
-    Route::get('/master-data/hierarchical', [MasterDataController::class, 'getHierarchicalData']);
+    // Get all master data (categories separate, contributings with actions)
+    Route::get('/master-data/all', [MasterDataController::class, 'getAllMasterData']);
 
-    // Get categories
+    // Get categories (standalone)
     Route::get('/master-data/categories', [MasterDataController::class, 'getCategories']);
 
-    // Get contributings by category
-    Route::get('/master-data/categories/{categoryId}/contributings', [MasterDataController::class, 'getContributingsByCategory']);
+    // Get contributings with their actions
+    Route::get('/master-data/contributings', [MasterDataController::class, 'getContributings']);
+
+    // Get specific contributing detail with actions
+    Route::get('/master-data/contributings/{contributingId}', [MasterDataController::class, 'getContributingDetail']);
 
     // Get actions by contributing
     Route::get('/master-data/contributings/{contributingId}/actions', [MasterDataController::class, 'getActionsByContributing']);
 
-    // Get actions by category (all actions under a category)
-    Route::get('/master-data/categories/{categoryId}/actions', [MasterDataController::class, 'getActionsByCategory']);
+    // Get all actions
+    Route::get('/master-data/actions', [MasterDataController::class, 'getActions']);
 
     // Search master data
     Route::get('/master-data/search', [MasterDataController::class, 'search']);
 
-    // Get full path for an action
+    // Get full path for an action (contributing → action)
     Route::get('/master-data/actions/{actionId}/path', [MasterDataController::class, 'getActionPath']);
+
+    // Get master data statistics
+    Route::get('/master-data/statistics', [MasterDataController::class, 'getStatistics']);
 });
