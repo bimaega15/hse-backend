@@ -65,6 +65,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/statistics', [MasterDataController::class, 'getStatistics']);
     });
 
+    // Dashboard API - untuk home page frontend
+    Route::get('/dashboard', [ReportController::class, 'dashboard']);
+
     // Reports CRUD routes
     Route::prefix('reports')->group(function () {
         // List reports (with filtering, search, pagination)

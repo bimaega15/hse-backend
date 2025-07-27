@@ -6,7 +6,9 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\User;
+use App\Traits\ApiResponseTrait;
 use App\Http\Requests\StoreReportRequest;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 
 class ReportController extends Controller
 {
+    use ApiResponseTrait;
     /**
      * Display a listing of reports with filtering, search, and pagination
      */
@@ -609,34 +612,6 @@ class ReportController extends Controller
     }
 
     /**
-     * Get average completion time in hours
-     */
-    private function getAverageCompletionTime(User $user)
-    {
-        $query = Report::where('status', 'done')
-            ->whereNotNull('start_process_at')
-            ->whereNotNull('completed_at');
-
-        if ($user->role === 'employee') {
-            $query->where('employee_id', $user->id);
-        }
-
-        $completedReports = $query->get();
-
-        if ($completedReports->isEmpty()) {
-            return 0;
-        }
-
-        $totalHours = 0;
-        foreach ($completedReports as $report) {
-            $hours = $report->start_process_at->diffInHours($report->completed_at);
-            $totalHours += $hours;
-        }
-
-        return round($totalHours / $completedReports->count(), 1);
-    }
-
-    /**
      * Get monthly reports data
      */
     private function getMonthlyReportsData(User $user, int $months = 6)
@@ -658,5 +633,155 @@ class ReportController extends Controller
                 $item->month_name = date('F Y', mktime(0, 0, 0, $item->month, 1, $item->year));
                 return $item;
             });
+    }
+
+
+    public function dashboard(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $query = Report::query();
+
+            // Filter by user role
+            if ($user->role === 'employee') {
+                $query->where('employee_id', $user->id);
+            }
+
+            // Get status counts
+            $statusCounts = [
+                'pending' => (clone $query)->where('status', 'waiting')->count(),
+                'progress' => (clone $query)->where('status', 'in-progress')->count(),
+                'completed' => (clone $query)->where('status', 'done')->count(),
+            ];
+
+            // Calculate total and completion rate
+            $totalReports = array_sum($statusCounts);
+            $completionRate = $totalReports > 0
+                ? round(($statusCounts['completed'] / $totalReports) * 100, 1)
+                : 0;
+
+            // Get recent 5 reports with relationships
+            $recentReports = (clone $query)
+                ->with([
+                    'employee:id,name,email',
+                    'hseStaff:id,name,email',
+                    'categoryMaster:id,name',
+                    'contributingMaster:id,name',
+                    'actionMaster:id,name'
+                ])
+                ->latest()
+                ->limit(5)
+                ->get()
+                ->map(function ($report) {
+                    return [
+                        'id' => $report->id,
+                        'title' => $report->title,
+                        'description' => $report->description,
+                        'status' => $report->status,
+                        'status_label' => $this->getStatusLabel($report->status),
+                        'status_color' => $this->getStatusColor($report->status),
+                        'severity_rating' => $report->severity_rating,
+                        'severity_label' => $report->severity_label,
+                        'severity_color' => $report->severity_color,
+                        'location' => $report->location,
+                        'category' => $report->categoryMaster?->name,
+                        'employee' => [
+                            'id' => $report->employee?->id,
+                            'name' => $report->employee?->name,
+                        ],
+                        'hse_staff' => [
+                            'id' => $report->hseStaff?->id,
+                            'name' => $report->hseStaff?->name,
+                        ],
+                        'created_at' => $report->created_at,
+                        'created_at_human' => $report->created_at->diffForHumans(),
+                        'completed_at' => $report->completed_at,
+                        'processing_time_hours' => $report->processing_time_hours,
+                    ];
+                });
+
+            // Additional dashboard metrics
+            $additionalMetrics = [
+                'this_week' => (clone $query)
+                    ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
+                    ->count(),
+                'this_month' => (clone $query)
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->count(),
+                'average_completion_time' => $this->getAverageCompletionTime($user),
+            ];
+
+            $dashboardData = [
+                'status_counts' => $statusCounts,
+                'total_reports' => $totalReports,
+                'completion_rate' => $completionRate,
+                'recent_reports' => $recentReports,
+                'metrics' => $additionalMetrics,
+            ];
+
+            return $this->successResponse(
+                $dashboardData,
+                'Dashboard data retrieved successfully'
+            );
+        } catch (\Exception $e) {
+            return $this->errorResponse(
+                'Failed to retrieve dashboard data: ' . $e->getMessage(),
+                null,
+                500
+            );
+        }
+    }
+
+    /**
+     * Get status label in Indonesian
+     */
+    private function getStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'waiting' => 'Menunggu',
+            'in-progress' => 'Dalam Proses',
+            'done' => 'Selesai',
+            default => ucfirst($status)
+        };
+    }
+
+    /**
+     * Get status color for UI
+     */
+    private function getStatusColor(string $status): string
+    {
+        return match ($status) {
+            'waiting' => 'warning',
+            'in-progress' => 'info',
+            'done' => 'success',
+            default => 'secondary'
+        };
+    }
+
+    /**
+     * Calculate average completion time
+     */
+    private function getAverageCompletionTime($user): ?float
+    {
+        $query = Report::query()
+            ->whereNotNull('start_process_at')
+            ->whereNotNull('completed_at');
+
+        if ($user->role === 'employee') {
+            $query->where('employee_id', $user->id);
+        }
+
+        $reports = $query->get();
+
+        if ($reports->isEmpty()) {
+            return null;
+        }
+
+        $totalHours = $reports->sum(function ($report) {
+            return $report->start_process_at->diffInHours($report->completed_at);
+        });
+
+        return round($totalHours / $reports->count(), 1);
     }
 }
