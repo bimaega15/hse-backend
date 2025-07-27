@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
 
             // Finally seed reports (depends on users and master data)
             ReportSeeder::class,
+
+            ObservationSeeder::class,
         ]);
     }
 }

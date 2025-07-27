@@ -8,6 +8,7 @@ use App\Http\Controllers\API\BannerController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\MasterDataController;
+use App\Http\Controllers\API\ObservationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -68,6 +69,37 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard API - untuk home page frontend
     Route::get('/dashboard', [ReportController::class, 'dashboard']);
+
+    // Observation CRUD routes
+    Route::prefix('observations')->group(function () {
+        // List observations (with filtering, search, pagination)
+        Route::get('/', [ObservationController::class, 'index']);
+
+        // Create new observation
+        Route::post('/', [ObservationController::class, 'store']);
+
+        // Get specific observation by ID
+        Route::get('/{id}', [ObservationController::class, 'show']);
+
+        // Update specific observation by ID (only owner, status = draft)
+        Route::put('/{id}', [ObservationController::class, 'update']);
+        Route::post('/{id}', [ObservationController::class, 'update']); // Method spoofing support
+
+        // Delete specific observation by ID (only owner, status = draft)
+        Route::delete('/{id}', [ObservationController::class, 'destroy']);
+
+        // Submit observation for review
+        Route::post('/{id}/submit', [ObservationController::class, 'submit']);
+
+        // Review observation (HSE staff only)
+        Route::post('/{id}/review', [ObservationController::class, 'review']);
+
+        // Observation statistics
+        Route::get('/statistics/dashboard', [ObservationController::class, 'statistics']);
+
+        // Dashboard data
+        Route::get('/dashboard/data', [ObservationController::class, 'dashboard']);
+    });
 
     // Banner routes
     Route::prefix('banners')->group(function () {
