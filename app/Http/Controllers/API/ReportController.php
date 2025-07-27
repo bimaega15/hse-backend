@@ -8,6 +8,7 @@ use App\Models\Report;
 use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\StoreReportRequest;
+use App\Models\Banner;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -712,12 +713,28 @@ class ReportController extends Controller
                 'average_completion_time' => $this->getAverageCompletionTime($user),
             ];
 
+            // Get active banners for homepage
+            $activeBanners = Banner::active()->ordered()->get()->map(function ($banner) {
+                return [
+                    'id' => $banner->id,
+                    'title' => $banner->title,
+                    'description' => $banner->description,
+                    'icon' => $banner->icon,
+                    'icon_class' => $banner->icon_class,
+                    'image_url' => $banner->image_url,
+                    'background_color' => $banner->background_color,
+                    'text_color' => $banner->text_color,
+                    'sort_order' => $banner->sort_order,
+                ];
+            });
+
             $dashboardData = [
                 'status_counts' => $statusCounts,
                 'total_reports' => $totalReports,
                 'completion_rate' => $completionRate,
                 'recent_reports' => $recentReports,
                 'metrics' => $additionalMetrics,
+                'banners' => $activeBanners,
             ];
 
             return $this->successResponse(

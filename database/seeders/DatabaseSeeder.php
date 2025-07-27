@@ -1,5 +1,4 @@
 <?php
-// database/seeders/DatabaseSeeder.php
 
 namespace Database\Seeders;
 
@@ -16,10 +15,13 @@ class DatabaseSeeder extends Seeder
             // Seed master data first
             MasterDataSeeder::class,
 
+            // Seed banners (new)
+            BannerSeeder::class,
+
             // Then seed users
             UserSeeder::class,
 
-            // Finally seed reports (depends on users)
+            // Finally seed reports (depends on users and master data)
             ReportSeeder::class,
         ]);
     }

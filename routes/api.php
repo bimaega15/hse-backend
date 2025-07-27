@@ -4,6 +4,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
+use App\Http\Controllers\API\BannerController;
 use App\Http\Controllers\API\ReportController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\MasterDataController;
@@ -67,6 +68,23 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard API - untuk home page frontend
     Route::get('/dashboard', [ReportController::class, 'dashboard']);
+
+    // Banner routes
+    Route::prefix('banners')->group(function () {
+        // Get active banners for frontend (no auth required for public display)
+        Route::get('/active', [BannerController::class, 'getActiveBanners']);
+
+        // CRUD operations (admin only - you may want to add admin middleware)
+        Route::get('/', [BannerController::class, 'index']);
+        Route::post('/', [BannerController::class, 'store']);
+        Route::get('/{id}', [BannerController::class, 'show']);
+        Route::put('/{id}', [BannerController::class, 'update']);
+        Route::delete('/{id}', [BannerController::class, 'destroy']);
+
+        // Additional banner operations
+        Route::post('/{id}/toggle', [BannerController::class, 'toggleStatus']);
+        Route::post('/reorder', [BannerController::class, 'reorder']);
+    });
 
     // Reports CRUD routes
     Route::prefix('reports')->group(function () {
