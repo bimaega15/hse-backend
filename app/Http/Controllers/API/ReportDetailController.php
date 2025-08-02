@@ -219,101 +219,6 @@ class ReportDetailController extends Controller
         ]);
     }
 
-    /**
-     * Update report detail (HSE staff only)
-     */
-    public function update(Request $request, $reportId, $detailId): JsonResponse
-    {
-        $user = $request->user();
-
-        if ($user->role !== 'hse_staff') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya HSE staff yang dapat mengupdate detail laporan',
-            ], 403);
-        }
-
-        $reportDetail = ReportDetail::where('report_id', $reportId)->find($detailId);
-
-        if (!$reportDetail) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Detail laporan tidak ditemukan',
-            ], 404);
-        }
-
-        if (!$reportDetail->canBeUpdated()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Detail laporan yang sudah selesai tidak dapat diupdate',
-            ], 400);
-        }
-
-        // Custom validation for evidences (can be file uploads or base64)
-        $validator = $this->validateReportDetailData($request->all(), true);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation Error',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
-
-        try {
-            $updateData = $request->only([
-                'correction_action',
-                'due_date',
-                'pic',
-                'status_car'
-            ]);
-
-            // Handle evidence uploads (both file uploads and base64)
-            if ($request->has('evidences')) {
-                // Delete old evidences
-                if ($reportDetail->evidences) {
-                    foreach ($reportDetail->evidences as $evidence) {
-                        Storage::disk('public')->delete($evidence);
-                    }
-                }
-
-                if (!empty($request->evidences)) {
-                    $evidencePaths = $this->handleEvidences($request);
-                    $updateData['evidences'] = $evidencePaths;
-                } else {
-                    $updateData['evidences'] = [];
-                }
-            }
-
-            $reportDetail->update($updateData);
-            $reportDetail->load(['approvedBy', 'createdBy', 'report']);
-
-            Log::info('Report detail updated successfully', [
-                'report_detail_id' => $reportDetail->id,
-                'report_id' => $reportId,
-                'hse_staff_id' => $user->id,
-                'updated_fields' => array_keys($updateData)
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Detail laporan berhasil diupdate',
-                'data' => $reportDetail
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Report detail update failed', [
-                'report_detail_id' => $detailId,
-                'report_id' => $reportId,
-                'user_id' => $user->id,
-                'error' => $e->getMessage()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat mengupdate detail laporan: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Delete report detail (HSE staff only)
@@ -489,39 +394,7 @@ class ReportDetailController extends Controller
         ]);
     }
 
-    /**
-     * Custom validation for report detail data (supports both file uploads and base64)
-     */
-    private function validateReportDetailData(array $data, bool $isUpdate = false): \Illuminate\Contracts\Validation\Validator
-    {
-        $rules = [
-            'correction_action' => $isUpdate ? 'sometimes|required|string|max:2000' : 'required|string|max:2000',
-            'due_date' => $isUpdate ? 'sometimes|required|date|after_or_equal:today' : 'required|date|after_or_equal:today',
-            'pic' => 'nullable|string|max:255',
-            'status_car' => 'nullable|in:open,in_progress,closed',
-            'evidences' => 'nullable|array|max:10', // Maximum 10 evidences
-        ];
 
-        // Custom validation for evidences array
-        if (isset($data['evidences']) && is_array($data['evidences'])) {
-            foreach ($data['evidences'] as $index => $evidence) {
-                if (is_string($evidence)) {
-                    // Base64 validation
-                    $rules["evidences.{$index}"] = 'string|max:10485760'; // ~8MB base64
-                } else {
-                    // File upload validation
-                    $rules["evidences.{$index}"] = 'image|mimes:jpeg,png,jpg,gif|max:5120'; // 5MB
-                }
-            }
-        }
-
-        return Validator::make($data, $rules, [
-            'evidences.max' => 'Maksimal 10 file evidence yang dapat diupload',
-            'evidences.*.max' => 'Ukuran file evidence maksimal 5MB',
-            'evidences.*.image' => 'Evidence harus berupa file gambar',
-            'evidences.*.mimes' => 'Evidence harus berformat jpeg, png, jpg, atau gif',
-        ]);
-    }
 
     /**
      * Handle evidences (both file uploads and base64 images)
@@ -684,5 +557,243 @@ class ReportDetailController extends Controller
         }
 
         return $evidencePaths;
+    }
+
+
+
+
+    public function update(Request $request, $reportId, $detailId): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'hse_staff') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya HSE staff yang dapat mengupdate detail laporan',
+            ], 403);
+        }
+
+        $reportDetail = ReportDetail::where('report_id', $reportId)->find($detailId);
+
+        if (!$reportDetail) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Detail laporan tidak ditemukan',
+            ], 404);
+        }
+
+        if (!$reportDetail->canBeUpdated()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Detail laporan yang sudah selesai tidak dapat diupdate',
+            ], 400);
+        }
+
+        // Custom validation for evidences (can be file uploads or base64)
+        $validator = $this->validateReportDetailData($request->all(), true);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation Error',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $updateData = $request->only([
+                'correction_action',
+                'due_date',
+                'pic',
+                'status_car'
+            ]);
+
+            // Handle evidence updates dengan logic baru
+            if ($request->has('evidences')) {
+                $updateData['evidences'] = $this->handleEvidenceUpdates($request, $reportDetail);
+            }
+
+            $reportDetail->update($updateData);
+            $reportDetail->load(['approvedBy', 'createdBy', 'report']);
+
+            Log::info('Report detail updated successfully', [
+                'report_detail_id' => $reportDetail->id,
+                'report_id' => $reportId,
+                'hse_staff_id' => $user->id,
+                'updated_fields' => array_keys($updateData)
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail laporan berhasil diupdate',
+                'data' => $reportDetail
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Report detail update failed', [
+                'report_detail_id' => $detailId,
+                'report_id' => $reportId,
+                'user_id' => $user->id,
+                'error' => $e->getMessage()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengupdate detail laporan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Handle evidence updates - mempertahankan file existing dan upload file baru
+     */
+    private function handleEvidenceUpdates(Request $request, ReportDetail $reportDetail): array
+    {
+        $currentEvidences = $reportDetail->evidences ?? [];
+        $newEvidences = $request->evidences ?? [];
+
+        if (empty($newEvidences)) {
+            // Jika evidences kosong, hapus semua file lama
+            foreach ($currentEvidences as $evidence) {
+                Storage::disk('public')->delete($evidence);
+            }
+            return [];
+        }
+
+        $finalEvidences = [];
+        $filesToDelete = [];
+
+        // Pisahkan antara file path existing dan base64 baru
+        $existingPaths = [];
+        $base64Images = [];
+
+        foreach ($newEvidences as $evidence) {
+            if (is_string($evidence)) {
+                // Cek apakah ini path file existing atau base64
+                if (strpos($evidence, 'report_evidences/') === 0) {
+                    // Ini adalah path file existing
+                    $existingPaths[] = $evidence;
+                } elseif ($this->isBase64Image($evidence)) {
+                    // Ini adalah base64 image
+                    $base64Images[] = $evidence;
+                }
+            } elseif ($evidence instanceof \Illuminate\Http\UploadedFile) {
+                // Handle file upload langsung
+                $base64Images[] = $evidence;
+            }
+        }
+
+        // Tentukan file mana yang perlu dihapus
+        foreach ($currentEvidences as $currentEvidence) {
+            if (!in_array($currentEvidence, $existingPaths)) {
+                $filesToDelete[] = $currentEvidence;
+            }
+        }
+
+        // Hapus file yang tidak ada di payload
+        foreach ($filesToDelete as $fileToDelete) {
+            Storage::disk('public')->delete($fileToDelete);
+            Log::info('Deleted old evidence file', ['file' => $fileToDelete]);
+        }
+
+        // Tambahkan file existing yang dipertahankan
+        $finalEvidences = array_merge($finalEvidences, $existingPaths);
+
+        // Upload file/base64 baru
+        foreach ($base64Images as $newImage) {
+            try {
+                if ($newImage instanceof \Illuminate\Http\UploadedFile) {
+                    // Handle file upload
+                    $path = $this->saveUploadedFile($newImage);
+                    if ($path) {
+                        $finalEvidences[] = $path;
+                    }
+                } else {
+                    // Handle base64 image
+                    $path = $this->saveBase64Image($newImage);
+                    if ($path) {
+                        $finalEvidences[] = $path;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to process new evidence', [
+                    'type' => $newImage instanceof \Illuminate\Http\UploadedFile ? 'file' : 'base64',
+                    'error' => $e->getMessage()
+                ]);
+                // Continue processing other evidences
+            }
+        }
+
+        return $finalEvidences;
+    }
+
+    /**
+     * Check if string is base64 image
+     */
+    private function isBase64Image(string $data): bool
+    {
+        try {
+            // Cek apakah ada prefix data:image
+            if (strpos($data, 'data:image') === 0) {
+                return true;
+            }
+
+            // Cek apakah string valid base64 dan bisa di-decode sebagai image
+            if (strpos($data, ',') !== false) {
+                $base64Data = explode(',', $data)[1];
+            } else {
+                $base64Data = $data;
+            }
+
+            $decoded = base64_decode($base64Data, true);
+            if ($decoded === false) {
+                return false;
+            }
+
+            // Cek apakah hasil decode adalah valid image
+            $imageInfo = getimagesizefromstring($decoded);
+            return $imageInfo !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Enhanced validation for mixed evidence types
+     */
+    private function validateReportDetailData(array $data, bool $isUpdate = false): \Illuminate\Contracts\Validation\Validator
+    {
+        $rules = [
+            'correction_action' => $isUpdate ? 'sometimes|required|string|max:2000' : 'required|string|max:2000',
+            'due_date' => $isUpdate ? 'sometimes|required|date|after_or_equal:today' : 'required|date|after_or_equal:today',
+            'pic' => 'nullable|string|max:255',
+            'status_car' => 'nullable|in:open,in_progress,closed',
+            'evidences' => 'nullable|array|max:10', // Maximum 10 evidences
+        ];
+
+        // Custom validation for evidences array
+        if (isset($data['evidences']) && is_array($data['evidences'])) {
+            foreach ($data['evidences'] as $index => $evidence) {
+                if (is_string($evidence)) {
+                    // Cek apakah ini path existing atau base64
+                    if (strpos($evidence, 'report_evidences/') === 0) {
+                        // Path existing file - validasi bahwa file exists
+                        $rules["evidences.{$index}"] = 'string';
+                    } else {
+                        // Base64 validation
+                        $rules["evidences.{$index}"] = 'string|max:10485760'; // ~8MB base64
+                    }
+                } else {
+                    // File upload validation
+                    $rules["evidences.{$index}"] = 'image|mimes:jpeg,png,jpg,gif|max:5120'; // 5MB
+                }
+            }
+        }
+
+        return Validator::make($data, $rules, [
+            'evidences.max' => 'Maksimal 10 file evidence yang dapat diupload',
+            'evidences.*.max' => 'Ukuran file evidence maksimal 5MB',
+            'evidences.*.image' => 'Evidence harus berupa file gambar',
+            'evidences.*.mimes' => 'Evidence harus berformat jpeg, png, jpg, atau gif',
+        ]);
     }
 }
