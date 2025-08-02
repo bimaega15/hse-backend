@@ -172,35 +172,58 @@ class ReportController extends Controller
      */
     public function show(Request $request, $id)
     {
+        $user = $request->user();
+
         $report = Report::with([
             'employee',
             'hseStaff',
             'categoryMaster',
             'contributingMaster',
-            'actionMaster'
+            'actionMaster',
+            'reportDetails' => function ($query) {
+                $query->with(['approvedBy', 'createdBy'])
+                    ->orderBy('due_date', 'asc')
+                    ->orderBy('created_at', 'desc');
+            }
         ])->find($id);
 
         if (!$report) {
             return response()->json([
                 'success' => false,
-                'message' => 'Laporan tidak ditemukan'
+                'message' => 'Laporan tidak ditemukan',
             ], 404);
         }
 
-        $user = $request->user();
-
-        // Authorization check
+        // Check access permissions
         if ($user->role === 'employee' && $report->employee_id !== $user->id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Anda tidak memiliki akses ke laporan ini',
-                'error_code' => 'FORBIDDEN'
+                'message' => 'Tidak memiliki akses ke laporan ini',
             ], 403);
         }
+
+        // Add computed attributes for report details
+        $report->report_details_count = $report->reportDetails->count();
+        $report->open_details_count = $report->reportDetails->where('status_car', 'open')->count();
+        $report->in_progress_details_count = $report->reportDetails->where('status_car', 'in_progress')->count();
+        $report->closed_details_count = $report->reportDetails->where('status_car', 'closed')->count();
+        $report->overdue_details_count = $report->reportDetails->where('due_date', '<', now())
+            ->where('status_car', '!=', 'closed')
+            ->count();
+
+        // Calculate completion percentage
+        $totalDetails = $report->reportDetails->count();
+        $closedDetails = $report->reportDetails->where('status_car', 'closed')->count();
+        $report->completion_percentage = $totalDetails > 0 ? round(($closedDetails / $totalDetails) * 100, 2) : 0;
+
+        // Add status badges/labels for frontend
+        $report->can_have_details = $report->canHaveReportDetails();
+        $report->has_overdue_details = $report->hasOverdueReportDetails();
 
         return response()->json([
             'success' => true,
             'data' => $report,
+            'message' => 'Detail laporan berhasil diambil'
         ]);
     }
 

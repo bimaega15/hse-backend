@@ -1,5 +1,5 @@
 <?php
-// app/Models/Report.php (Updated - Removed ObservationForm)
+// app/Models/Report.php (Updated with ReportDetail relationship)
 
 namespace App\Models;
 
@@ -67,6 +67,34 @@ class Report extends Model
         return $this->belongsTo(Action::class, 'action_id');
     }
 
+    // NEW: Report Details relationship
+    public function reportDetails()
+    {
+        return $this->hasMany(ReportDetail::class);
+    }
+
+    public function openReportDetails()
+    {
+        return $this->hasMany(ReportDetail::class)->where('status_car', 'open');
+    }
+
+    public function inProgressReportDetails()
+    {
+        return $this->hasMany(ReportDetail::class)->where('status_car', 'in_progress');
+    }
+
+    public function closedReportDetails()
+    {
+        return $this->hasMany(ReportDetail::class)->where('status_car', 'closed');
+    }
+
+    public function overdueReportDetails()
+    {
+        return $this->hasMany(ReportDetail::class)
+            ->where('due_date', '<', now())
+            ->where('status_car', '!=', 'closed');
+    }
+
     // Existing scopes
     public function scopeWaiting($query)
     {
@@ -93,149 +121,51 @@ class Report extends Model
         return $query->where('hse_staff_id', $hseStaffId);
     }
 
-    // New scopes for master data
-    public function scopeByCategory($query, $categoryId)
+    // NEW: Methods related to report details
+    public function canHaveReportDetails()
     {
-        return $query->where('category_id', $categoryId);
+        return $this->status === 'in-progress' || $this->status === 'done';
     }
 
-    public function scopeByContributing($query, $contributingId)
+    public function hasOpenReportDetails()
     {
-        return $query->where('contributing_id', $contributingId);
+        return $this->reportDetails()->where('status_car', 'open')->exists();
     }
 
-    public function scopeByAction($query, $actionId)
+    public function hasOverdueReportDetails()
     {
-        return $query->where('action_id', $actionId);
+        return $this->reportDetails()
+            ->where('due_date', '<', now())
+            ->where('status_car', '!=', 'closed')
+            ->exists();
     }
 
-    // New scopes for severity
-    public function scopeBySeverity($query, $severity)
+    public function getReportDetailsCountAttribute()
     {
-        return $query->where('severity_rating', $severity);
+        return $this->reportDetails()->count();
     }
 
-    public function scopeHighSeverity($query)
+    public function getOpenReportDetailsCountAttribute()
     {
-        return $query->whereIn('severity_rating', ['high', 'critical']);
+        return $this->reportDetails()->where('status_car', 'open')->count();
     }
 
-    public function scopeLowSeverity($query)
+    public function getInProgressReportDetailsCountAttribute()
     {
-        return $query->whereIn('severity_rating', ['low', 'medium']);
+        return $this->reportDetails()->where('status_car', 'in_progress')->count();
     }
 
-    // Accessors
-    public function getImageUrlsAttribute()
+    public function getClosedReportDetailsCountAttribute()
     {
-        if (!$this->images) {
-            return [];
-        }
-
-        return array_map(function ($imagePath) {
-            return url('storage/' . $imagePath);
-        }, $this->images);
+        return $this->reportDetails()->where('status_car', 'closed')->count();
     }
 
-    // Get category name from master data
-    public function getCategoryNameAttribute()
+    public function getCompletionPercentageAttribute()
     {
-        return $this->categoryMaster ? $this->categoryMaster->name : null;
-    }
+        $total = $this->reportDetails()->count();
+        if ($total === 0) return 0;
 
-    // Get contributing name from master data
-    public function getContributingNameAttribute()
-    {
-        return $this->contributingMaster ? $this->contributingMaster->name : null;
-    }
-
-    // Get action name from master data
-    public function getActionNameAttribute()
-    {
-        return $this->actionMaster ? $this->actionMaster->name : null;
-    }
-
-    // Get contributing → action hierarchy
-    public function getContributingActionHierarchyAttribute()
-    {
-        if ($this->contributingMaster && $this->actionMaster) {
-            return $this->contributingMaster->name . ' → ' . $this->actionMaster->name;
-        }
-        return null;
-    }
-
-    // Get severity badge color
-    public function getSeverityColorAttribute()
-    {
-        return match ($this->severity_rating) {
-            'low' => 'success',
-            'medium' => 'warning',
-            'high' => 'danger',
-            'critical' => 'dark',
-            default => 'secondary'
-        };
-    }
-
-    // Get severity label
-    public function getSeverityLabelAttribute()
-    {
-        return match ($this->severity_rating) {
-            'low' => 'Rendah',
-            'medium' => 'Sedang',
-            'high' => 'Tinggi',
-            'critical' => 'Kritis',
-            default => ucfirst($this->severity_rating)
-        };
-    }
-
-    // Check if action has been taken
-    public function getHasActionTakenAttribute()
-    {
-        return !empty($this->action_taken);
-    }
-
-    // Get full report summary
-    public function getReportSummaryAttribute()
-    {
-        $summary = [];
-
-        if ($this->category_name) {
-            $summary[] = "Kategori: {$this->category_name}";
-        }
-
-        if ($this->contributing_action_hierarchy) {
-            $summary[] = "Detail: {$this->contributing_action_hierarchy}";
-        }
-
-        $summary[] = "Tingkat Keparahan: {$this->severity_label}";
-
-        return implode(' | ', $summary);
-    }
-
-    // Get processing time in hours
-    public function getProcessingTimeHoursAttribute()
-    {
-        if ($this->start_process_at && $this->completed_at) {
-            return $this->start_process_at->diffInHours($this->completed_at);
-        }
-        return null;
-    }
-
-    // Check if report is completed
-    public function getIsCompletedAttribute()
-    {
-        return $this->status === 'done';
-    }
-
-    // Check if report is in progress
-    public function getIsInProgressAttribute()
-    {
-        return $this->status === 'in-progress';
-    }
-
-    // Check if report is waiting
-    public function getIsWaitingAttribute()
-    {
-        return $this->status === 'waiting';
+        $closed = $this->reportDetails()->where('status_car', 'closed')->count();
+        return round(($closed / $total) * 100, 2);
     }
 }
