@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ReportDetailController extends Controller
 {
@@ -124,14 +125,8 @@ class ReportDetailController extends Controller
             ], 400);
         }
 
-        $validator = Validator::make($request->all(), [
-            'correction_action' => 'required|string|max:2000',
-            'due_date' => 'required|date|after_or_equal:today',
-            'pic' => 'nullable|string|max:255',
-            'status_car' => 'nullable|in:open,in_progress,closed',
-            'evidences' => 'nullable|array',
-            'evidences.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB
-        ]);
+        // Custom validation for evidences (can be file uploads or base64)
+        $validator = $this->validateReportDetailData($request->all());
 
         if ($validator->fails()) {
             return response()->json([
@@ -153,9 +148,9 @@ class ReportDetailController extends Controller
                 'created_by' => $user->id,
             ];
 
-            // Handle evidence uploads
-            if ($request->hasFile('evidences')) {
-                $evidencePaths = $this->uploadEvidences($request->file('evidences'));
+            // Handle evidence uploads (both file uploads and base64)
+            if ($request->has('evidences') && !empty($request->evidences)) {
+                $evidencePaths = $this->handleEvidences($request);
                 $reportDetailData['evidences'] = $evidencePaths;
             }
 
@@ -167,7 +162,8 @@ class ReportDetailController extends Controller
                 'report_detail_id' => $reportDetail->id,
                 'report_id' => $reportId,
                 'hse_staff_id' => $user->id,
-                'due_date' => $request->due_date
+                'due_date' => $request->due_date,
+                'evidence_count' => count($reportDetailData['evidences'] ?? [])
             ]);
 
             return response()->json([
@@ -253,14 +249,8 @@ class ReportDetailController extends Controller
             ], 400);
         }
 
-        $validator = Validator::make($request->all(), [
-            'correction_action' => 'sometimes|required|string|max:2000',
-            'due_date' => 'sometimes|required|date|after_or_equal:today',
-            'pic' => 'sometimes|nullable|string|max:255',
-            'status_car' => 'sometimes|nullable|in:open,in_progress,closed',
-            'evidences' => 'nullable|array',
-            'evidences.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB
-        ]);
+        // Custom validation for evidences (can be file uploads or base64)
+        $validator = $this->validateReportDetailData($request->all(), true);
 
         if ($validator->fails()) {
             return response()->json([
@@ -278,8 +268,8 @@ class ReportDetailController extends Controller
                 'status_car'
             ]);
 
-            // Handle evidence uploads
-            if ($request->hasFile('evidences')) {
+            // Handle evidence uploads (both file uploads and base64)
+            if ($request->has('evidences')) {
                 // Delete old evidences
                 if ($reportDetail->evidences) {
                     foreach ($reportDetail->evidences as $evidence) {
@@ -287,8 +277,12 @@ class ReportDetailController extends Controller
                     }
                 }
 
-                $evidencePaths = $this->uploadEvidences($request->file('evidences'));
-                $updateData['evidences'] = $evidencePaths;
+                if (!empty($request->evidences)) {
+                    $evidencePaths = $this->handleEvidences($request);
+                    $updateData['evidences'] = $evidencePaths;
+                } else {
+                    $updateData['evidences'] = [];
+                }
             }
 
             $reportDetail->update($updateData);
@@ -496,7 +490,186 @@ class ReportDetailController extends Controller
     }
 
     /**
-     * Upload evidence images
+     * Custom validation for report detail data (supports both file uploads and base64)
+     */
+    private function validateReportDetailData(array $data, bool $isUpdate = false): \Illuminate\Contracts\Validation\Validator
+    {
+        $rules = [
+            'correction_action' => $isUpdate ? 'sometimes|required|string|max:2000' : 'required|string|max:2000',
+            'due_date' => $isUpdate ? 'sometimes|required|date|after_or_equal:today' : 'required|date|after_or_equal:today',
+            'pic' => 'nullable|string|max:255',
+            'status_car' => 'nullable|in:open,in_progress,closed',
+            'evidences' => 'nullable|array|max:10', // Maximum 10 evidences
+        ];
+
+        // Custom validation for evidences array
+        if (isset($data['evidences']) && is_array($data['evidences'])) {
+            foreach ($data['evidences'] as $index => $evidence) {
+                if (is_string($evidence)) {
+                    // Base64 validation
+                    $rules["evidences.{$index}"] = 'string|max:10485760'; // ~8MB base64
+                } else {
+                    // File upload validation
+                    $rules["evidences.{$index}"] = 'image|mimes:jpeg,png,jpg,gif|max:5120'; // 5MB
+                }
+            }
+        }
+
+        return Validator::make($data, $rules, [
+            'evidences.max' => 'Maksimal 10 file evidence yang dapat diupload',
+            'evidences.*.max' => 'Ukuran file evidence maksimal 5MB',
+            'evidences.*.image' => 'Evidence harus berupa file gambar',
+            'evidences.*.mimes' => 'Evidence harus berformat jpeg, png, jpg, atau gif',
+        ]);
+    }
+
+    /**
+     * Handle evidences (both file uploads and base64 images)
+     */
+    private function handleEvidences(Request $request): array
+    {
+        $evidencePaths = [];
+        $evidences = $request->evidences;
+
+        if (!is_array($evidences)) {
+            return $evidencePaths;
+        }
+
+        foreach ($evidences as $index => $evidence) {
+            try {
+                if (is_string($evidence)) {
+                    // Handle base64 image
+                    $path = $this->saveBase64Image($evidence);
+                    if ($path) {
+                        $evidencePaths[] = $path;
+                    }
+                } elseif ($evidence instanceof \Illuminate\Http\UploadedFile) {
+                    // Handle file upload
+                    if ($evidence->isValid()) {
+                        $path = $this->saveUploadedFile($evidence);
+                        if ($path) {
+                            $evidencePaths[] = $path;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to process evidence', [
+                    'index' => $index,
+                    'type' => is_string($evidence) ? 'base64' : 'file',
+                    'error' => $e->getMessage()
+                ]);
+                // Continue processing other evidences
+            }
+        }
+
+        return $evidencePaths;
+    }
+
+    /**
+     * Save base64 image to storage
+     */
+    private function saveBase64Image(string $base64Data): ?string
+    {
+        try {
+            // Remove data:image/...;base64, prefix if present
+            if (strpos($base64Data, ',') !== false) {
+                $base64Data = explode(',', $base64Data)[1];
+            }
+
+            // Decode base64
+            $imageData = base64_decode($base64Data);
+
+            if ($imageData === false) {
+                throw new \Exception('Invalid base64 data');
+            }
+
+            // Validate image and get info
+            $imageInfo = $this->validateBase64Image($imageData);
+            if (!$imageInfo) {
+                throw new \Exception('Invalid image data');
+            }
+
+            // Generate unique filename
+            $extension = $imageInfo['extension'];
+            $filename = 'evidence_' . time() . '_' . uniqid() . '.' . $extension;
+            $path = 'report_evidences/' . $filename;
+
+            // Save to storage
+            if (Storage::disk('public')->put($path, $imageData)) {
+                return $path;
+            }
+
+            throw new \Exception('Failed to save image to storage');
+        } catch (\Exception $e) {
+            Log::error('Failed to save base64 image', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Save uploaded file to storage
+     */
+    private function saveUploadedFile(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        try {
+            $filename = 'evidence_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('report_evidences', $filename, 'public');
+            return $path;
+        } catch (\Exception $e) {
+            Log::error('Failed to save uploaded file', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Validate base64 image data
+     */
+    private function validateBase64Image(string $imageData): ?array
+    {
+        try {
+            // Get image info
+            $imageInfo = getimagesizefromstring($imageData);
+
+            if ($imageInfo === false) {
+                return null;
+            }
+
+            // Check mime type
+            $allowedMimes = [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/gif' => 'gif',
+                'image/jpg' => 'jpg'
+            ];
+
+            if (!isset($allowedMimes[$imageInfo['mime']])) {
+                return null;
+            }
+
+            // Check file size (max 5MB)
+            if (strlen($imageData) > 5242880) { // 5MB in bytes
+                return null;
+            }
+
+            return [
+                'width' => $imageInfo[0],
+                'height' => $imageInfo[1],
+                'mime' => $imageInfo['mime'],
+                'extension' => $allowedMimes[$imageInfo['mime']],
+                'size' => strlen($imageData)
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Upload evidence images (legacy method for backward compatibility)
+     * @deprecated Use handleEvidences() instead
      */
     private function uploadEvidences(array $evidences): array
     {
