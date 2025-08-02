@@ -80,7 +80,7 @@ class ReportDetailController extends Controller
         $query->orderBy('due_date', 'asc')
             ->orderBy('created_at', 'desc');
 
-        $reportDetails = $query->paginate($request->get('per_page', 10));
+        $reportDetails = $query->get();
 
         return response()->json([
             'success' => true,
