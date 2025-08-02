@@ -24,7 +24,15 @@ class ReportDetailController extends Controller
     {
         $user = $request->user();
 
-        $report = Report::with(['reportDetails.approvedBy', 'reportDetails.createdBy'])
+        $report = Report::with([
+            'employee',
+            'hseStaff',
+            'categoryMaster',
+            'contributingMaster',
+            'actionMaster',
+            'reportDetails.approvedBy',
+            'reportDetails.createdBy'
+        ])
             ->find($reportId);
 
         if (!$report) {
