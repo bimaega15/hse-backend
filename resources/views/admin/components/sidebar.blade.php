@@ -28,7 +28,6 @@
                  <a href="index.html" class="side-nav-link">
                      <span class="menu-icon"><i data-lucide="airplay"></i></span>
                      <span class="menu-text"> Dashboard </span>
-                     <span class="badge bg-danger rounded">3</span>
                  </a>
              </li>
 
