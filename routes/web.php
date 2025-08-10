@@ -10,7 +10,8 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\ReportController; // Add this import
+use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\ObservationController; // Add this import
 
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -77,12 +78,33 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::delete('/{id}', [ReportController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/status', [ReportController::class, 'updateStatus'])->name('update-status');
 
-
         // Statistics and analytics
         Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics.data');
 
         // Actions by contributing
         Route::get('/actions/by-contributing/{contributingId}', [ReportController::class, 'getActionsByContributing'])->name('actions.by-contributing');
+    });
+
+    // Observations Management Routes
+    Route::prefix('admin/observations')->name('admin.observations.')->group(function () {
+        // Main index page with different views (default, analytics, filtered)
+        Route::get('/', [ObservationController::class, 'index'])->name('index');
+
+        // DataTables data endpoint
+        Route::get('/data', [ObservationController::class, 'getData'])->name('data');
+
+        // CRUD operations
+        Route::get('/create', [ObservationController::class, 'create'])->name('create');
+        Route::post('/', [ObservationController::class, 'store'])->name('store');
+        Route::get('/{id}', [ObservationController::class, 'show'])->name('show');
+        Route::put('/{id}', [ObservationController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ObservationController::class, 'destroy'])->name('destroy');
+
+        // Status management
+        Route::patch('/{id}/status', [ObservationController::class, 'updateStatus'])->name('update-status');
+
+        // Statistics and analytics
+        Route::get('/statistics/data', [ObservationController::class, 'getStatistics'])->name('statistics.data');
     });
 
     // Categories Management Routes
@@ -157,6 +179,17 @@ Route::middleware(['auth', 'role:hse_staff,admin'])->group(function () {
         return view('hse.dashboard');
     })->name('hse.dashboard');
 
+    // HSE Staff can also access observations (read-only or limited access)
+    Route::prefix('hse/observations')->name('hse.observations.')->group(function () {
+        Route::get('/', [ObservationController::class, 'index'])->name('index');
+        Route::get('/data', [ObservationController::class, 'getData'])->name('data');
+        Route::get('/{id}', [ObservationController::class, 'show'])->name('show');
+        Route::get('/statistics/data', [ObservationController::class, 'getStatistics'])->name('statistics.data');
+
+        // HSE Staff can review observations
+        Route::patch('/{id}/status', [ObservationController::class, 'updateStatus'])->name('update-status');
+    });
+
     // Tambahkan routes khusus HSE staff disini (admin juga bisa akses)
     // Route::get('/hse/reports', [HSEReportController::class, 'index'])->name('hse.reports');
     // Route::get('/hse/incidents', [IncidentController::class, 'index'])->name('hse.incidents');
@@ -166,6 +199,18 @@ Route::middleware(['auth', 'role:employee,hse_staff,admin'])->group(function () 
     Route::get('/employee/dashboard', function () {
         return view('employee.dashboard');
     })->name('employee.dashboard');
+
+    // Employee can create and view their own observations
+    Route::prefix('employee/observations')->name('employee.observations.')->group(function () {
+        Route::get('/', [ObservationController::class, 'index'])->name('index');
+        Route::get('/data', [ObservationController::class, 'getData'])->name('data');
+        Route::get('/create', [ObservationController::class, 'create'])->name('create');
+        Route::post('/', [ObservationController::class, 'store'])->name('store');
+        Route::get('/{id}', [ObservationController::class, 'show'])->name('show');
+        Route::put('/{id}', [ObservationController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ObservationController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/status', [ObservationController::class, 'updateStatus'])->name('update-status');
+    });
 });
 
 // Default redirect

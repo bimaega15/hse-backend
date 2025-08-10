@@ -409,12 +409,16 @@
                 }
             });
         } else if (trendsCtx) {
-            // Show empty state for trends chart
-            const ctx = trendsCtx.getContext('2d');
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('No trends data available', trendsCtx.width / 2, trendsCtx.height / 2);
+            // Show empty state for trends chart with proper centering
+            trendsCtx.parentElement.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 300px;">
+                    <div class="text-center text-muted">
+                        <i class="ri-line-chart-line fs-48 mb-3"></i>
+                        <p class="mb-0">No trends data available</p>
+                        <small>Data will appear when observations are created</small>
+                    </div>
+                </div>
+            `;
         }
 
         // Observation Types Chart
@@ -473,12 +477,16 @@
                 }
             });
         } else if (typesCtx) {
-            // Show empty state for types chart
-            const ctx = typesCtx.getContext('2d');
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText('No types data available', typesCtx.width / 2, typesCtx.height / 2);
+            // Show empty state for types chart with proper centering
+            typesCtx.parentElement.innerHTML = `
+                <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 200px;">
+                    <div class="text-center text-muted">
+                        <i class="ri-pie-chart-line fs-48 mb-3"></i>
+                        <p class="mb-0">No types data available</p>
+                        <small>Chart will appear when observations are added</small>
+                    </div>
+                </div>
+            `;
         }
     }
 
@@ -488,8 +496,15 @@
             console.warn('Chart.js error:', e.message);
             // Fallback: hide chart containers and show message
             document.querySelectorAll('.chart-container').forEach(container => {
-                container.innerHTML =
-                    '<div class="text-center text-muted py-4"><i class="ri-bar-chart-line fs-48"></i><p>Chart data unavailable</p></div>';
+                container.innerHTML = `
+                    <div class="d-flex align-items-center justify-content-center h-100" style="min-height: 250px;">
+                        <div class="text-center text-muted">
+                            <i class="ri-bar-chart-line fs-48 mb-3"></i>
+                            <p class="mb-0">Chart data unavailable</p>
+                            <small>Please try refreshing the page</small>
+                        </div>
+                    </div>
+                `;
             });
         }
     });

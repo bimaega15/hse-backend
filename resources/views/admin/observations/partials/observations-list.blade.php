@@ -5,7 +5,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm bg-primary bg-gradient rounded">
+                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
                             <i class="ri-eye-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -23,7 +23,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm bg-secondary bg-gradient rounded">
+                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-secondary bg-gradient rounded">
                             <i class="ri-draft-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -41,7 +41,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm bg-warning bg-gradient rounded">
+                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
                             <i class="ri-send-plane-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -59,7 +59,7 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm bg-success bg-gradient rounded">
+                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
                             <i class="ri-check-line fs-16 text-white"></i>
                         </div>
                     </div>
