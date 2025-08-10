@@ -601,9 +601,6 @@
     </div>
 
     @push('jsSection')
-        <!-- Include ApexCharts -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.44.0/apexcharts.min.js"></script>
-
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 // Reports Trend Chart

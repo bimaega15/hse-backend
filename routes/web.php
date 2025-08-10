@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthenticationController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ProfileController;
 
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -44,6 +45,11 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/data', [DashboardController::class, 'getData'])->name('data');
         Route::get('/recent-reports', [DashboardController::class, 'getRecentReports'])->name('recent-reports');
         Route::get('/statistics', [DashboardController::class, 'getStatistics'])->name('statistics');
+    });
+
+    // Dashboard API endpoints
+    Route::prefix('admin/profile')->name('admin.profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'index'])->name('index');
     });
 
     // Tambahkan routes khusus admin lainnya disini
