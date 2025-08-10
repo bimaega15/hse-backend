@@ -221,13 +221,13 @@ Route::get('/', function () {
         $user = auth()->user();
         switch ($user->role) {
             case 'admin':
-                return redirect()->route('admin.dashboard');
+                return redirect()->route('admin.dashboard.index');
             case 'hse_staff':
                 return redirect()->route('hse.dashboard');
             case 'employee':
                 return redirect()->route('employee.dashboard');
             default:
-                return redirect()->route('admin.dashboard');
+                return redirect()->route('admin.dashboard.index');
         }
     }
     return redirect()->route('admin.login');

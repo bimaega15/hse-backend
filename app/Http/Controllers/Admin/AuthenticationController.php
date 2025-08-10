@@ -99,13 +99,13 @@ class AuthenticationController extends Controller
     {
         switch ($role) {
             case 'admin':
-                return route('admin.dashboard');
+                return route('admin.dashboard.index');
             case 'hse_staff':
                 return route('hse.dashboard');
             case 'employee':
                 return route('employee.dashboard');
             default:
-                return route('admin.dashboard');
+                return route('admin.dashboard.index');
         }
     }
 }
