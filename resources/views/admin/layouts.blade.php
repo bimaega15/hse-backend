@@ -69,7 +69,6 @@
     <script src="{{ asset('admin/backend/dist') }}/assets/vendor/apexcharts/apexcharts.min.js"></script>
 
     <!-- Projects Analytics Dashboard App js -->
-    <script src="{{ asset('admin/backend/dist') }}/assets/js/pages/dashboard.js"></script>
     @stack('jsSection')
 
 </body>
