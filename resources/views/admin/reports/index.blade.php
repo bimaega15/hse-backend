@@ -2,6 +2,212 @@
 
 @section('title', 'Reports Management')
 
+@push('cssSection')
+    <style>
+        /* Detail Timeline Styles for Modal */
+        .detail-timeline {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .detail-timeline::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 8%;
+            right: 8%;
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            z-index: 1;
+        }
+
+        .detail-timeline.progress-1::before {
+            background: linear-gradient(to right, #28a745 33%, #e9ecef 33%);
+        }
+
+        .detail-timeline.progress-2::before {
+            background: linear-gradient(to right, #28a745 67%, #e9ecef 67%);
+        }
+
+        .detail-timeline.progress-3::before {
+            background: #28a745;
+        }
+
+        .detail-timeline-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            max-width: 150px;
+        }
+
+        .detail-timeline-icon {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 0.75rem;
+            border: 4px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .detail-timeline-step.completed .detail-timeline-icon {
+            background: linear-gradient(135deg, #2850a7, #206fc9);
+            color: white;
+            border-color: #2883a7;
+            transform: scale(1.05);
+        }
+
+        .detail-timeline-step.current .detail-timeline-icon {
+            background: linear-gradient(135deg, #ffc107, #fd7e14);
+            color: #212529;
+            border-color: #ffc107;
+            animation: pulse 2s infinite;
+            transform: scale(1.1);
+        }
+
+        .detail-timeline-step .detail-timeline-icon {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: #6c757d;
+            border-color: #18bd78;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(255, 193, 7, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 10px rgba(255, 193, 7, 0);
+            }
+
+            100% {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 0 0 0 rgba(255, 193, 7, 0);
+            }
+        }
+
+        .detail-timeline-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: #495057;
+            margin-bottom: 0.25rem;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .detail-timeline-date {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: center;
+            font-weight: 500;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+        }
+
+        .detail-timeline-step.completed .detail-timeline-title {
+            color: #28a745;
+            font-weight: 800;
+        }
+
+        .detail-timeline-step.current .detail-timeline-title {
+            color: #fd7e14;
+            font-weight: 800;
+        }
+
+        .detail-timeline-step.completed .detail-timeline-date {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .detail-timeline-step.current .detail-timeline-date {
+            color: #fd7e14;
+            font-weight: 600;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .detail-timeline {
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1rem;
+            }
+
+            .detail-timeline::before {
+                display: none;
+            }
+
+            .detail-timeline-step {
+                max-width: none;
+                width: 100%;
+                flex-direction: row;
+                text-align: left;
+            }
+
+            .detail-timeline-icon {
+                margin-bottom: 0;
+                margin-right: 1rem;
+                width: 45px;
+                height: 45px;
+                font-size: 20px;
+            }
+
+            .detail-timeline-content {
+                flex: 1;
+            }
+
+            .detail-timeline-title,
+            .detail-timeline-date {
+                text-align: left;
+            }
+        }
+
+        /* Additional hover effects */
+        .detail-timeline-step:hover .detail-timeline-icon {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .detail-timeline-step.completed:hover .detail-timeline-icon {
+            transform: scale(1.1) translateY(-2px);
+        }
+
+        .detail-timeline-step.current:hover .detail-timeline-icon {
+            transform: scale(1.15) translateY(-2px);
+        }
+
+        /* Timeline header styling */
+        .timeline-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-header i {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.2rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+@endpush
+
 @section('content')
     <div class="page-content">
         <!-- Page Title -->
@@ -583,9 +789,8 @@
             // Populate HSE staff
             $('#hseStaffId, #statusHseStaffId').empty().append('<option value="">Select HSE Staff</option>');
             formData.hse_staff.forEach(function(staff) {
-                console.log(staff);
                 $('#hseStaffId, #statusHseStaffId').append(
-                    `<option value="${staff.id}">${staff.name} (${staff.department})</option>`);
+                    `<option value="${staff.id}">${staff.name} (${staff.employee_id})</option>`);
             });
 
             // Populate categories
@@ -738,6 +943,57 @@
             });
         }
 
+        function renderDetailTimeline(report) {
+            const created = report.created_at ? formatDateTime(report.created_at) : 'N/A';
+            const started = report.start_process_at ? formatDateTime(report.start_process_at) : 'Pending';
+            const completed = report.completed_at ? formatDateTime(report.completed_at) : 'Pending';
+
+            // Determine current progress
+            let progressClass = 'progress-1'; // Created
+            if (report.status === 'in-progress') progressClass = 'progress-2'; // Started
+            if (report.status === 'done') progressClass = 'progress-3'; // Completed
+
+            let createdClass = 'completed';
+            let startedClass = report.status === 'in-progress' || report.status === 'done' ? 'completed' : (report
+                .status === 'waiting' ? 'current' : '');
+            let completedClass = report.status === 'done' ? 'completed' : (report.status === 'in-progress' ? 'current' :
+                '');
+
+            return `
+                <div class="detail-timeline ${progressClass}">
+                    <div class="detail-timeline-step ${createdClass}">
+                        <div class="detail-timeline-icon">
+                            <i class="ri-file-add-line"></i>
+                        </div>
+                        <div class="detail-timeline-content">
+                            <div class="detail-timeline-title">Created</div>
+                            <div class="detail-timeline-date">${created}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-timeline-step ${startedClass}">
+                        <div class="detail-timeline-icon">
+                            <i class="ri-play-circle-line"></i>
+                        </div>
+                        <div class="detail-timeline-content">
+                            <div class="detail-timeline-title">Started</div>
+                            <div class="detail-timeline-date">${started}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-timeline-step ${completedClass}">
+                        <div class="detail-timeline-icon">
+                            <i class="ri-check-line text-white"></i>
+                        </div>
+                        <div class="detail-timeline-content">
+                            <div class="detail-timeline-title">Completed</div>
+                            <div class="detail-timeline-date">${completed}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderReportDetails(report) {
             const statusColors = {
                 'waiting': 'warning',
@@ -790,7 +1046,7 @@
                 <hr>
 
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <h6 class="fw-bold">Report Classification</h6>
                         <table class="table table-sm">
                             <tr><td class="fw-bold">Category:</td><td>${report.category_master ? report.category_master.name : 'N/A'}</td></tr>
@@ -798,7 +1054,7 @@
                             <tr><td class="fw-bold">Action:</td><td>${report.action_master ? report.action_master.name : 'N/A'}</td></tr>
                         </table>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-6">
                         <h6 class="fw-bold">Status & Severity</h6>
                         <table class="table table-sm">
                             <tr><td class="fw-bold">Status:</td><td><span class="badge bg-${statusColors[report.status]}">${report.status}</span></td></tr>
@@ -806,13 +1062,17 @@
                             <tr><td class="fw-bold">Location:</td><td>${report.location}</td></tr>
                         </table>
                     </div>
-                    <div class="col-md-4">
-                        <h6 class="fw-bold">Dates</h6>
-                        <table class="table table-sm">
-                            <tr><td class="fw-bold">Created:</td><td>${formatDateTime(report.created_at)}</td></tr>
-                            <tr><td class="fw-bold">Started:</td><td>${report.start_process_at ? formatDateTime(report.start_process_at) : 'Not Started'}</td></tr>
-                            <tr><td class="fw-bold">Completed:</td><td>${report.completed_at ? formatDateTime(report.completed_at) : 'Not Completed'}</td></tr>
-                        </table>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="timeline-header">
+                            <i class="ri-time-line"></i>
+                            <h6 class="fw-bold mb-0">Progress Timeline</h6>
+                        </div>
+                        ${renderDetailTimeline(report)}
                     </div>
                 </div>
 
