@@ -79,16 +79,17 @@
                         </div>
 
                         <div class="position-relative rounded-0" style="max-height: 300px;" data-simplebar>
-                            <div class="text-center p-4">
-                                <i data-lucide="bell-off" class="fs-48 text-muted mb-3"></i>
-                                <h6 class="text-muted">No new notifications</h6>
-                                <p class="text-muted fs-14 mb-0">You're all caught up!</p>
+                            <!-- No notifications placeholder -->
+                            <div class="text-center py-4">
+                                <i class="ri-notification-line fs-48 text-muted"></i>
+                                <p class="text-muted mt-2">No new notifications</p>
                             </div>
                         </div>
 
+                        <!-- All notifications link -->
                         <a href="javascript:void(0);"
                             class="dropdown-item position-absolute bottom-0 notification-item text-center text-reset text-decoration-underline fw-bold notify-item border-top border-light py-2">
-                            View All
+                            View All Notifications
                         </a>
                     </div>
                 </div>
@@ -115,11 +116,17 @@
                 <div class="dropdown">
                     <a class="topbar-link dropdown-toggle drop-arrow-none px-2" data-bs-toggle="dropdown"
                         data-bs-offset="0,25" type="button" aria-haspopup="false" aria-expanded="false">
-                        <img src="{{ auth()->user()->profile_image ? url('storage/' . auth()->user()->profile_image) : asset('admin/backend/dist/assets/images/users/avatar-1.jpg') }}"
-                            height="32" width="32" class="rounded-circle me-lg-2 d-flex" alt="user-image">
+                        @if (auth()->user()->profile_image)
+                            <img src="{{ url('storage/' . auth()->user()->profile_image) }}" width="32"
+                                class="rounded-circle me-lg-2 d-flex" alt="user-image" height="32">
+                        @else
+                            <img src="{{ asset('admin/backend/dist') }}/assets/images/users/avatar-1.jpg"
+                                width="32" class="rounded-circle me-lg-2 d-flex" alt="user-image"
+                                height="32">
+                        @endif
                         <span class="d-lg-flex flex-column gap-1 d-none">
                             <span class="fw-semibold">{{ auth()->user()->name }}</span>
-                            <span class="fs-11 text-white">{{ auth()->user()->role_display }}</span>
+                            <span class="fs-12 text-white">{{ auth()->user()->role_display }}</span>
                         </span>
                         <i class="ri-arrow-down-s-line d-none d-lg-block align-middle ms-2"></i>
                     </a>
@@ -138,13 +145,7 @@
                         <!-- item-->
                         <a href="javascript:void(0);" class="dropdown-item">
                             <i class="ri-settings-2-line me-1 fs-16 align-middle"></i>
-                            <span class="align-middle">Account Settings</span>
-                        </a>
-
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item">
-                            <i class="ri-dashboard-line me-1 fs-16 align-middle"></i>
-                            <span class="align-middle">Dashboard</span>
+                            <span class="align-middle">Settings</span>
                         </a>
 
                         <!-- item-->
@@ -155,29 +156,27 @@
 
                         <div class="dropdown-divider"></div>
 
-                        <!-- Security item -->
-                        <a href="{{ route('admin.profile.index') }}#security" class="dropdown-item">
-                            <i class="ri-lock-line me-1 fs-16 align-middle"></i>
-                            <span class="align-middle">Change Password</span>
-                        </a>
-
-                        <div class="dropdown-divider"></div>
-
                         <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item fw-semibold text-danger"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <a href="javascript:void(0);" class="dropdown-item" onclick="logout()">
                             <i class="ri-logout-box-line me-1 fs-16 align-middle"></i>
                             <span class="align-middle">Sign Out</span>
                         </a>
-
-                        <!-- Hidden logout form -->
-                        <form id="logout-form" action="{{ route('admin.logout') }}" method="POST"
-                            style="display: none;">
-                            @csrf
-                        </form>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </header>
+
+<!-- Logout Form (Hidden) -->
+<form id="logout-form" action="{{ route('admin.logout') }}" method="POST" style="display: none;">
+    @csrf
+</form>
+
+<script>
+    function logout() {
+        if (confirm('Are you sure you want to logout?')) {
+            document.getElementById('logout-form').submit();
+        }
+    }
+</script>

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthenticationController;
+use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
 
@@ -55,6 +56,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::post('/image/upload', [ProfileController::class, 'uploadProfileImage'])->name('image.upload');
         Route::delete('/image', [ProfileController::class, 'deleteProfileImage'])->name('image.delete');
         Route::get('/data', [ProfileController::class, 'getProfile'])->name('data');
+    });
+
+    // Categories Management Routes
+    Route::prefix('admin/categories')->name('admin.categories.')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::get('/data', [CategoryController::class, 'getData'])->name('data');
+        Route::post('/', [CategoryController::class, 'store'])->name('store');
+        Route::get('/{id}', [CategoryController::class, 'show'])->name('show');
+        Route::put('/{id}', [CategoryController::class, 'update'])->name('update');
+        Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Tambahkan routes khusus admin lainnya disini

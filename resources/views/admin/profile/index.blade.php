@@ -29,7 +29,8 @@
                                     class="img-fluid rounded-circle avatar-xl border border-3 border-light shadow">
                                 <button type="button"
                                     class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0"
-                                    data-bs-toggle="modal" data-bs-target="#changeImageModal">
+                                    style="width: 32px; height: 32px;" data-bs-toggle="modal"
+                                    data-bs-target="#changeImageModal">
                                     <i class="ri-camera-line"></i>
                                 </button>
                             </div>
