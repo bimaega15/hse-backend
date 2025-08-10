@@ -232,7 +232,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm bg-primary bg-gradient rounded">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
                                         <i class="ri-file-text-line fs-16 text-white"></i>
                                     </div>
                                 </div>
@@ -250,7 +250,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm bg-warning bg-gradient rounded">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
                                         <i class="ri-time-line fs-16 text-white"></i>
                                     </div>
                                 </div>
@@ -268,7 +268,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm bg-info bg-gradient rounded">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-info bg-gradient rounded">
                                         <i class="ri-refresh-line fs-16 text-white"></i>
                                     </div>
                                 </div>
@@ -286,7 +286,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm bg-success bg-gradient rounded">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
                                         <i class="ri-check-line fs-16 text-white"></i>
                                     </div>
                                 </div>
