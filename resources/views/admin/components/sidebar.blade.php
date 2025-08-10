@@ -190,16 +190,10 @@
             <li class="side-nav-title">System</li>
 
             <li class="side-nav-item">
-                <a href="#" class="side-nav-link">
+                <a href="{{ route('admin.notifications.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.notifications.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="bell"></i></span>
                     <span class="menu-text"> Notifications </span>
-                </a>
-            </li>
-
-            <li class="side-nav-item">
-                <a href="#" class="side-nav-link">
-                    <span class="menu-icon"><i data-lucide="settings"></i></span>
-                    <span class="menu-text"> Settings </span>
                 </a>
             </li>
 
