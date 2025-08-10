@@ -4,8 +4,8 @@
     <div class="col-xl-3 col-md-6">
         <div class="card analytics-card">
             <div class="card-body analytics-metric">
-                <div class="metric-value">{{ $additionalData['summary']['total_reports'] ?? 0 }}</div>
-                <div class="metric-label">Total Reports</div>
+                <div class="metric-value">{{ $additionalData['summary']['total_observations'] ?? 0 }}</div>
+                <div class="metric-label">Total Observations</div>
                 <div class="metric-change">
                     @if (isset($additionalData['summary']['this_month']) && isset($additionalData['summary']['last_month']))
                         @php
@@ -31,10 +31,10 @@
     <div class="col-xl-3 col-md-6">
         <div class="card analytics-card">
             <div class="card-body analytics-metric">
-                <div class="metric-value text-warning">{{ $additionalData['summary']['critical_incidents'] ?? 0 }}</div>
-                <div class="metric-label">Critical Incidents</div>
+                <div class="metric-value text-warning">{{ $additionalData['summary']['pending_review'] ?? 0 }}</div>
+                <div class="metric-label">Pending Review</div>
                 <div class="metric-change">
-                    <span class="text-muted">High & Critical Severity</span>
+                    <span class="text-muted">Submitted Observations</span>
                 </div>
             </div>
         </div>
@@ -43,10 +43,10 @@
     <div class="col-xl-3 col-md-6">
         <div class="card analytics-card">
             <div class="card-body analytics-metric">
-                <div class="metric-value text-danger">{{ $additionalData['summary']['overdue_cars'] ?? 0 }}</div>
-                <div class="metric-label">Overdue CARs</div>
+                <div class="metric-value text-danger">{{ $additionalData['summary']['high_severity_count'] ?? 0 }}</div>
+                <div class="metric-label">High Severity</div>
                 <div class="metric-change">
-                    <span class="text-muted">Corrective Actions</span>
+                    <span class="text-muted">Critical & High Risk</span>
                 </div>
             </div>
         </div>
@@ -55,13 +55,18 @@
     <div class="col-xl-3 col-md-6">
         <div class="card analytics-card">
             <div class="card-body analytics-metric">
-                <div class="metric-value text-success">
-                    {{ $additionalData['completion_metrics']['completion_rate'] ?? 0 }}%
-                </div>
-                <div class="metric-label">Completion Rate</div>
+                @php
+                    $totalObs = $additionalData['summary']['total_observations'] ?? 0;
+                    $reviewed = 0;
+                    if (isset($additionalData['trends'])) {
+                        $reviewed = $additionalData['trends']->sum('reviewed');
+                    }
+                    $reviewRate = $totalObs > 0 ? round(($reviewed / $totalObs) * 100, 1) : 0;
+                @endphp
+                <div class="metric-value text-success">{{ $reviewRate }}%</div>
+                <div class="metric-label">Review Rate</div>
                 <div class="metric-change">
-                    <span class="text-muted">{{ $additionalData['completion_metrics']['avg_resolution_hours'] ?? 0 }}h
-                        avg resolution</span>
+                    <span class="text-muted">{{ $reviewed }} reviewed</span>
                 </div>
             </div>
         </div>
@@ -80,36 +85,36 @@
             </div>
             <div class="card-body">
                 <div class="chart-container">
-                    <canvas id="trendsChart"></canvas>
+                    <canvas id="observationTrendsChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Severity Distribution -->
+    <!-- Observation Types Distribution -->
     <div class="col-xl-4">
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-pie-chart-line me-2"></i>Severity Analysis
+                    <i class="ri-pie-chart-line me-2"></i>Types Distribution
                 </h5>
             </div>
             <div class="card-body">
                 <div class="chart-container chart-small">
-                    <canvas id="severityChart"></canvas>
+                    <canvas id="observationTypesChart"></canvas>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Category Analysis & SLA Compliance -->
+<!-- Type Analysis & Severity Analysis -->
 <div class="row mb-4">
     <div class="col-xl-6">
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-bar-chart-line me-2"></i>Category Breakdown
+                    <i class="ri-bar-chart-line me-2"></i>Observation Types Analysis
                 </h5>
             </div>
             <div class="card-body">
@@ -117,27 +122,44 @@
                     <table class="table table-sm">
                         <thead>
                             <tr>
-                                <th>Category</th>
-                                <th>Total</th>
-                                <th>Completed</th>
-                                <th>Avg Resolution</th>
+                                <th>Type</th>
+                                <th>Count</th>
+                                <th>Avg Severity</th>
+                                <th>Trend</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @if (isset($additionalData['categories']) && count($additionalData['categories']) > 0)
-                                @foreach ($additionalData['categories'] as $category)
+                            @if (isset($additionalData['type_analysis']) && count($additionalData['type_analysis']) > 0)
+                                @foreach ($additionalData['type_analysis'] as $type)
+                                    @php
+                                        $typeLabels = [
+                                            'at_risk_behavior' => 'At Risk Behavior',
+                                            'nearmiss_incident' => 'Near Miss Incident',
+                                            'informal_risk_mgmt' => 'Risk Management',
+                                            'sim_k3' => 'SIM K3',
+                                        ];
+                                        $typeName = $typeLabels[$type->observation_type] ?? $type->observation_type;
+                                        $avgSeverity = round($type->avg_severity_score ?? 0, 1);
+                                        $severityColor =
+                                            $avgSeverity >= 3 ? 'danger' : ($avgSeverity >= 2 ? 'warning' : 'success');
+                                    @endphp
                                     <tr>
-                                        <td>{{ $category->category ?? 'Unknown' }}</td>
-                                        <td>{{ $category->total ?? 0 }}</td>
+                                        <td>{{ $typeName }}</td>
                                         <td>
-                                            <span class="badge bg-success">{{ $category->completed ?? 0 }}</span>
+                                            <span class="badge bg-primary">{{ $type->count ?? 0 }}</span>
                                         </td>
-                                        <td>{{ round($category->avg_resolution_hours ?? 0, 1) }}h</td>
+                                        <td>
+                                            <span class="badge bg-{{ $severityColor }}">{{ $avgSeverity }}</span>
+                                        </td>
+                                        <td>
+                                            <i class="ri-arrow-up-line text-success"></i>
+                                        </td>
                                     </tr>
                                 @endforeach
                             @else
                                 <tr>
-                                    <td colspan="4" class="text-center text-muted">No category data available</td>
+                                    <td colspan="4" class="text-center text-muted">No type analysis data available
+                                    </td>
                                 </tr>
                             @endif
                         </tbody>
@@ -151,35 +173,48 @@
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-shield-check-line me-2"></i>SLA Compliance
+                    <i class="ri-shield-check-line me-2"></i>Severity Analysis
                 </h5>
             </div>
             <div class="card-body">
-                @if (isset($additionalData['completion_metrics']['sla_compliance']) &&
-                        count($additionalData['completion_metrics']['sla_compliance']) > 0)
-                    @foreach ($additionalData['completion_metrics']['sla_compliance'] as $severity => $sla)
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div>
-                                <span
-                                    class="sla-indicator {{ ($sla['compliance_rate'] ?? 0) >= 80 ? 'sla-good' : (($sla['compliance_rate'] ?? 0) >= 60 ? 'sla-warning' : 'sla-critical') }}"></span>
-                                <strong>{{ ucfirst($severity) }}</strong>
-                                <small class="text-muted">({{ $sla['target_hours'] ?? 0 }}h target)</small>
+                @if (isset($additionalData['severity_analysis']) && count($additionalData['severity_analysis']) > 0)
+                    @foreach (['critical', 'high', 'medium', 'low'] as $severity)
+                        @php
+                            $severityData = $additionalData['severity_analysis'][$severity] ?? collect();
+                            $totalCount = $severityData->sum('count');
+                            $severityColors = [
+                                'critical' => 'dark',
+                                'high' => 'danger',
+                                'medium' => 'warning',
+                                'low' => 'success',
+                            ];
+                            $color = $severityColors[$severity];
+                        @endphp
+                        @if ($totalCount > 0)
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <strong>{{ ucfirst($severity) }} Severity</strong>
+                                    <small class="text-muted d-block">
+                                        @foreach ($severityData as $item)
+                                            {{ ucfirst(str_replace('_', ' ', $item->observation_type)) }}
+                                            ({{ $item->count }})
+                                        @endforeach
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <div class="fw-bold text-{{ $color }}">{{ $totalCount }}</div>
+                                </div>
                             </div>
-                            <div class="text-end">
-                                <div class="fw-bold">{{ $sla['compliance_rate'] ?? 0 }}%</div>
-                                <small
-                                    class="text-muted">{{ $sla['within_sla'] ?? 0 }}/{{ $sla['total'] ?? 0 }}</small>
+                            <div class="progress mb-3" style="height: 6px;">
+                                <div class="progress-bar bg-{{ $color }}"
+                                    style="width: {{ min(($totalCount / 50) * 100, 100) }}%"></div>
                             </div>
-                        </div>
-                        <div class="progress mb-3" style="height: 6px;">
-                            <div class="progress-bar {{ ($sla['compliance_rate'] ?? 0) >= 80 ? 'bg-success' : (($sla['compliance_rate'] ?? 0) >= 60 ? 'bg-warning' : 'bg-danger') }}"
-                                style="width: {{ $sla['compliance_rate'] ?? 0 }}%"></div>
-                        </div>
+                        @endif
                     @endforeach
                 @else
                     <div class="text-center text-muted py-4">
                         <i class="ri-shield-line fs-48 mb-3"></i>
-                        <p>No SLA compliance data available</p>
+                        <p>No severity analysis data available</p>
                     </div>
                 @endif
             </div>
@@ -187,13 +222,13 @@
     </div>
 </div>
 
-<!-- HSE Performance -->
+<!-- Observer Performance -->
 <div class="row">
     <div class="col-12">
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-team-line me-2"></i>HSE Staff Performance
+                    <i class="ri-team-line me-2"></i>Observer Performance
                 </h5>
             </div>
             <div class="card-body">
@@ -201,41 +236,42 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>HSE Staff</th>
-                                <th>Total Assigned</th>
-                                <th>Completed</th>
+                                <th>Observer</th>
+                                <th>Total Observations</th>
+                                <th>Reviewed</th>
                                 <th>This Month</th>
-                                <th>Completion Rate</th>
+                                <th>Review Rate</th>
                                 <th>Performance</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @if (isset($additionalData['hse_performance']) && count($additionalData['hse_performance']) > 0)
-                                @foreach ($additionalData['hse_performance'] as $staff)
+                            @if (isset($additionalData['observer_performance']) && count($additionalData['observer_performance']) > 0)
+                                @foreach ($additionalData['observer_performance'] as $observer)
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded me-2">
+                                                <div class="avatar-sm bg-primary bg-gradient rounded me-2">
                                                     <span
-                                                        class="avatar-title fs-14">{{ strtoupper(substr($staff->name ?? 'U', 0, 2)) }}</span>
+                                                        class="avatar-title fs-14">{{ strtoupper(substr($observer->name ?? 'U', 0, 2)) }}</span>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold">{{ $staff->name ?? 'Unknown' }}</div>
-                                                    <small class="text-muted">{{ $staff->email ?? 'No email' }}</small>
+                                                    <div class="fw-bold">{{ $observer->name ?? 'Unknown' }}</div>
+                                                    <small
+                                                        class="text-muted">{{ $observer->email ?? 'No email' }}</small>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{{ $staff->assigned_reports_count ?? 0 }}</td>
+                                        <td>{{ $observer->observations_count ?? 0 }}</td>
                                         <td>
                                             <span
-                                                class="badge bg-success">{{ $staff->completed_reports_count ?? 0 }}</span>
+                                                class="badge bg-success">{{ $observer->reviewed_observations_count ?? 0 }}</span>
                                         </td>
-                                        <td>{{ $staff->this_month_reports_count ?? 0 }}</td>
-                                        <td>{{ $staff->completion_rate ?? 0 }}%</td>
+                                        <td>{{ $observer->this_month_observations_count ?? 0 }}</td>
+                                        <td>{{ $observer->review_rate ?? 0 }}%</td>
                                         <td>
                                             <div class="progress" style="width: 100px; height: 8px;">
-                                                <div class="progress-bar {{ ($staff->completion_rate ?? 0) >= 80 ? 'bg-success' : (($staff->completion_rate ?? 0) >= 60 ? 'bg-warning' : 'bg-danger') }}"
-                                                    style="width: {{ $staff->completion_rate ?? 0 }}%"></div>
+                                                <div class="progress-bar {{ ($observer->review_rate ?? 0) >= 80 ? 'bg-success' : (($observer->review_rate ?? 0) >= 60 ? 'bg-warning' : 'bg-danger') }}"
+                                                    style="width: {{ $observer->review_rate ?? 0 }}%"></div>
                                             </div>
                                         </td>
                                     </tr>
@@ -244,7 +280,7 @@
                                 <tr>
                                     <td colspan="6" class="text-center text-muted py-4">
                                         <i class="ri-team-line fs-48 mb-3"></i>
-                                        <p>No HSE staff performance data available</p>
+                                        <p>No observer performance data available</p>
                                     </td>
                                 </tr>
                             @endif
@@ -266,25 +302,26 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-3">
-                        <a href="{{ route('admin.reports.index') }}?status=waiting"
+                        <a href="{{ route('admin.observations.index') }}?status=submitted"
                             class="btn btn-outline-warning w-100 mb-2">
-                            <i class="ri-time-line me-2"></i>View Pending Reports
+                            <i class="ri-send-plane-line me-2"></i>Review Submitted
                         </a>
                     </div>
                     <div class="col-md-3">
-                        <a href="{{ route('admin.reports.index') }}?status=in-progress"
-                            class="btn btn-outline-info w-100 mb-2">
-                            <i class="ri-refresh-line me-2"></i>View In Progress
+                        <a href="{{ route('admin.observations.index') }}?status=draft"
+                            class="btn btn-outline-secondary w-100 mb-2">
+                            <i class="ri-draft-line me-2"></i>View Drafts
                         </a>
                     </div>
                     <div class="col-md-3">
-                        <button type="button" class="btn btn-outline-primary w-100 mb-2" onclick="createReport()">
-                            <i class="ri-add-line me-2"></i>Create New Report
+                        <button type="button" class="btn btn-outline-primary w-100 mb-2"
+                            onclick="createObservation()">
+                            <i class="ri-add-line me-2"></i>Create New Observation
                         </button>
                     </div>
                     <div class="col-md-3">
-                        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary w-100 mb-2">
-                            <i class="ri-list-line me-2"></i>View All Reports
+                        <a href="{{ route('admin.observations.index') }}" class="btn btn-outline-info w-100 mb-2">
+                            <i class="ri-list-line me-2"></i>View All Observations
                         </a>
                     </div>
                 </div>
@@ -299,40 +336,40 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize charts with actual data
-        initAnalyticsCharts();
+        initObservationAnalyticsCharts();
     });
 
-    function initAnalyticsCharts() {
+    function initObservationAnalyticsCharts() {
         // Get data safely
         const trendsData = @json($additionalData['trends'] ?? []);
-        const severityData = @json($additionalData['severity_analysis'] ?? []);
+        const typeAnalysisData = @json($additionalData['type_analysis'] ?? []);
 
         // Trends Chart
-        const trendsCtx = document.getElementById('trendsChart');
+        const trendsCtx = document.getElementById('observationTrendsChart');
         if (trendsCtx && trendsData.length > 0) {
             new Chart(trendsCtx, {
                 type: 'line',
                 data: {
                     labels: trendsData.map(item => item.month_name || 'Unknown'),
                     datasets: [{
-                        label: 'Total Reports',
+                        label: 'Total Observations',
                         data: trendsData.map(item => item.total || 0),
                         borderColor: '#667eea',
                         backgroundColor: 'rgba(102, 126, 234, 0.1)',
                         tension: 0.4,
                         fill: true
                     }, {
-                        label: 'Completed',
-                        data: trendsData.map(item => item.completed || 0),
+                        label: 'Reviewed',
+                        data: trendsData.map(item => item.reviewed || 0),
                         borderColor: '#28a745',
                         backgroundColor: 'rgba(40, 167, 69, 0.1)',
                         tension: 0.4,
                         fill: true
                     }, {
-                        label: 'Critical',
-                        data: trendsData.map(item => item.critical || 0),
-                        borderColor: '#dc3545',
-                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        label: 'Total Details',
+                        data: trendsData.map(item => item.total_details || 0),
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
                         tension: 0.4,
                         fill: true
                     }]
@@ -373,26 +410,35 @@
             });
         } else if (trendsCtx) {
             // Show empty state for trends chart
-            trendsCtx.getContext('2d').fillText('No trends data available', 10, 50);
+            const ctx = trendsCtx.getContext('2d');
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No trends data available', trendsCtx.width / 2, trendsCtx.height / 2);
         }
 
-        // Severity Chart
-        const severityCtx = document.getElementById('severityChart');
-        if (severityCtx && severityData.length > 0) {
-            new Chart(severityCtx, {
+        // Observation Types Chart
+        const typesCtx = document.getElementById('observationTypesChart');
+        if (typesCtx && typeAnalysisData.length > 0) {
+            const typeLabels = {
+                'at_risk_behavior': 'At Risk Behavior',
+                'nearmiss_incident': 'Near Miss Incident',
+                'informal_risk_mgmt': 'Risk Management',
+                'sim_k3': 'SIM K3'
+            };
+
+            new Chart(typesCtx, {
                 type: 'doughnut',
                 data: {
-                    labels: severityData.map(item => {
-                        const severity = item.severity_rating || 'unknown';
-                        return severity.charAt(0).toUpperCase() + severity.slice(1);
-                    }),
+                    labels: typeAnalysisData.map(item => typeLabels[item.observation_type] || item
+                        .observation_type),
                     datasets: [{
-                        data: severityData.map(item => item.count || 0),
+                        data: typeAnalysisData.map(item => item.count || 0),
                         backgroundColor: [
-                            '#28a745', // low - green
-                            '#ffc107', // medium - yellow
-                            '#fd7e14', // high - orange  
-                            '#dc3545' // critical - red
+                            '#dc3545', // At Risk - red
+                            '#ffc107', // Near Miss - yellow
+                            '#17a2b8', // Risk Mgmt - info
+                            '#6f42c1' // SIM K3 - purple
                         ],
                         borderWidth: 2,
                         borderColor: '#fff'
@@ -426,13 +472,13 @@
                     cutout: '60%'
                 }
             });
-        } else if (severityCtx) {
-            // Show empty state for severity chart
-            const ctx = severityCtx.getContext('2d');
+        } else if (typesCtx) {
+            // Show empty state for types chart
+            const ctx = typesCtx.getContext('2d');
             ctx.fillStyle = '#6c757d';
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('No severity data available', severityCtx.width / 2, severityCtx.height / 2);
+            ctx.fillText('No types data available', typesCtx.width / 2, typesCtx.height / 2);
         }
     }
 

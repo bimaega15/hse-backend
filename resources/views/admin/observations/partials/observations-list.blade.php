@@ -5,13 +5,13 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
-                            <i class="ri-file-text-line fs-16 text-white"></i>
+                        <div class="avatar-sm bg-primary bg-gradient rounded">
+                            <i class="ri-eye-line fs-16 text-white"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <p class="text-uppercase fw-medium text-muted mb-0">Total Reports</p>
-                        <h4 class="fs-16 fw-semibold mb-0" id="totalReports">-</h4>
+                        <p class="text-uppercase fw-medium text-muted mb-0">Total Observations</p>
+                        <h4 class="fs-16 fw-semibold mb-0" id="totalObservations">-</h4>
                     </div>
                 </div>
             </div>
@@ -23,13 +23,13 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
-                            <i class="ri-time-line fs-16 text-white"></i>
+                        <div class="avatar-sm bg-secondary bg-gradient rounded">
+                            <i class="ri-draft-line fs-16 text-white"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <p class="text-uppercase fw-medium text-muted mb-0">Pending</p>
-                        <h4 class="fs-16 fw-semibold mb-0" id="pendingReports">-</h4>
+                        <p class="text-uppercase fw-medium text-muted mb-0">Draft</p>
+                        <h4 class="fs-16 fw-semibold mb-0" id="draftObservations">-</h4>
                     </div>
                 </div>
             </div>
@@ -41,13 +41,13 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-info bg-gradient rounded">
-                            <i class="ri-refresh-line fs-16 text-white"></i>
+                        <div class="avatar-sm bg-warning bg-gradient rounded">
+                            <i class="ri-send-plane-line fs-16 text-white"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <p class="text-uppercase fw-medium text-muted mb-0">In Progress</p>
-                        <h4 class="fs-16 fw-semibold mb-0" id="inProgressReports">-</h4>
+                        <p class="text-uppercase fw-medium text-muted mb-0">Submitted</p>
+                        <h4 class="fs-16 fw-semibold mb-0" id="submittedObservations">-</h4>
                     </div>
                 </div>
             </div>
@@ -59,13 +59,13 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
+                        <div class="avatar-sm bg-success bg-gradient rounded">
                             <i class="ri-check-line fs-16 text-white"></i>
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <p class="text-uppercase fw-medium text-muted mb-0">Completed</p>
-                        <h4 class="fs-16 fw-semibold mb-0" id="completedReports">-</h4>
+                        <p class="text-uppercase fw-medium text-muted mb-0">Reviewed</p>
+                        <h4 class="fs-16 fw-semibold mb-0" id="reviewedObservations">-</h4>
                     </div>
                 </div>
             </div>
@@ -84,28 +84,28 @@
                     </div>
                     <div class="flex-grow-1 ms-3">
                         <h6 class="fs-14 mb-1">
-                            @if ($status === 'waiting')
-                                Viewing Pending Reports
-                            @elseif($status === 'in-progress')
-                                Viewing Reports In Progress
-                            @elseif($status === 'done')
-                                Viewing Completed Reports
+                            @if ($status === 'draft')
+                                Viewing Draft Observations
+                            @elseif($status === 'submitted')
+                                Viewing Submitted Observations
+                            @elseif($status === 'reviewed')
+                                Viewing Reviewed Observations
                             @endif
                         </h6>
                         <p class="mb-0">
-                            @if ($status === 'waiting')
-                                These reports are waiting for HSE staff assignment and processing.
-                            @elseif($status === 'in-progress')
-                                These reports are currently being processed by HSE staff.
-                            @elseif($status === 'done')
-                                These reports have been completed and closed.
+                            @if ($status === 'draft')
+                                These observations are still being edited and haven't been submitted for review.
+                            @elseif($status === 'submitted')
+                                These observations have been submitted and are awaiting HSE staff review.
+                            @elseif($status === 'reviewed')
+                                These observations have been reviewed and completed by HSE staff.
                             @endif
-                            <a href="{{ route('admin.reports.index') }}"
-                                class="text-decoration-underline fw-medium">View all reports</a>
+                            <a href="{{ route('admin.observations.index') }}"
+                                class="text-decoration-underline fw-medium">View all observations</a>
                         </p>
                     </div>
                     <div class="flex-shrink-0">
-                        <a href="{{ route('admin.reports.index') }}?view=analytics" class="btn btn-info btn-sm">
+                        <a href="{{ route('admin.observations.index') }}?view=analytics" class="btn btn-info btn-sm">
                             <i class="ri-bar-chart-line me-1"></i>View Analytics
                         </a>
                     </div>
@@ -120,14 +120,14 @@
         <div class="card">
             <div class="card-header border-bottom border-dashed d-flex align-items-center justify-content-between">
                 <h4 class="header-title mb-0">
-                    Reports List
+                    Observations List
                     @if ($status)
-                        @if ($status === 'waiting')
-                            <span class="badge bg-warning ms-2">Pending</span>
-                        @elseif($status === 'in-progress')
-                            <span class="badge bg-info ms-2">In Progress</span>
-                        @elseif($status === 'done')
-                            <span class="badge bg-success ms-2">Completed</span>
+                        @if ($status === 'draft')
+                            <span class="badge bg-secondary ms-2">Draft</span>
+                        @elseif($status === 'submitted')
+                            <span class="badge bg-warning ms-2">Submitted</span>
+                        @elseif($status === 'reviewed')
+                            <span class="badge bg-success ms-2">Reviewed</span>
                         @endif
                     @endif
                 </h4>
@@ -139,20 +139,23 @@
                                 <i class="ri-filter-2-line me-1"></i>Quick Filter
                             </button>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ route('admin.reports.index') }}?status=waiting">
-                                        <i class="ri-time-line me-2 text-warning"></i>Pending Reports
+                                <li><a class="dropdown-item"
+                                        href="{{ route('admin.observations.index') }}?status=draft">
+                                        <i class="ri-draft-line me-2 text-secondary"></i>Draft Observations
                                     </a></li>
                                 <li><a class="dropdown-item"
-                                        href="{{ route('admin.reports.index') }}?status=in-progress">
-                                        <i class="ri-refresh-line me-2 text-info"></i>In Progress
+                                        href="{{ route('admin.observations.index') }}?status=submitted">
+                                        <i class="ri-send-plane-line me-2 text-warning"></i>Submitted
                                     </a></li>
-                                <li><a class="dropdown-item" href="{{ route('admin.reports.index') }}?status=done">
-                                        <i class="ri-check-line me-2 text-success"></i>Completed
+                                <li><a class="dropdown-item"
+                                        href="{{ route('admin.observations.index') }}?status=reviewed">
+                                        <i class="ri-check-line me-2 text-success"></i>Reviewed
                                     </a></li>
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="{{ route('admin.reports.index') }}?view=analytics">
+                                <li><a class="dropdown-item"
+                                        href="{{ route('admin.observations.index') }}?view=analytics">
                                         <i class="ri-bar-chart-line me-2 text-primary"></i>Analytics Dashboard
                                     </a></li>
                             </ul>
@@ -161,8 +164,8 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="showFilters()">
                         <i class="ri-filter-line me-1"></i>Advanced Filters
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="createReport()">
-                        <i class="ri-add-line me-1"></i>Add New Report
+                    <button type="button" class="btn btn-primary" onclick="createObservation()">
+                        <i class="ri-add-line me-1"></i>Add New Observation
                     </button>
                 </div>
             </div>
@@ -175,20 +178,21 @@
                             <label for="statusFilter" class="form-label fw-medium">Status</label>
                             <select class="form-select" id="statusFilter" name="status">
                                 <option value="">All Status</option>
-                                <option value="waiting" {{ $status === 'waiting' ? 'selected' : '' }}>Waiting</option>
-                                <option value="in-progress" {{ $status === 'in-progress' ? 'selected' : '' }}>In
-                                    Progress</option>
-                                <option value="done" {{ $status === 'done' ? 'selected' : '' }}>Completed</option>
+                                <option value="draft" {{ $status === 'draft' ? 'selected' : '' }}>Draft</option>
+                                <option value="submitted" {{ $status === 'submitted' ? 'selected' : '' }}>Submitted
+                                </option>
+                                <option value="reviewed" {{ $status === 'reviewed' ? 'selected' : '' }}>Reviewed
+                                </option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="severityFilter" class="form-label fw-medium">Severity</label>
-                            <select class="form-select" id="severityFilter" name="severity">
-                                <option value="">All Severity</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
+                            <label for="observationTypeFilter" class="form-label fw-medium">Observation Type</label>
+                            <select class="form-select" id="observationTypeFilter" name="observation_type">
+                                <option value="">All Types</option>
+                                <option value="at_risk_behavior">At Risk Behavior</option>
+                                <option value="nearmiss_incident">Near Miss Incident</option>
+                                <option value="informal_risk_mgmt">Informal Risk Management</option>
+                                <option value="sim_k3">SIM K3</option>
                             </select>
                         </div>
                         <div class="col-md-3">
@@ -222,25 +226,23 @@
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    <p class="mt-2 text-muted">Loading reports data...</p>
+                    <p class="mt-2 text-muted">Loading observations data...</p>
                 </div>
 
                 <!-- Data Table -->
                 <div class="table-responsive">
-                    <table id="reportsTable" class="table table-striped table-bordered dt-responsive nowrap"
+                    <table id="observationsTable" class="table table-striped table-bordered dt-responsive nowrap"
                         style="width:100%">
                         <thead class="table-dark">
                             <tr>
                                 <th width="3%">#</th>
-                                <th width="12%">Employee</th>
-                                <th width="12%">HSE Staff</th>
-                                <th width="12%">Report Info</th>
-                                <th width="20%">Description</th>
-                                <th width="8%">Severity</th>
+                                <th width="15%">Observer</th>
+                                <th width="12%">Observation Info</th>
+                                <th width="15%">Types Breakdown</th>
                                 <th width="8%">Status</th>
-                                <th width="10%">CAR Progress</th>
-                                <th width="12%">Dates</th>
-                                <th width="3%">Actions</th>
+                                <th width="25%">Notes</th>
+                                <th width="12%">Created At</th>
+                                <th width="10%">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -252,22 +254,22 @@
                 <!-- Empty State -->
                 <div id="emptyState" class="text-center py-5 d-none">
                     <div class="mb-3">
-                        <i class="ri-file-list-line fs-48 text-muted"></i>
+                        <i class="ri-eye-off-line fs-48 text-muted"></i>
                     </div>
-                    <h5 class="text-muted">No Reports Found</h5>
+                    <h5 class="text-muted">No Observations Found</h5>
                     <p class="text-muted mb-3">
-                        @if ($status === 'waiting')
-                            No pending reports at the moment.
-                        @elseif($status === 'in-progress')
-                            No reports currently in progress.
-                        @elseif($status === 'done')
-                            No completed reports found.
+                        @if ($status === 'draft')
+                            No draft observations at the moment.
+                        @elseif($status === 'submitted')
+                            No submitted observations waiting for review.
+                        @elseif($status === 'reviewed')
+                            No reviewed observations found.
                         @else
-                            No reports have been created yet.
+                            No observations have been created yet.
                         @endif
                     </p>
-                    <button type="button" class="btn btn-primary" onclick="createReport()">
-                        <i class="ri-add-line me-1"></i>Create First Report
+                    <button type="button" class="btn btn-primary" onclick="createObservation()">
+                        <i class="ri-add-line me-1"></i>Create First Observation
                     </button>
                 </div>
             </div>
@@ -278,26 +280,26 @@
                     <div class="col-md-6">
                         <div class="text-muted small">
                             <i class="ri-information-line me-1"></i>
-                            <span id="tableInfo">Showing reports data</span>
+                            <span id="tableInfo">Showing observations data</span>
                         </div>
                     </div>
                     <div class="col-md-6 text-end">
                         <div class="d-flex justify-content-end gap-2">
                             @if (!$status)
-                                <a href="{{ route('admin.reports.index') }}?status=waiting"
+                                <a href="{{ route('admin.observations.index') }}?status=submitted"
                                     class="btn btn-outline-warning btn-sm">
-                                    <i class="ri-time-line me-1"></i>View Pending
+                                    <i class="ri-send-plane-line me-1"></i>View Submitted
                                 </a>
-                                <a href="{{ route('admin.reports.index') }}?view=analytics"
+                                <a href="{{ route('admin.observations.index') }}?view=analytics"
                                     class="btn btn-outline-primary btn-sm">
                                     <i class="ri-bar-chart-line me-1"></i>Analytics
                                 </a>
                             @else
-                                <a href="{{ route('admin.reports.index') }}"
+                                <a href="{{ route('admin.observations.index') }}"
                                     class="btn btn-outline-secondary btn-sm">
                                     <i class="ri-arrow-left-line me-1"></i>View All
                                 </a>
-                                <a href="{{ route('admin.reports.index') }}?view=analytics"
+                                <a href="{{ route('admin.observations.index') }}?view=analytics"
                                     class="btn btn-outline-primary btn-sm">
                                     <i class="ri-bar-chart-line me-1"></i>Analytics
                                 </a>
@@ -322,27 +324,27 @@
                 </div>
                 <div class="card-body">
                     <div class="list-group list-group-flush">
-                        <a href="{{ route('admin.reports.index') }}?status=waiting"
+                        <a href="{{ route('admin.observations.index') }}?status=submitted"
                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             <div>
-                                <i class="ri-time-line me-2 text-warning"></i>Review Pending Reports
+                                <i class="ri-send-plane-line me-2 text-warning"></i>Review Submitted
                             </div>
-                            <span class="badge bg-warning" id="pendingBadge">-</span>
+                            <span class="badge bg-warning" id="submittedBadge">-</span>
                         </a>
-                        <a href="{{ route('admin.reports.index') }}?status=in-progress"
+                        <a href="{{ route('admin.observations.index') }}?status=draft"
                             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                             <div>
-                                <i class="ri-refresh-line me-2 text-info"></i>Track In Progress
+                                <i class="ri-draft-line me-2 text-secondary"></i>View Drafts
                             </div>
-                            <span class="badge bg-info" id="progressBadge">-</span>
+                            <span class="badge bg-secondary" id="draftBadge">-</span>
                         </a>
-                        <a href="{{ route('admin.reports.index') }}?view=analytics"
+                        <a href="{{ route('admin.observations.index') }}?view=analytics"
                             class="list-group-item list-group-item-action">
                             <i class="ri-bar-chart-line me-2 text-primary"></i>View Analytics Dashboard
                         </a>
                         <button type="button" class="list-group-item list-group-item-action"
-                            onclick="createReport()">
-                            <i class="ri-add-line me-2 text-success"></i>Create New Report
+                            onclick="createObservation()">
+                            <i class="ri-add-line me-2 text-success"></i>Create New Observation
                         </button>
                     </div>
                 </div>
@@ -360,33 +362,33 @@
                     <div class="row text-center">
                         <div class="col-md-3">
                             <div class="p-2">
-                                <h4 class="fw-bold text-primary mb-1" id="todayReports">-</h4>
+                                <h4 class="fw-bold text-primary mb-1" id="todayObservations">-</h4>
                                 <p class="text-muted mb-0 small">Today</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="p-2">
-                                <h4 class="fw-bold text-info mb-1" id="weekReports">-</h4>
+                                <h4 class="fw-bold text-info mb-1" id="weekObservations">-</h4>
                                 <p class="text-muted mb-0 small">This Week</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="p-2">
-                                <h4 class="fw-bold text-warning mb-1" id="monthReports">-</h4>
+                                <h4 class="fw-bold text-warning mb-1" id="monthObservations">-</h4>
                                 <p class="text-muted mb-0 small">This Month</p>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="p-2">
-                                <h4 class="fw-bold text-success mb-1" id="completionRate">-</h4>
-                                <p class="text-muted mb-0 small">Completion Rate</p>
+                                <h4 class="fw-bold text-success mb-1" id="reviewRate">-</h4>
+                                <p class="text-muted mb-0 small">Review Rate</p>
                             </div>
                         </div>
                     </div>
                     <hr class="my-3">
                     <div class="text-center">
                         <p class="text-muted mb-2">Want more detailed insights?</p>
-                        <a href="{{ route('admin.reports.index') }}?view=analytics" class="btn btn-primary">
+                        <a href="{{ route('admin.observations.index') }}?view=analytics" class="btn btn-primary">
                             <i class="ri-bar-chart-line me-1"></i>View Full Analytics
                         </a>
                     </div>
@@ -397,7 +399,7 @@
 @endif
 
 <script>
-    // Additional JavaScript for reports list specific functionality
+    // Additional JavaScript for observations list specific functionality
     document.addEventListener('DOMContentLoaded', function() {
         // Update quick action badges
         updateQuickActionBadges();
@@ -408,46 +410,46 @@
 
     function updateQuickActionBadges() {
         // Update badges in quick actions widget
-        $('#pendingBadge').text($('#pendingReports').text());
-        $('#progressBadge').text($('#inProgressReports').text());
+        $('#submittedBadge').text($('#submittedObservations').text());
+        $('#draftBadge').text($('#draftObservations').text());
     }
 
     function updateRecentActivity() {
         // This would typically come from an API call
         // For now, we'll use placeholder logic
         $.ajax({
-            url: "{{ route('admin.reports.statistics.data') }}",
+            url: "{{ route('admin.observations.statistics.data') }}",
             type: 'GET',
             success: function(response) {
                 if (response.success) {
                     const stats = response.data;
 
                     // Update recent activity numbers (you would get these from backend)
-                    $('#todayReports').text(stats.today_reports || '0');
-                    $('#weekReports').text(stats.week_reports || '0');
-                    $('#monthReports').text(stats.month_reports || '0');
+                    $('#todayObservations').text(stats.today_observations || '0');
+                    $('#weekObservations').text(stats.week_observations || '0');
+                    $('#monthObservations').text(stats.month_observations || '0');
 
-                    // Calculate and display completion rate
-                    const completionRate = stats.total_reports > 0 ?
-                        Math.round((stats.completed_reports / stats.total_reports) * 100) :
+                    // Calculate and display review rate
+                    const reviewRate = stats.total_observations > 0 ?
+                        Math.round((stats.reviewed_observations / stats.total_observations) * 100) :
                         0;
-                    $('#completionRate').text(completionRate + '%');
+                    $('#reviewRate').text(reviewRate + '%');
                 }
             },
             error: function() {
                 // Set fallback values
-                $('#todayReports').text('0');
-                $('#weekReports').text('0');
-                $('#monthReports').text('0');
-                $('#completionRate').text('0%');
+                $('#todayObservations').text('0');
+                $('#weekObservations').text('0');
+                $('#monthObservations').text('0');
+                $('#reviewRate').text('0%');
             }
         });
     }
 
     // Auto-refresh data every 5 minutes for real-time updates
     setInterval(function() {
-        if (reportsTable) {
-            reportsTable.ajax.reload(null, false); // Don't reset pagination
+        if (observationsTable) {
+            observationsTable.ajax.reload(null, false); // Don't reset pagination
         }
         loadStatistics();
         updateQuickActionBadges();
@@ -457,90 +459,22 @@
     // Table state management
     $(document).ready(function() {
         // Show/hide empty state based on table data
-        if (typeof reportsTable !== 'undefined') {
-            reportsTable.on('draw', function() {
-                const info = reportsTable.page.info();
+        if (typeof observationsTable !== 'undefined') {
+            observationsTable.on('draw', function() {
+                const info = observationsTable.page.info();
                 if (info.recordsTotal === 0) {
                     $('#emptyState').removeClass('d-none');
-                    $('#reportsTable').addClass('d-none');
+                    $('#observationsTable').addClass('d-none');
                 } else {
                     $('#emptyState').addClass('d-none');
-                    $('#reportsTable').removeClass('d-none');
+                    $('#observationsTable').removeClass('d-none');
 
                     // Update table info
                     $('#tableInfo').text(
-                        `Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} reports`);
+                        `Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} observations`
+                        );
                 }
             });
         }
     });
-
-    // Export functionality (future enhancement)
-    function exportReports(format) {
-        const filters = {
-            status: $('#statusFilter').val(),
-            severity: $('#severityFilter').val(),
-            start_date: $('#startDateFilter').val(),
-            end_date: $('#endDateFilter').val()
-        };
-
-        // Build query string
-        const params = new URLSearchParams();
-        Object.keys(filters).forEach(key => {
-            if (filters[key]) {
-                params.append(key, filters[key]);
-            }
-        });
-        params.append('format', format);
-
-        // Open export URL
-        window.open(`/admin/reports/export?${params.toString()}`, '_blank');
-    }
-
-    // Print functionality
-    function printReports() {
-        window.print();
-    }
-
-    // Bulk operations (future enhancement)
-    function bulkUpdateStatus(status) {
-        const selectedIds = [];
-        $('.report-checkbox:checked').each(function() {
-            selectedIds.push($(this).val());
-        });
-
-        if (selectedIds.length === 0) {
-            showAlert('warning', 'No Selection', 'Please select at least one report');
-            return;
-        }
-
-        // Implement bulk update logic
-        console.log('Bulk update status:', status, selectedIds);
-    }
-
-    // Advanced search functionality
-    function performAdvancedSearch() {
-        const searchTerm = $('#advancedSearchInput').val();
-        if (searchTerm.length < 3) {
-            showAlert('info', 'Search Term Too Short', 'Please enter at least 3 characters');
-            return;
-        }
-
-        // Apply search to DataTable
-        reportsTable.search(searchTerm).draw();
-    }
-
-    // Reset all filters and search
-    function resetAllFilters() {
-        $('#filtersForm')[0].reset();
-        if (reportsTable) {
-            reportsTable.search('').columns().search('').draw();
-        }
-
-        // Clear URL parameters
-        window.history.pushState({}, '', '{{ route('admin.reports.index') }}');
-
-        // Reload page to reset everything
-        window.location.reload();
-    }
 </script>

@@ -26,7 +26,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm rounded-circle bg-primary-subtle">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center rounded-circle bg-primary-subtle">
                                         <span class="avatar-title text-primary">
                                             <i class="ri-group-line fs-18"></i>
                                         </span>
@@ -45,7 +45,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm rounded-circle bg-success-subtle">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center rounded-circle bg-success-subtle">
                                         <span class="avatar-title text-success">
                                             <i class="ri-user-check-line fs-18"></i>
                                         </span>
@@ -64,7 +64,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm rounded-circle bg-warning-subtle">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center rounded-circle bg-warning-subtle">
                                         <span class="avatar-title text-warning">
                                             <i class="ri-shield-user-line fs-18"></i>
                                         </span>
@@ -83,7 +83,7 @@
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
-                                    <div class="avatar-sm rounded-circle bg-info-subtle">
+                                    <div class="avatar-sm d-flex align-items-center justify-content-center rounded-circle bg-info-subtle">
                                         <span class="avatar-title text-info">
                                             <i class="ri-user-line fs-18"></i>
                                         </span>

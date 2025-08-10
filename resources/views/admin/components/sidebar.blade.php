@@ -72,27 +72,33 @@
             </li>
 
             <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#sidebarObservations" aria-expanded="false"
-                    aria-controls="sidebarObservations" class="side-nav-link">
+                <a data-bs-toggle="collapse" href="#sidebarObservations"
+                    aria-expanded="{{ request()->routeIs('admin.observations.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarObservations"
+                    class="side-nav-link {{ request()->routeIs('admin.observations.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="eye"></i></span>
                     <span class="menu-text"> Observations</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse" id="sidebarObservations">
+                <div class="collapse {{ request()->routeIs('admin.observations.*') ? 'show' : '' }}"
+                    id="sidebarObservations">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.observations.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.observations.index') && !request()->has('status') && !request()->has('view') ? 'text-primary' : '' }}">
                                 <span class="menu-text">All Observations</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.observations.index') }}?status=submitted"
+                                class="side-nav-link {{ request()->routeIs('admin.observations.index') && request()->get('status') == 'submitted' ? 'text-primary' : '' }}">
                                 <span class="menu-text">Submitted Observations</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
-                                <span class="menu-text">Observation Statistics</span>
+                            <a href="{{ route('admin.observations.index') }}?view=analytics"
+                                class="side-nav-link {{ request()->routeIs('admin.observations.index') && request()->get('view') == 'analytics' ? 'text-primary' : '' }}">
+                                <span class="menu-text">Observation Analytics</span>
                             </a>
                         </li>
                     </ul>
