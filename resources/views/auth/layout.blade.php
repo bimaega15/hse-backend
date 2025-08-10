@@ -29,11 +29,15 @@
 
     @yield('content')
 
+
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
     <!-- Vendor js -->
     <script src="{{ asset('admin/backend/dist') }}/assets/js/vendor.min.js"></script>
 
     <!-- App js -->
     <script src="{{ asset('admin/backend/dist') }}/assets/js/app.js"></script>
+
+    @stack('jsSection')
 
 </body>
 

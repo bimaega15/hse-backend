@@ -59,6 +59,11 @@ class User extends Authenticatable
         return $query->where('is_active', true);
     }
 
+    public function scopeRole($query, $role)
+    {
+        return $query->where('role', $role);
+    }
+
     // Helper methods for role checking
     public function isAdmin()
     {
@@ -73,5 +78,15 @@ class User extends Authenticatable
     public function isEmployee()
     {
         return $this->role === 'employee';
+    }
+
+    public function getRoleDisplayAttribute(): string
+    {
+        return match ($this->role) {
+            'admin' => 'Administrator',
+            'hse_staff' => 'HSE Staff',
+            'employee' => 'Employee',
+            default => 'Unknown'
+        };
     }
 }
