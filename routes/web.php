@@ -22,13 +22,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             switch ($user->role) {
                 case 'admin':
-                    return view('admin.dashboard');
+                    return app(DashboardController::class)->index();
                 case 'hse_staff':
                     return view('hse.dashboard');
                 case 'employee':
                     return view('employee.dashboard');
                 default:
-                    return view('admin.dashboard');
+                    return app(DashboardController::class)->index();
             }
         })->name('dashboard');
     });
@@ -36,9 +36,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 // Role-specific protected routes
 Route::middleware(['auth', 'role:admin'])->group(function () {
+    // Admin Dashboard Routes
     Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
-    // Tambahkan routes khusus admin disini
+    // Dashboard API endpoints
+    Route::prefix('admin/dashboard')->name('admin.dashboard.')->group(function () {
+        Route::get('/data', [DashboardController::class, 'getData'])->name('data');
+        Route::get('/recent-reports', [DashboardController::class, 'getRecentReports'])->name('recent-reports');
+        Route::get('/statistics', [DashboardController::class, 'getStatistics'])->name('statistics');
+    });
+
+    // Tambahkan routes khusus admin lainnya disini
     // Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users');
     // Route::get('/admin/settings', [SettingController::class, 'index'])->name('admin.settings');
 });
@@ -57,11 +65,8 @@ Route::middleware(['auth', 'role:employee,hse_staff,admin'])->group(function () 
     Route::get('/employee/dashboard', function () {
         return view('employee.dashboard');
     })->name('employee.dashboard');
-
-    // Tambahkan routes yang bisa diakses semua role disini
-    // Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
-    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 });
+
 
 // Default redirect
 Route::get('/', function () {
