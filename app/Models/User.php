@@ -49,8 +49,29 @@ class User extends Authenticatable
         return $query->where('role', 'hse_staff');
     }
 
+    public function scopeAdmins($query)
+    {
+        return $query->where('role', 'admin');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    // Helper methods for role checking
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+
+    public function isHseStaff()
+    {
+        return $this->role === 'hse_staff';
+    }
+
+    public function isEmployee()
+    {
+        return $this->role === 'employee';
     }
 }

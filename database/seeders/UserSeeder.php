@@ -11,6 +11,28 @@ class UserSeeder extends Seeder
 {
     public function run()
     {
+        // Create Admin User
+        User::create([
+            'name' => 'Super Admin',
+            'email' => 'admin@company.com',
+            'password' => Hash::make('admin123'),
+            'role' => 'admin',
+            'department' => 'Management',
+            'phone' => '08111000999',
+            'is_active' => true
+        ]);
+
+        // Create Second Admin
+        User::create([
+            'name' => 'System Administrator',
+            'email' => 'sysadmin@company.com',
+            'password' => Hash::make('admin123'),
+            'role' => 'admin',
+            'department' => 'Information Technology',
+            'phone' => '08222000888',
+            'is_active' => true
+        ]);
+
         // Create HSE Staff
         User::create([
             'name' => 'Jane HSE',
