@@ -126,7 +126,7 @@
             </li>
 
             <li class="side-nav-item">
-                <a href="#" class="side-nav-link">
+                <a href="{{ route('admin.banners.index') }}" class="side-nav-link">
                     <span class="menu-icon"><i data-lucide="image"></i></span>
                     <span class="menu-text"> Banners </span>
                 </a>

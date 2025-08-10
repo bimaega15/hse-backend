@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthenticationController;
+use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -67,6 +68,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::put('/{id}', [CategoryController::class, 'update'])->name('update');
         Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Banners Management Routes
+    Route::prefix('admin/banners')->name('admin.banners.')->group(function () {
+        Route::get('/', [BannerController::class, 'index'])->name('index');
+        Route::get('/data', [BannerController::class, 'getData'])->name('data');
+        Route::post('/', [BannerController::class, 'store'])->name('store');
+        Route::get('/{id}', [BannerController::class, 'show'])->name('show');
+        Route::put('/{id}', [BannerController::class, 'update'])->name('update');
+        Route::delete('/{id}', [BannerController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [BannerController::class, 'toggleStatus'])->name('toggle-status');
+        Route::post('/reorder', [BannerController::class, 'reorder'])->name('reorder');
     });
 
     // Tambahkan routes khusus admin lainnya disini

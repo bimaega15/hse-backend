@@ -1,4 +1,7 @@
 @extends('admin.layouts')
+
+@section('title', 'HSE Dashboard')
+
 @section('content')
     <div class="page-content">
         <div class="page-title-head d-flex align-items-center gap-2">
