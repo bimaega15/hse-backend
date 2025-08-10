@@ -105,21 +105,26 @@
             </li>
 
             <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#sidebarContributing" aria-expanded="false"
-                    aria-controls="sidebarContributing" class="side-nav-link">
+                <a data-bs-toggle="collapse" href="#sidebarContributing"
+                    aria-expanded="{{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarContributing"
+                    class="side-nav-link {{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="layers"></i></span>
                     <span class="menu-text"> Contributing Factors</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse" id="sidebarContributing">
+                <div class="collapse {{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') ? 'show' : '' }}"
+                    id="sidebarContributing">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.contributing.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.contributing.*') ? 'text-primary' : '' }}">
                                 <span class="menu-text">All Contributing Factors</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.actions.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.actions.*') ? 'text-primary' : '' }}">
                                 <span class="menu-text">Actions Management</span>
                             </a>
                         </li>
@@ -285,6 +290,21 @@
                 }
             }
         }
+
+        // Handle sidebar active states for contributing factors
+        if (currentPath.includes('/admin/contributing') || currentPath.includes('/admin/actions')) {
+            const contributingCollapse = document.getElementById('sidebarContributing');
+            const contributingToggle = document.querySelector('[href="#sidebarContributing"]');
+
+            if (contributingCollapse) {
+                contributingCollapse.classList.add('show');
+            }
+
+            if (contributingToggle) {
+                contributingToggle.classList.add('active');
+                contributingToggle.setAttribute('aria-expanded', 'true');
+            }
+        }
     });
 
     // Handle collapse state when clicking on role filter links
@@ -297,6 +317,17 @@
             if (usersByRoleCollapse) {
                 // Mark that we want this to stay open
                 sessionStorage.setItem('keepUsersByRoleOpen', 'true');
+            }
+        }
+
+        // Handle contributing factors section
+        if (target && target.getAttribute('href') && (target.getAttribute('href').includes(
+                'admin/contributing') ||
+                target.getAttribute('href').includes('admin/actions'))) {
+            // Ensure the collapse stays open when navigating between contributing sections
+            const contributingCollapse = document.getElementById('sidebarContributing');
+            if (contributingCollapse) {
+                sessionStorage.setItem('keepContributingOpen', 'true');
             }
         }
     });

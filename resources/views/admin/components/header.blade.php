@@ -126,7 +126,7 @@
                         @endif
                         <span class="d-lg-flex flex-column gap-1 d-none">
                             <span class="fw-semibold">{{ auth()->user()->name }}</span>
-                            <span class="fs-12 text-white">{{ auth()->user()->role_display }}</span>
+                            <span class="fs-12">{{ auth()->user()->role_display }}</span>
                         </span>
                         <i class="ri-arrow-down-s-line d-none d-lg-block align-middle ms-2"></i>
                     </a>
@@ -140,18 +140,6 @@
                         <a href="{{ route('admin.profile.index') }}" class="dropdown-item">
                             <i class="ri-account-circle-line me-1 fs-16 align-middle"></i>
                             <span class="align-middle">My Profile</span>
-                        </a>
-
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item">
-                            <i class="ri-settings-2-line me-1 fs-16 align-middle"></i>
-                            <span class="align-middle">Settings</span>
-                        </a>
-
-                        <!-- item-->
-                        <a href="javascript:void(0);" class="dropdown-item">
-                            <i class="ri-question-line me-1 fs-16 align-middle"></i>
-                            <span class="align-middle">Help & Support</span>
                         </a>
 
                         <div class="dropdown-divider"></div>

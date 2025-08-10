@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthenticationController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\ContributingController;
+use App\Http\Controllers\Admin\ActionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProfileController;
@@ -70,6 +72,29 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::put('/{id}', [CategoryController::class, 'update'])->name('update');
         Route::delete('/{id}', [CategoryController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/toggle-status', [CategoryController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Contributing Factors Management Routes
+    Route::prefix('admin/contributing')->name('admin.contributing.')->group(function () {
+        Route::get('/', [ContributingController::class, 'index'])->name('index');
+        Route::get('/data', [ContributingController::class, 'getData'])->name('data');
+        Route::post('/', [ContributingController::class, 'store'])->name('store');
+        Route::get('/{id}', [ContributingController::class, 'show'])->name('show');
+        Route::put('/{id}', [ContributingController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ContributingController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [ContributingController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Actions Management Routes
+    Route::prefix('admin/actions')->name('admin.actions.')->group(function () {
+        Route::get('/', [ActionController::class, 'index'])->name('index');
+        Route::get('/data', [ActionController::class, 'getData'])->name('data');
+        Route::post('/', [ActionController::class, 'store'])->name('store');
+        Route::get('/{id}', [ActionController::class, 'show'])->name('show');
+        Route::put('/{id}', [ActionController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ActionController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [ActionController::class, 'toggleStatus'])->name('toggle-status');
+        Route::get('/by-contributing/{contributingId}', [ActionController::class, 'getByContributing'])->name('by-contributing');
     });
 
     // Banners Management Routes

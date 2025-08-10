@@ -40,10 +40,10 @@ class AuthenticationController extends Controller
 
         // Cek kredensial
         $credentials = $request->only('email', 'password');
-        
+
         // Cek apakah user exists dan aktif
         $user = User::where('email', $credentials['email'])->first();
-        
+
         if (!$user) {
             return response()->json([
                 'success' => false,
@@ -61,12 +61,12 @@ class AuthenticationController extends Controller
         // Coba login
         if (Auth::attempt($credentials, $request->has('remember'))) {
             $request->session()->regenerate();
-            
+
             $user = Auth::user();
-            
+
             // Redirect berdasarkan role
             $redirectUrl = $this->getRedirectUrl($user->role);
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Login berhasil',
@@ -86,16 +86,13 @@ class AuthenticationController extends Controller
         ], 401);
     }
 
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Logout berhasil'
-        ]);
+        return redirect()->route('admin.login');
     }
 
     private function getRedirectUrl($role): string
