@@ -227,8 +227,9 @@
                         <div class="card-header d-flex flex-wrap align-items-center gap-2">
                             <h4 class="header-title me-auto">Recent HSE Reports</h4>
                             <div class="d-flex gap-2 justify-content-end text-end">
-                                <a href="javascript:void(0);" class="btn btn-sm btn-light">View All</a>
-                                <a href="javascript:void(0);" class="btn btn-sm btn-primary">New Report</a>
+                                <a href="{{ route('admin.reports.index') }}" class="btn btn-sm btn-light">View All</a>
+                                <a href="javascript:void(0);" class="btn btn-sm btn-primary" onclick="createReport()">New
+                                    Report</a>
                             </div>
                         </div>
 
@@ -237,146 +238,15 @@
                                 <table class="table table-custom table-centered table-sm table-nowrap table-hover mb-0">
                                     <thead class="bg-light">
                                         <tr>
-                                            <th>Reporter</th>
+                                            <th>Employee</th>
                                             <th>Category</th>
                                             <th>Severity</th>
                                             <th>Status</th>
                                             <th>Date</th>
-                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody id="recent-reports">
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-sm flex-shrink-0 me-2">
-                                                        <span class="avatar-title bg-primary-subtle rounded-circle">
-                                                            <i class="ri-user-line"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="fs-14 mt-1 mb-0">John Doe</h6>
-                                                        <small class="text-muted">Safety Officer</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info-subtle text-info">Near Miss</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning-subtle text-warning">Medium</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-success-subtle text-success">
-                                                    <i class="ri-check-line me-1"></i>Completed
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">2 hours ago</small>
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <a href="#"
-                                                        class="dropdown-toggle text-muted drop-arrow-none p-0"
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <i class="ri-more-2-fill"></i>
-                                                    </a>
-                                                    <div class="dropdown-menu dropdown-menu-end">
-                                                        <a href="javascript:void(0);" class="dropdown-item">View
-                                                            Details</a>
-                                                        <a href="javascript:void(0);" class="dropdown-item">Edit</a>
-                                                        <a href="javascript:void(0);" class="dropdown-item">Export</a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-sm flex-shrink-0 me-2">
-                                                        <span class="avatar-title bg-warning-subtle rounded-circle">
-                                                            <i class="ri-user-line"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="fs-14 mt-1 mb-0">Jane Smith</h6>
-                                                        <small class="text-muted">Production</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-danger-subtle text-danger">Accident</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-danger-subtle text-danger">Critical</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-info-subtle text-info">
-                                                    <i class="ri-play-line me-1"></i>In Progress
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">4 hours ago</small>
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <a href="#"
-                                                        class="dropdown-toggle text-muted drop-arrow-none p-0"
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <i class="ri-more-2-fill"></i>
-                                                    </a>
-                                                    <div class="dropdown-menu dropdown-menu-end">
-                                                        <a href="javascript:void(0);" class="dropdown-item">View
-                                                            Details</a>
-                                                        <a href="javascript:void(0);" class="dropdown-item">Assign</a>
-                                                        <a href="javascript:void(0);" class="dropdown-item">Priority</a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="avatar-sm flex-shrink-0 me-2">
-                                                        <span class="avatar-title bg-success-subtle rounded-circle">
-                                                            <i class="ri-user-line"></i>
-                                                        </span>
-                                                    </div>
-                                                    <div>
-                                                        <h6 class="fs-14 mt-1 mb-0">Mike Wilson</h6>
-                                                        <small class="text-muted">Maintenance</small>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning-subtle text-warning">Hazard</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning-subtle text-warning">Medium</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-warning-subtle text-warning">
-                                                    <i class="ri-time-line me-1"></i>Waiting
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <small class="text-muted">1 day ago</small>
-                                            </td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <a href="#"
-                                                        class="dropdown-toggle text-muted drop-arrow-none p-0"
-                                                        data-bs-toggle="dropdown" aria-expanded="false">
-                                                        <i class="ri-more-2-fill"></i>
-                                                    </a>
-                                                    <div class="dropdown-menu dropdown-menu-end">
-                                                        <a href="javascript:void(0);" class="dropdown-item">Review</a>
-                                                        <a href="javascript:void(0);" class="dropdown-item">Assign</a>
-                                                        <a href="javascript:void(0);" class="dropdown-item">Edit</a>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                        <!-- Data will be loaded via AJAX -->
                                     </tbody>
                                 </table>
                             </div>
@@ -386,194 +256,32 @@
 
                 <div class="col-xxl-6">
                     <div class="card">
-                        <div class="card-header d-flex flex-wrap align-items-center gap-2 border-bottom border-dashed">
-                            <h4 class="header-title me-auto">HSE Staff Activity</h4>
+                        <div class="card-header d-flex flex-wrap align-items-center gap-2">
+                            <h4 class="header-title me-auto">Recent Observations</h4>
                             <div class="d-flex gap-2 justify-content-end text-end">
-                                <a href="javascript:void(0);" class="btn btn-sm btn-primary">Manage Staff</a>
+                                <a href="{{ route('admin.observations.index') }}" class="btn btn-sm btn-light">View
+                                    All</a>
+                                <a href="javascript:void(0);" class="btn btn-sm btn-primary"
+                                    onclick="createObservation()">New Observation</a>
                             </div>
                         </div>
 
-                        <div class="card-body" data-simplebar style="height: 400px;">
-                            <div class="timeline-alt py-0">
-                                <div class="timeline-item">
-                                    <span class="bg-success-subtle text-success timeline-icon">
-                                        <i class="ri-check-line"></i>
-                                    </span>
-                                    <div class="timeline-item-info">
-                                        <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                                            Report Completed
-                                        </a>
-                                        <span class="mb-1">Sarah Johnson completed investigation for accident report
-                                            #HSE-2024-156</span>
-                                        <p class="mb-0 pb-3">
-                                            <small class="text-muted">15 minutes ago</small>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="timeline-item">
-                                    <span class="bg-info-subtle text-info timeline-icon">
-                                        <i class="ri-user-add-line"></i>
-                                    </span>
-                                    <div class="timeline-item-info">
-                                        <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                                            Report Assigned
-                                        </a>
-                                        <span class="mb-1">Critical incident report assigned to
-                                            <span class="fw-medium">David Chen (HSE Manager)</span>
-                                        </span>
-                                        <p class="mb-0 pb-3">
-                                            <small class="text-muted">1 hour ago</small>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="timeline-item">
-                                    <span class="bg-warning-subtle text-warning timeline-icon">
-                                        <i class="ri-alert-line"></i>
-                                    </span>
-                                    <div class="timeline-item-info">
-                                        <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                                            New Critical Incident
-                                        </a>
-                                        <span class="mb-1">Chemical spill reported in Sector B - immediate response
-                                            required</span>
-                                        <p class="mb-0 pb-3">
-                                            <small class="text-muted">2 hours ago</small>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="timeline-item">
-                                    <span class="bg-primary-subtle text-primary timeline-icon">
-                                        <i class="ri-file-text-line"></i>
-                                    </span>
-                                    <div class="timeline-item-info">
-                                        <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                                            Safety Audit Completed
-                                        </a>
-                                        <span class="mb-1">Monthly safety audit for Production Area completed with
-                                            <span class="fw-medium text-success">95% compliance</span>
-                                        </span>
-                                        <p class="mb-0 pb-3">
-                                            <small class="text-muted">4 hours ago</small>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="timeline-item">
-                                    <span class="bg-info-subtle text-info timeline-icon">
-                                        <i class="ri-graduation-cap-line"></i>
-                                    </span>
-                                    <div class="timeline-item-info">
-                                        <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                                            Training Session
-                                        </a>
-                                        <span class="mb-1">Safety training session conducted for 45 employees</span>
-                                        <p class="mb-0 pb-3">
-                                            <small class="text-muted">Yesterday</small>
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="timeline-item">
-                                    <span class="bg-success-subtle text-success timeline-icon">
-                                        <i class="ri-shield-check-line"></i>
-                                    </span>
-                                    <div class="timeline-item-info">
-                                        <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                                            Safety Milestone
-                                        </a>
-                                        <span class="mb-1">Achieved 100 days without workplace incidents</span>
-                                        <p class="mb-0 pb-2">
-                                            <small class="text-muted">2 days ago</small>
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Actions & Alerts -->
-            <div class="row">
-                <div class="col-xl-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="header-title">Quick Actions</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="d-grid gap-2">
-                                <a href="javascript:void(0);" class="btn btn-outline-primary">
-                                    <i class="ri-add-line me-1"></i> Create New Report
-                                </a>
-                                <a href="javascript:void(0);" class="btn btn-outline-info">
-                                    <i class="ri-eye-line me-1"></i> Review Pending Reports
-                                </a>
-                                <a href="javascript:void(0);" class="btn btn-outline-warning">
-                                    <i class="ri-user-settings-line me-1"></i> Manage HSE Staff
-                                </a>
-                                <a href="javascript:void(0);" class="btn btn-outline-success">
-                                    <i class="ri-file-chart-line me-1"></i> Generate Reports
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h4 class="header-title">System Alerts & Notifications</h4>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-danger border-0" role="alert">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3">
-                                        <span class="avatar-title bg-danger rounded-circle">
-                                            <i class="ri-error-warning-line fs-18"></i>
-                                        </span>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h5 class="alert-heading">Critical Incident Alert</h5>
-                                        <p class="mb-0">3 critical incidents require immediate attention. Review and
-                                            assign to HSE staff.</p>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-danger">Review Now</button>
-                                </div>
-                            </div>
-
-                            <div class="alert alert-warning border-0" role="alert">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3">
-                                        <span class="avatar-title bg-warning rounded-circle">
-                                            <i class="ri-time-line fs-18"></i>
-                                        </span>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h5 class="alert-heading">Overdue Reports</h5>
-                                        <p class="mb-0">5 reports are overdue for resolution. Follow up with assigned HSE
-                                            staff.</p>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-warning">View Details</button>
-                                </div>
-                            </div>
-
-                            <div class="alert alert-info border-0" role="alert">
-                                <div class="d-flex align-items-center">
-                                    <div class="avatar-sm me-3">
-                                        <span class="avatar-title bg-info rounded-circle">
-                                            <i class="ri-calendar-line fs-18"></i>
-                                        </span>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <h5 class="alert-heading">Scheduled Maintenance</h5>
-                                        <p class="mb-0">Safety equipment inspection due next week. Schedule maintenance
-                                            team.</p>
-                                    </div>
-                                    <button type="button" class="btn btn-sm btn-info">Schedule</button>
-                                </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-custom table-centered table-sm table-nowrap table-hover mb-0">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Observer</th>
+                                            <th>Type</th>
+                                            <th>Count</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent-observations">
+                                        <!-- Data will be loaded via AJAX -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -767,8 +475,8 @@
                         if (data.success) {
                             updateDashboardStats(data.data.statistics);
                             updateCharts(data.data.charts);
-                            updateSystemAlerts(data.data.alerts);
-                            updateRecentActivity(data.data.recent_activity);
+                            loadRecentReports();
+                            loadRecentObservations();
                         } else {
                             console.error('Failed to load dashboard data:', data.message);
                             showErrorNotification('Failed to load dashboard data');
@@ -778,70 +486,44 @@
                         console.error('Error loading dashboard data:', error);
                         showErrorNotification('Error loading dashboard data');
                     });
-
-                // Load recent reports separately
-                loadRecentReports();
-            }
-
-            // Fallback function untuk load sample data jika API belum ready
-            function loadSampleDashboardData() {
-                console.log('Loading sample dashboard data...');
-
-                const sampleStats = {
-                    total_reports: 125,
-                    pending_reports: 12,
-                    critical_incidents: 3,
-                    completion_rate: 89.5,
-                    in_progress_reports: 8,
-                    completed_reports: 105,
-                    avg_resolution_time: '2.5 days'
-                };
-
-                const sampleCharts = {
-                    severity_distribution: {
-                        critical: 15,
-                        high: 25,
-                        medium: 45,
-                        low: 35
-                    },
-                    monthly_trend: {
-                        completed: [31, 40, 28, 51, 42, 85, 77, 92, 68, 85, 105, 98],
-                        in_progress: [11, 22, 18, 31, 32, 25, 17, 22, 18, 25, 8, 12],
-                        waiting: [15, 11, 32, 18, 9, 24, 11, 18, 14, 21, 12, 15]
-                    }
-                };
-
-                updateDashboardStats(sampleStats);
-                updateCharts(sampleCharts);
-            }
-
-            function updateDashboardStats(stats) {
-                // Safely update elements if they exist
-                const updateElement = (id, value) => {
-                    const element = document.getElementById(id);
-                    if (element) {
-                        element.textContent = value;
-                    }
-                };
-
-                updateElement('total-reports', stats.total_reports || 0);
-                updateElement('pending-reports', stats.pending_reports || 0);
-                updateElement('critical-incidents', stats.critical_incidents || 0);
-                updateElement('completion-rate', (stats.completion_rate || 0) + '%');
-                updateElement('waiting-count', stats.pending_reports || 0);
-                updateElement('progress-count', stats.in_progress_reports || 0);
-                updateElement('completed-count', stats.completed_reports || 0);
-                updateElement('avg-resolution', stats.avg_resolution_time || 'N/A');
-
-                // Calculate high/critical vs low/medium
-                var highCritical = stats.critical_incidents || 0;
-                var lowMedium = (stats.total_reports || 0) - highCritical;
-                updateElement('high-critical', highCritical);
-                updateElement('low-medium', lowMedium);
             }
 
             function loadRecentReports() {
-                // Sample recent reports data
+                fetch('{{ route('admin.dashboard.recent-reports') }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateReportsTable(data.data);
+                        } else {
+                            console.error('Failed to load recent reports:', data.message);
+                            loadSampleReports();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading recent reports:', error);
+                        loadSampleReports();
+                    });
+            }
+
+            function loadRecentObservations() {
+                // Load recent observations from API
+                fetch('/admin/observations/recent')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateObservationsTable(data.data);
+                        } else {
+                            console.error('Failed to load recent observations:', data.message);
+                            loadSampleObservations();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading recent observations:', error);
+                        loadSampleObservations();
+                    });
+            }
+
+            function loadSampleReports() {
                 const sampleReports = [{
                         id: 1,
                         reporter: 'John Doe',
@@ -877,6 +559,67 @@
                 updateReportsTable(sampleReports);
             }
 
+            function loadSampleObservations() {
+                const sampleObservations = [{
+                        id: 1,
+                        observer: 'Alice Brown',
+                        department: 'HSE Team',
+                        type: 'At Risk',
+                        count: 3,
+                        status: 'Reviewed',
+                        date: '1 hour ago',
+                        avatarClass: 'bg-info-subtle'
+                    },
+                    {
+                        id: 2,
+                        observer: 'Bob Johnson',
+                        department: 'Production',
+                        type: 'Near Miss',
+                        count: 1,
+                        status: 'Submitted',
+                        date: '3 hours ago',
+                        avatarClass: 'bg-secondary-subtle'
+                    },
+                    {
+                        id: 3,
+                        observer: 'Carol Davis',
+                        department: 'Engineering',
+                        type: 'Risk Mgmt',
+                        count: 2,
+                        status: 'Draft',
+                        date: '6 hours ago',
+                        avatarClass: 'bg-primary-subtle'
+                    }
+                ];
+
+                updateObservationsTable(sampleObservations);
+            }
+
+            function updateDashboardStats(stats) {
+                // Safely update elements if they exist
+                const updateElement = (id, value) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.textContent = value;
+                    }
+                };
+
+                updateElement('total-reports', stats.total_reports || 0);
+                updateElement('pending-reports', stats.pending_reports || 0);
+                updateElement('critical-incidents', stats.critical_incidents || 0);
+                updateElement('completion-rate', (stats.completion_rate || 0) + '%');
+                updateElement('waiting-count', stats.pending_reports || 0);
+                updateElement('progress-count', stats.in_progress_reports || 0);
+                updateElement('completed-count', stats.completed_reports || 0);
+                updateElement('avg-resolution', stats.avg_resolution_time || 'N/A');
+
+                // Calculate high/critical vs low/medium
+                var highCritical = stats.critical_incidents || 0;
+                var lowMedium = (stats.total_reports || 0) - highCritical;
+                updateElement('high-critical', highCritical);
+                updateElement('low-medium', lowMedium);
+            }
+
             function updateCharts(chartsData) {
                 try {
                     // Update severity chart with real data
@@ -908,84 +651,6 @@
                 }
             }
 
-            function updateSystemAlerts(alerts) {
-                // Update system alerts section
-                var alertsContainer = document.querySelector('.card:has(.alert) .card-body');
-                if (alertsContainer && alerts && alerts.length > 0) {
-                    var alertsHtml = '';
-                    alerts.forEach(function(alert) {
-                        alertsHtml += `
-            <div class="alert alert-${alert.type} border-0" role="alert">
-                <div class="d-flex align-items-center">
-                    <div class="avatar-sm me-3">
-                        <span class="avatar-title bg-${alert.type} rounded-circle">
-                            <i class="${alert.icon} fs-18"></i>
-                        </span>
-                    </div>
-                    <div class="flex-grow-1">
-                        <h5 class="alert-heading">${alert.title}</h5>
-                        <p class="mb-0">${alert.message}</p>
-                    </div>
-                    <button type="button" class="btn btn-sm btn-${alert.type}">${alert.action}</button>
-                </div>
-            </div>
-        `;
-                    });
-                    alertsContainer.innerHTML = alertsHtml;
-                }
-            }
-
-            function updateRecentActivity(activities) {
-                // Update recent activity timeline
-                var timelineContainer = document.querySelector('.timeline-alt');
-                if (timelineContainer && activities && activities.length > 0) {
-                    var activitiesHtml = '';
-                    activities.forEach(function(activity) {
-                        var iconClass = activity.type === 'success' ? 'bg-success-subtle text-success' :
-                            activity.type === 'warning' ? 'bg-warning-subtle text-warning' :
-                            activity.type === 'info' ? 'bg-info-subtle text-info' :
-                            'bg-primary-subtle text-primary';
-
-                        activitiesHtml += `
-            <div class="timeline-item">
-                <span class="${iconClass} timeline-icon">
-                    <i class="${activity.icon}"></i>
-                </span>
-                <div class="timeline-item-info">
-                    <a href="javascript:void(0);" class="link-reset fw-semibold mb-1 d-block">
-                        ${activity.title}
-                    </a>
-                    <span class="mb-1">${activity.description}</span>
-                    <p class="mb-0 pb-3">
-                        <small class="text-muted">${activity.time}</small>
-                    </p>
-                </div>
-            </div>
-        `;
-                    });
-                    timelineContainer.innerHTML = activitiesHtml;
-                }
-            }
-
-            function showErrorNotification(message) {
-                // Simple error notification
-                var notification = document.createElement('div');
-                notification.className = 'alert alert-danger position-fixed top-0 end-0 m-3';
-                notification.style.zIndex = '9999';
-                notification.innerHTML = `
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        ${message}
-    `;
-                document.body.appendChild(notification);
-
-                // Auto remove after 5 seconds
-                setTimeout(function() {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 5000);
-            }
-
             function updateReportsTable(reports) {
                 var tbody = document.getElementById('recent-reports');
                 if (!tbody) return;
@@ -998,49 +663,81 @@
                     var categoryClass = getCategoryClass(report.category);
 
                     var row = `
-        <tr>
-            <td>
-                <div class="d-flex align-items-center">
-                    <div class="avatar-sm flex-shrink-0 me-2">
-                        <span class="avatar-title ${report.avatarClass} rounded-circle">
-                            <i class="ri-user-line"></i>
-                        </span>
-                    </div>
-                    <div>
-                        <h6 class="fs-14 mt-1 mb-0">${report.reporter}</h6>
-                        <small class="text-muted">${report.department}</small>
-                    </div>
-                </div>
-            </td>
-            <td>
-                <span class="badge ${categoryClass}">${report.category}</span>
-            </td>
-            <td>
-                <span class="badge ${severityClass}">${report.severity}</span>
-            </td>
-            <td>
-                <span class="badge ${statusClass}">
-                    ${getStatusIcon(report.status)}${report.status}
-                </span>
-            </td>
-            <td>
-                <small class="text-muted">${report.date}</small>
-            </td>
-            <td>
-                <div class="dropdown">
-                    <a href="#" class="dropdown-toggle text-muted drop-arrow-none p-0"
-                        data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="ri-more-2-fill"></i>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-end">
-                        <a href="javascript:void(0);" class="dropdown-item">View Details</a>
-                        <a href="javascript:void(0);" class="dropdown-item">Edit</a>
-                        <a href="javascript:void(0);" class="dropdown-item">Export</a>
-                    </div>
-                </div>
-            </td>
-        </tr>
-    `;
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm flex-shrink-0 me-2">
+                                        <span class="avatar-title ${report.avatarClass} rounded-circle">
+                                            <i class="ri-user-line"></i>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="fs-14 mt-1 mb-0">${report.reporter}</h6>
+                                        <small class="text-muted">${report.department}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge ${categoryClass}">${report.category}</span>
+                            </td>
+                            <td>
+                                <span class="badge ${severityClass}">${report.severity}</span>
+                            </td>
+                            <td>
+                                <span class="badge ${statusClass}">
+                                    ${getStatusIcon(report.status)}${report.status}
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">${report.date}</small>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            }
+
+            function updateObservationsTable(observations) {
+                var tbody = document.getElementById('recent-observations');
+                if (!tbody) return;
+
+                tbody.innerHTML = '';
+
+                observations.forEach(function(observation) {
+                    var statusClass = getObservationStatusClass(observation.status);
+                    var typeClass = getObservationTypeClass(observation.type);
+
+                    var row = `
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-sm flex-shrink-0 me-2">
+                                        <span class="avatar-title ${observation.avatarClass} rounded-circle">
+                                            <i class="ri-eye-line"></i>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h6 class="fs-14 mt-1 mb-0">${observation.observer}</h6>
+                                        <small class="text-muted">${observation.department}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge ${typeClass}">${observation.type}</span>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-primary">${observation.count}</span>
+                            </td>
+                            <td>
+                                <span class="badge ${statusClass}">
+                                    ${getObservationStatusIcon(observation.status)}${observation.status}
+                                </span>
+                            </td>
+                            <td>
+                                <small class="text-muted">${observation.date}</small>
+                            </td>
+                        </tr>
+                    `;
                     tbody.innerHTML += row;
                 });
             }
@@ -1086,6 +783,34 @@
                 }
             }
 
+            function getObservationStatusClass(status) {
+                switch (status) {
+                    case 'Reviewed':
+                        return 'bg-success-subtle text-success';
+                    case 'Submitted':
+                        return 'bg-warning-subtle text-warning';
+                    case 'Draft':
+                        return 'bg-secondary-subtle text-secondary';
+                    default:
+                        return 'bg-secondary-subtle text-secondary';
+                }
+            }
+
+            function getObservationTypeClass(type) {
+                switch (type) {
+                    case 'At Risk':
+                        return 'bg-danger-subtle text-danger';
+                    case 'Near Miss':
+                        return 'bg-warning-subtle text-warning';
+                    case 'Risk Mgmt':
+                        return 'bg-info-subtle text-info';
+                    case 'SIM K3':
+                        return 'bg-primary-subtle text-primary';
+                    default:
+                        return 'bg-secondary-subtle text-secondary';
+                }
+            }
+
             function getStatusIcon(status) {
                 switch (status) {
                     case 'Completed':
@@ -1099,6 +824,63 @@
                 }
             }
 
+            function getObservationStatusIcon(status) {
+                switch (status) {
+                    case 'Reviewed':
+                        return '<i class="ri-check-line me-1"></i>';
+                    case 'Submitted':
+                        return '<i class="ri-send-plane-line me-1"></i>';
+                    case 'Draft':
+                        return '<i class="ri-draft-line me-1"></i>';
+                    default:
+                        return '';
+                }
+            }
+
+            function showErrorNotification(message) {
+                // Simple error notification
+                var notification = document.createElement('div');
+                notification.className = 'alert alert-danger position-fixed top-0 end-0 m-3';
+                notification.style.zIndex = '9999';
+                notification.innerHTML = `
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    ${message}
+                `;
+                document.body.appendChild(notification);
+
+                // Auto remove after 5 seconds
+                setTimeout(function() {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 5000);
+            }
+
+            // Function untuk redirect ke halaman reports/observations
+            function createReport() {
+                window.location.href = '{{ route('admin.reports.index') }}';
+            }
+
+            function createObservation() {
+                window.location.href = '{{ route('admin.observations.index') }}';
+            }
+
+            function viewReport(id) {
+                window.location.href = `/admin/reports/${id}`;
+            }
+
+            function editReport(id) {
+                window.location.href = `/admin/reports/${id}/edit`;
+            }
+
+            function viewObservation(id) {
+                window.location.href = `/admin/observations/${id}`;
+            }
+
+            function editObservation(id) {
+                window.location.href = `/admin/observations/${id}/edit`;
+            }
+
             // Real-time updates simulation
             setInterval(function() {
                 // Simulate real-time updates to pending reports count
@@ -1109,6 +891,12 @@
                     pendingElement.textContent = newPending;
                 }
             }, 30000); // Update every 30 seconds
+
+            // Auto refresh recent data every 5 minutes
+            setInterval(function() {
+                loadRecentReports();
+                loadRecentObservations();
+            }, 300000); // 5 minutes
         </script>
     @endpush
 @endsection

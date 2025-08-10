@@ -418,4 +418,78 @@ class DashboardController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get recent observations for dashboard
+     */
+    public function getRecentObservations(): JsonResponse
+    {
+        try {
+            $recentObservations = Observation::with([
+                'user:id,name,department',
+                'details' => function ($query) {
+                    $query->select('observation_id', 'observation_type', 'severity')
+                        ->orderBy('created_at', 'desc')
+                        ->limit(1);
+                }
+            ])
+                ->latest()
+                ->limit(10)
+                ->get()
+                ->map(function ($observation) {
+                    // Get the primary observation type from details
+                    $primaryDetail = $observation->details->first();
+                    $observationType = 'Mixed';
+                    if ($primaryDetail) {
+                        $typeLabels = [
+                            'at_risk_behavior' => 'At Risk',
+                            'nearmiss_incident' => 'Near Miss',
+                            'informal_risk_mgmt' => 'Risk Mgmt',
+                            'sim_k3' => 'SIM K3'
+                        ];
+                        $observationType = $typeLabels[$primaryDetail->observation_type] ?? 'Unknown';
+                    }
+
+                    // Calculate total observations count
+                    $totalCount = ($observation->at_risk_behavior ?? 0) +
+                        ($observation->nearmiss_incident ?? 0) +
+                        ($observation->informal_risk_mgmt ?? 0) +
+                        ($observation->sim_k3 ?? 0);
+
+                    return [
+                        'id' => $observation->id,
+                        'observer' => $observation->user->name ?? 'Unknown',
+                        'department' => $observation->user->department ?? 'N/A',
+                        'type' => $observationType,
+                        'count' => $totalCount,
+                        'status' => ucfirst($observation->status),
+                        'date' => $observation->created_at->diffForHumans(),
+                        'avatarClass' => $this->getObservationAvatarClass($observation->status)
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'data' => $recentObservations
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load recent observations: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get avatar class based on observation status
+     */
+    private function getObservationAvatarClass(string $status): string
+    {
+        return match ($status) {
+            'reviewed' => 'bg-success-subtle',
+            'submitted' => 'bg-warning-subtle',
+            'draft' => 'bg-secondary-subtle',
+            default => 'bg-primary-subtle'
+        };
+    }
 }

@@ -45,14 +45,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 // Role-specific protected routes
 Route::middleware(['auth', 'role:admin'])->group(function () {
-    // Admin Dashboard Routes
-    Route::get('/admin/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
-    // Dashboard API endpoints
-    Route::prefix('admin/dashboard')->name('admin.dashboard.')->group(function () {
-        Route::get('/data', [DashboardController::class, 'getData'])->name('data');
-        Route::get('/recent-reports', [DashboardController::class, 'getRecentReports'])->name('recent-reports');
-        Route::get('/statistics', [DashboardController::class, 'getStatistics'])->name('statistics');
+    // Tambahkan route ini ke dalam group route admin dashboard
+    Route::prefix('admin')->name('admin.')->middleware(['auth'])->group(function () {
+        Route::prefix('dashboard')->name('dashboard.')->group(function () {
+            Route::get('/', [DashboardController::class, 'index'])->name('index');
+            Route::get('/data', [DashboardController::class, 'getData'])->name('data');
+            Route::get('/recent-reports', [DashboardController::class, 'getRecentReports'])->name('recent-reports');
+            Route::get('/recent-observations', [DashboardController::class, 'getRecentObservations'])->name('recent-observations'); // Route baru
+            Route::get('/statistics', [DashboardController::class, 'getStatistics'])->name('statistics');
+        });
     });
 
     // Profile Routes - Updated with all needed endpoints

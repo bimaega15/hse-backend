@@ -3,7 +3,7 @@
         <div class="d-flex align-items-center gap-2">
 
             <!-- Brand Logo -->
-            <a href="{{ route('admin.dashboard') }}" class="logo">
+            <a href="{{ route('admin.dashboard.index') }}" class="logo">
                 <span class="logo-light">
                     <span class="logo-lg"><img src="{{ asset('admin/backend/dist') }}/assets/images/logo.png"
                             alt="logo"></span>

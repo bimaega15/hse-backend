@@ -29,8 +29,8 @@
             <li class="side-nav-title">Navigation</li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.dashboard') }}"
-                    class="side-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <a href="{{ route('admin.dashboard.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.dashboard.index') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="airplay"></i></span>
                     <span class="menu-text"> Dashboard </span>
                 </a>
