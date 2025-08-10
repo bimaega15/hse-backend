@@ -47,9 +47,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/statistics', [DashboardController::class, 'getStatistics'])->name('statistics');
     });
 
-    // Dashboard API endpoints
+    // Profile Routes - Updated with all needed endpoints
     Route::prefix('admin/profile')->name('admin.profile.')->group(function () {
         Route::get('/', [ProfileController::class, 'index'])->name('index');
+        Route::post('/update', [ProfileController::class, 'updateProfile'])->name('update');
+        Route::post('/password', [ProfileController::class, 'updatePassword'])->name('password');
+        Route::post('/image/upload', [ProfileController::class, 'uploadProfileImage'])->name('image.upload');
+        Route::delete('/image', [ProfileController::class, 'deleteProfileImage'])->name('image.delete');
+        Route::get('/data', [ProfileController::class, 'getProfile'])->name('data');
     });
 
     // Tambahkan routes khusus admin lainnya disini
@@ -72,7 +77,6 @@ Route::middleware(['auth', 'role:employee,hse_staff,admin'])->group(function () 
         return view('employee.dashboard');
     })->name('employee.dashboard');
 });
-
 
 // Default redirect
 Route::get('/', function () {
