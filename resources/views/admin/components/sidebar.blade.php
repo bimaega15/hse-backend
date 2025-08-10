@@ -29,7 +29,8 @@
             <li class="side-nav-title">Navigation</li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.dashboard') }}" class="side-nav-link">
+                <a href="{{ route('admin.dashboard') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="airplay"></i></span>
                     <span class="menu-text"> Dashboard </span>
                 </a>
@@ -96,7 +97,8 @@
             <li class="side-nav-title">Master Data</li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.categories.index') }}" class="side-nav-link">
+                <a href="{{ route('admin.categories.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="tag"></i></span>
                     <span class="menu-text"> Categories </span>
                 </a>
@@ -126,7 +128,8 @@
             </li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.banners.index') }}" class="side-nav-link">
+                <a href="{{ route('admin.banners.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="image"></i></span>
                     <span class="menu-text"> Banners </span>
                 </a>
@@ -135,33 +138,40 @@
             <li class="side-nav-title">User Management</li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.users.index') }}" class="side-nav-link">
+                <a href="{{ route('admin.users.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.users.*') && !request()->has('role') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="users"></i></span>
                     <span class="menu-text"> All Users </span>
                 </a>
             </li>
 
             <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#sidebarUsersByRole" aria-expanded="false"
-                    aria-controls="sidebarUsersByRole" class="side-nav-link">
+                <a data-bs-toggle="collapse" href="#sidebarUsersByRole"
+                    aria-expanded="{{ request()->routeIs('admin.users.*') && request()->has('role') ? 'true' : 'false' }}"
+                    aria-controls="sidebarUsersByRole"
+                    class="side-nav-link {{ request()->routeIs('admin.users.*') && request()->has('role') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="user-check"></i></span>
                     <span class="menu-text"> Users by Role</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse" id="sidebarUsersByRole">
+                <div class="collapse {{ request()->routeIs('admin.users.*') && request()->has('role') ? 'show' : '' }}"
+                    id="sidebarUsersByRole">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
-                            <a href="{{ route('admin.users.index') }}?role=admin" class="side-nav-link">
+                            <a href="{{ route('admin.users.index') }}?role=admin"
+                                class="side-nav-link {{ request()->routeIs('admin.users.*') && request()->get('role') == 'admin' ? 'text-primary' : '' }}">
                                 <span class="menu-text">Administrators</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="{{ route('admin.users.index') }}?role=hse_staff" class="side-nav-link">
+                            <a href="{{ route('admin.users.index') }}?role=hse_staff"
+                                class="side-nav-link {{ request()->routeIs('admin.users.*') && request()->get('role') == 'hse_staff' ? 'text-primary' : '' }}">
                                 <span class="menu-text">HSE Staff</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="{{ route('admin.users.index') }}?role=employee" class="side-nav-link">
+                            <a href="{{ route('admin.users.index') }}?role=employee"
+                                class="side-nav-link {{ request()->routeIs('admin.users.*') && request()->get('role') == 'employee' ? 'text-primary' : '' }}">
                                 <span class="menu-text">Employees</span>
                             </a>
                         </li>
@@ -170,7 +180,8 @@
             </li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.profile.index') }}" class="side-nav-link">
+                <a href="{{ route('admin.profile.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.profile.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="user"></i></span>
                     <span class="menu-text"> Profile </span>
                 </a>
@@ -230,3 +241,69 @@
         <div class="clearfix"></div>
     </div>
 </div>
+
+{{-- Custom JavaScript for Sidebar Active State --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle sidebar active states for user management
+        const currentPath = window.location.pathname;
+        const currentParams = new URLSearchParams(window.location.search);
+
+        // Check if we're on users page
+        if (currentPath.includes('/admin/users')) {
+            // Get role parameter
+            const roleParam = currentParams.get('role');
+
+            if (roleParam) {
+                // We're on a filtered users page
+                // Ensure the collapse is shown
+                const usersByRoleCollapse = document.getElementById('sidebarUsersByRole');
+                const usersByRoleToggle = document.querySelector('[href="#sidebarUsersByRole"]');
+
+                if (usersByRoleCollapse) {
+                    usersByRoleCollapse.classList.add('show');
+                }
+
+                if (usersByRoleToggle) {
+                    usersByRoleToggle.classList.add('active');
+                    usersByRoleToggle.setAttribute('aria-expanded', 'true');
+                }
+
+                // Set active on specific role link
+                const roleLinks = {
+                    'admin': 'a[href*="role=admin"]',
+                    'hse_staff': 'a[href*="role=hse_staff"]',
+                    'employee': 'a[href*="role=employee"]'
+                };
+
+                if (roleLinks[roleParam]) {
+                    const activeLink = document.querySelector(roleLinks[roleParam]);
+                    if (activeLink) {
+                        activeLink.classList.add('active');
+                    }
+                }
+            } else {
+                // We're on the main users page (All Users)
+                const allUsersLink = document.querySelector('a[href="' + "{{ route('admin.users.index') }}" +
+                    '"]');
+                if (allUsersLink && !allUsersLink.getAttribute('href').includes('role=')) {
+                    allUsersLink.classList.add('active');
+                }
+            }
+        }
+    });
+
+    // Handle collapse state when clicking on role filter links
+    document.addEventListener('click', function(e) {
+        const target = e.target.closest('a');
+        if (target && target.getAttribute('href') && target.getAttribute('href').includes(
+                'admin/users?role=')) {
+            // Ensure the collapse stays open when navigating between role filters
+            const usersByRoleCollapse = document.getElementById('sidebarUsersByRole');
+            if (usersByRoleCollapse) {
+                // Mark that we want this to stay open
+                sessionStorage.setItem('keepUsersByRoleOpen', 'true');
+            }
+        }
+    });
+</script>
