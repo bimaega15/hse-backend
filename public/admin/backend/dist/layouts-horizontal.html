@@ -1,0 +1,1926 @@
+<!DOCTYPE html>
+<html lang="en" data-layout="topnav">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Horizontal Layout | Abstack - Responsive Bootstrap 5 Admin Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description" />
+    <meta content="Coderthemes" name="author" />
+
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.ico">
+
+    <!-- Vector Maps css -->
+    <link href="assets/vendor/jsvectormap/jsvectormap.min.css" rel="stylesheet" type="text/css">
+
+    <!-- Vendor css -->
+    <link href="assets/css/vendor.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- App css -->
+    <link href="assets/css/app.min.css" rel="stylesheet" type="text/css" id="app-style" />
+
+    <!-- Icons css -->
+    <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Theme Config Js -->
+    <script src="assets/js/config.js"></script>
+</head>
+
+<body>
+    <!-- Begin page -->
+    <div class="wrapper">
+
+        <!-- Topbar Start -->
+        <header class="app-topbar">
+            <div class="page-container topbar-menu">
+                <div class="d-flex align-items-center gap-2">
+
+                    <!-- Brand Logo -->
+                    <a href="index.html" class="logo">
+                        <span class="logo-light">
+                            <span class="logo-lg"><img src="assets/images/logo.png" alt="logo"></span>
+                            <span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo"></span>
+                        </span>
+
+                        <span class="logo-dark">
+                            <span class="logo-lg"><img src="assets/images/logo-dark.png" alt="dark logo"></span>
+                            <span class="logo-sm"><img src="assets/images/logo-sm.png" alt="small logo"></span>
+                        </span>
+                    </a>
+
+                    <!-- Sidebar Menu Toggle Button -->
+                    <button class="sidenav-toggle-button px-2">
+                        <i class="ri-menu-2-line fs-24"></i>
+                    </button>
+
+                    <!-- Horizontal Menu Toggle Button -->
+                    <button class="topnav-toggle-button px-2" data-bs-toggle="collapse" data-bs-target="#topnav-menu-content">
+                        <i class="ri-menu-2-line fs-24"></i>
+                    </button>
+
+                    <!-- Search for small devices -->
+                    <div class="topbar-item d-flex d-xl-none">
+                        <button class="topbar-link" data-bs-toggle="modal" data-bs-target="#searchModal" type="button">
+                            <i class="ri-search-line fs-22"></i>
+                        </button>
+                    </div>
+
+                    <!-- Button Trigger Search Modal -->
+                    <div class="topbar-search d-none d-xl-flex gap-2 me-2 align-items-center" data-bs-toggle="modal"
+                        data-bs-target="#searchModal" type="button">
+                        <i class="ri-search-line fs-18"></i>
+                        <span class="me-2">Search something..</span>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+
+
+
+                    <!-- Language Dropdown -->
+                    <div class="topbar-item">
+                        <div class="dropdown">
+                            <button class="topbar-link" data-bs-toggle="dropdown" data-bs-offset="0,32" type="button"
+                                aria-haspopup="false" aria-expanded="false">
+                                <img src="assets/images/flags/us.svg" alt="user-image" class="w-100 rounded" height="18"
+                                    id="selected-language-image">
+                            </button>
+
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item" data-translator-lang="en">
+                                    <img src="assets/images/flags/us.svg" alt="user-image" class="me-1 rounded" height="18"
+                                        data-translator-image> <span class="align-middle">English</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item" data-translator-lang="hi">
+                                    <img src="assets/images/flags/in.svg" alt="user-image" class="me-1 rounded" height="18"
+                                        data-translator-image> <span class="align-middle">Hindi</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <img src="assets/images/flags/de.svg" alt="user-image" class="me-1 rounded" height="18">
+                                    <span class="align-middle">German</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <img src="assets/images/flags/it.svg" alt="user-image" class="me-1 rounded" height="18">
+                                    <span class="align-middle">Italian</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <img src="assets/images/flags/es.svg" alt="user-image" class="me-1 rounded" height="18">
+                                    <span class="align-middle">Spanish</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <img src="assets/images/flags/ru.svg" alt="user-image" class="me-1 rounded" height="18">
+                                    <span class="align-middle">Russian</span>
+                                </a>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Dropdown -->
+                    <div class="topbar-item">
+                        <div class="dropdown">
+                            <button class="topbar-link dropdown-toggle drop-arrow-none" data-bs-toggle="dropdown"
+                                data-bs-offset="0,25" type="button" data-bs-auto-close="outside" aria-haspopup="false"
+                                aria-expanded="false">
+                                <i data-lucide="bell" class="animate-ring fs-22"></i>
+                                <span class="noti-icon-badge"></span>
+                            </button>
+
+                            <div class="dropdown-menu p-0 dropdown-menu-end dropdown-menu-lg" style="min-height: 300px;">
+                                <div class="p-2 border-bottom position-relative border-dashed">
+                                    <div class="row align-items-center">
+                                        <div class="col">
+                                            <h6 class="m-0 fs-16 fw-semibold"> Notifications</h6>
+                                        </div>
+                                        <div class="col-auto">
+                                            <div class="dropdown">
+                                                <a href="#" class="dropdown-toggle drop-arrow-none link-dark"
+                                                    data-bs-toggle="dropdown" data-bs-offset="0,15" aria-expanded="false">
+                                                    <i class="ri-settings-2-line fs-22 align-middle"></i>
+                                                </a>
+                                                <div class="dropdown-menu dropdown-menu-end">
+                                                    <!-- item-->
+                                                    <a href="javascript:void(0);" class="dropdown-item">Mark as Read</a>
+                                                    <!-- item-->
+                                                    <a href="javascript:void(0);" class="dropdown-item">Delete All</a>
+                                                    <!-- item-->
+                                                    <a href="javascript:void(0);" class="dropdown-item">Do not Disturb</a>
+                                                    <!-- item-->
+                                                    <a href="javascript:void(0);" class="dropdown-item">Other Settings</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="position-relative rounded-0" style="max-height: 300px;" data-simplebar>
+                                    <!-- item-->
+                                    <div class="dropdown-item notification-item py-2 text-wrap active" id="notification-1">
+                                        <span class="d-flex align-items-center">
+                                            <span class="me-3 position-relative flex-shrink-0">
+                                                <img src="assets/images/users/avatar-2.jpg" class="avatar-lg rounded-circle"
+                                                    alt="" />
+                                            </span>
+                                            <span class="flex-grow-1 text-muted">
+                                                <span class="fw-medium text-body">Glady Haid</span> commented on <span
+                                                    class="fw-medium text-body">Abstack admin status</span>
+                                                <br />
+                                                <span class="fs-12">25m ago</span>
+                                            </span>
+                                            <span class="notification-item-close">
+                                                <button type="button"
+                                                    class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                                    data-dismissible="#notification-1">
+                                                    <i class="ri-close-line fs-16"></i>
+                                                </button>
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <!-- item-->
+                                    <div class="dropdown-item notification-item py-2 text-wrap" id="notification-2">
+                                        <span class="d-flex align-items-center">
+                                            <span class="me-3 position-relative flex-shrink-0">
+                                                <img src="assets/images/users/avatar-4.jpg" class="avatar-lg rounded-circle"
+                                                    alt="" />
+                                            </span>
+                                            <span class="flex-grow-1 text-muted">
+                                                <span class="fw-medium text-body">Tommy Berry</span> donated <span
+                                                    class="text-success">$100.00</span> for <span
+                                                    class="fw-medium text-body">Carbon removal program</span>
+                                                <br />
+                                                <span class="fs-12">58m ago</span>
+                                            </span>
+                                            <span class="notification-item-close">
+                                                <button type="button"
+                                                    class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                                    data-dismissible="#notification-2">
+                                                    <i class="ri-close-line fs-16"></i>
+                                                </button>
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <!-- item-->
+                                    <div class="dropdown-item notification-item py-2 text-wrap" id="notification-3">
+                                        <span class="d-flex align-items-center">
+                                            <div class="avatar-lg flex-shrink-0 me-3">
+                                                <span class="avatar-title bg-success-subtle text-success rounded-circle fs-22">
+                                                    <iconify-icon icon="solar:wallet-money-bold-duotone"></iconify-icon>
+                                                </span>
+                                            </div>
+                                            <span class="flex-grow-1 text-muted">
+                                                You withdraw a <span class="fw-medium text-body">$500</span> by <span
+                                                    class="fw-medium text-body">New York ATM</span>
+                                                <br />
+                                                <span class="fs-12">2h ago</span>
+                                            </span>
+                                            <span class="notification-item-close">
+                                                <button type="button"
+                                                    class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                                    data-dismissible="#notification-3">
+                                                    <i class="ri-close-line fs-16"></i>
+                                                </button>
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <!-- item-->
+                                    <div class="dropdown-item notification-item py-2 text-wrap" id="notification-4">
+                                        <span class="d-flex align-items-center">
+                                            <span class="me-3 position-relative flex-shrink-0">
+                                                <img src="assets/images/users/avatar-7.jpg" class="avatar-lg rounded-circle"
+                                                    alt="" />
+                                            </span>
+                                            <span class="flex-grow-1 text-muted">
+                                                <span class="fw-medium text-body">Richard Allen</span> followed you in <span
+                                                    class="fw-medium text-body">Facebook</span>
+                                                <br />
+                                                <span class="fs-12">3h ago</span>
+                                            </span>
+                                            <span class="notification-item-close">
+                                                <button type="button"
+                                                    class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                                    data-dismissible="#notification-4">
+                                                    <i class="ri-close-line fs-16"></i>
+                                                </button>
+                                            </span>
+                                        </span>
+                                    </div>
+
+                                    <!-- item-->
+                                    <div class="dropdown-item notification-item py-2 text-wrap" id="notification-5">
+                                        <span class="d-flex align-items-center">
+                                            <span class="me-3 position-relative flex-shrink-0">
+                                                <img src="assets/images/users/avatar-10.jpg" class="avatar-lg rounded-circle"
+                                                    alt="" />
+                                            </span>
+                                            <span class="flex-grow-1 text-muted">
+                                                <span class="fw-medium text-body">Victor Collier</span> liked you recent photo
+                                                in <span class="fw-medium text-body">Instagram</span>
+                                                <br />
+                                                <span class="fs-12">10h ago</span>
+                                            </span>
+                                            <span class="notification-item-close">
+                                                <button type="button"
+                                                    class="btn btn-ghost-danger rounded-circle btn-sm btn-icon"
+                                                    data-dismissible="#notification-5">
+                                                    <i class="ri-close-line fs-16"></i>
+                                                </button>
+                                            </span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- All-->
+                                <a href="javascript:void(0);"
+                                    class="dropdown-item position-absolute bottom-0 notification-item text-center text-reset text-decoration-underline fw-bold notify-item border-top border-light py-2">
+                                    View All
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Apps Dropdown -->
+                    <div class="topbar-item d-none d-sm-flex">
+                        <div class="dropdown">
+                            <button class="topbar-link dropdown-toggle drop-arrow-none" data-bs-toggle="dropdown"
+                                data-bs-offset="0,25" type="button" aria-haspopup="false" aria-expanded="false">
+                                <i data-lucide="layout-grid" class="fs-22"></i>
+                            </button>
+                            <div class="dropdown-menu dropdown-menu-end dropdown-menu-lg p-0">
+                                <div class="p-2">
+                                    <div class="row g-0">
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/slack.svg" alt="slack">
+                                                <span>Slack</span>
+                                            </a>
+                                        </div>
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/gitlab.svg" alt="Github">
+                                                <span>Gitlab</span>
+                                            </a>
+                                        </div>
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/dribbble.svg" alt="dribbble">
+                                                <span>Dribbble</span>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-0">
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/bitbucket.svg" alt="bitbucket">
+                                                <span>Bitbucket</span>
+                                            </a>
+                                        </div>
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/dropbox.svg" alt="dropbox">
+                                                <span>Dropbox</span>
+                                            </a>
+                                        </div>
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/google-cloud.svg" alt="G Suite">
+                                                <span>G Cloud</span>
+                                            </a>
+                                        </div>
+                                    </div> <!-- end row-->
+
+                                    <div class="row g-0">
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/aws.svg" alt="bitbucket">
+                                                <span>AWS</span>
+                                            </a>
+                                        </div>
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/digital-ocean.svg" alt="dropbox">
+                                                <span>Server</span>
+                                            </a>
+                                        </div>
+                                        <div class="col">
+                                            <a class="dropdown-icon-item" href="#">
+                                                <img src="assets/images/brands/bootstrap.svg" alt="G Suite">
+                                                <span>Bootstrap</span>
+                                            </a>
+                                        </div>
+                                    </div> <!-- end row-->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Button Trigger Customizer Offcanvas -->
+                    <div class="topbar-item d-none d-sm-flex">
+                        <button class="topbar-link" data-bs-toggle="offcanvas" data-bs-target="#theme-settings-offcanvas"
+                            type="button">
+                            <i data-lucide="settings" class="fs-22"></i>
+                        </button>
+                    </div>
+
+                    <!-- Light/Dark Mode Button -->
+                    <div class="topbar-item d-none d-sm-flex">
+                        <button class="topbar-link" id="light-dark-mode" type="button">
+                            <i data-lucide="moon" class="light-mode-icon fs-22"></i>
+                            <i data-lucide="sun" class="dark-mode-icon fs-22"></i>
+                        </button>
+                    </div>
+
+                    <!-- User Dropdown -->
+                    <div class="topbar-item nav-user">
+                        <div class="dropdown">
+                            <a class="topbar-link dropdown-toggle drop-arrow-none px-2" data-bs-toggle="dropdown"
+                                data-bs-offset="0,25" type="button" aria-haspopup="false" aria-expanded="false">
+                                <img src="assets/images/users/avatar-3.jpg" width="32" class="rounded-circle me-lg-2 d-flex"
+                                    alt="user-image">
+                                <span class="d-lg-flex flex-column gap-1 d-none">
+                                    <span class="fw-semibold">Samuel</span>
+                                </span>
+                                <i class="ri-arrow-down-s-line d-none d-lg-block align-middle ms-2"></i>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end">
+                                <!-- item-->
+                                <div class="dropdown-header noti-title">
+                                    <h6 class="text-overflow m-0">Welcome !</h6>
+                                </div>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <i class="ri-account-circle-line me-1 fs-16 align-middle"></i>
+                                    <span class="align-middle">My Account</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <i class="ri-wallet-3-line me-1 fs-16 align-middle"></i>
+                                    <span class="align-middle">Wallet : <span class="fw-semibold">$89.25k</span></span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <i class="ri-settings-2-line me-1 fs-16 align-middle"></i>
+                                    <span class="align-middle">Settings</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <i class="ri-question-line me-1 fs-16 align-middle"></i>
+                                    <span class="align-middle">Support</span>
+                                </a>
+
+                                <div class="dropdown-divider"></div>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item">
+                                    <i class="ri-lock-line me-1 fs-16 align-middle"></i>
+                                    <span class="align-middle">Lock Screen</span>
+                                </a>
+
+                                <!-- item-->
+                                <a href="javascript:void(0);" class="dropdown-item fw-semibold text-danger">
+                                    <i class="ri-logout-box-line me-1 fs-16 align-middle"></i>
+                                    <span class="align-middle">Sign Out</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <!-- Topbar End -->
+
+        <!-- Search Modal -->
+        <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content bg-transparent">
+                    <form>
+                        <div class="card mb-1">
+                            <div class="px-3 py-2 d-flex flex-row align-items-center" id="top-search">
+                                <i class="ri-search-line fs-22"></i>
+                                <input type="search" class="form-control border-0" id="search-modal-input"
+                                    placeholder="Search for actions, people,">
+                                <button type="submit" class="btn p-0" data-bs-dismiss="modal" aria-label="Close">[esc]</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horizontal Menu Start -->
+        <header class="topnav">
+            <nav class="navbar navbar-expand-lg">
+                <nav class="page-container">
+                    <div class="collapse navbar-collapse" id="topnav-menu-content">
+                        <ul class="navbar-nav">
+                            <li class="nav-item dropdown hover-dropdown">
+                                <a class="nav-link dropdown-toggle drop-arrow-none" href="index.html">
+                                    <span class="menu-icon"><i class="ri-airplay-line"></i></span>
+                                    <span class="menu-text"> Dashboards </span>
+                                </a>
+                            </li>
+
+                            <li class="nav-item dropdown hover-dropdown">
+                                <a class="nav-link dropdown-toggle drop-arrow-none" href="#" id="topnav-apps" role="button"
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="menu-icon"><i class="ri-apps-line"></i></span>
+                                    <span class="menu-text">Apps</span>
+                                    <div class="menu-arrow"></div>
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="topnav-apps">
+                                    <a href="apps-calendar.html" class="dropdown-item">Calendar</a>
+                                    <a href="apps-email.html" class="dropdown-item">Email</a>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-tasks"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Invoice
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-tasks">
+                                            <a href="apps-invoices.html" class="dropdown-item">Invoices</a>
+                                            <a href="apps-invoice-details.html" class="dropdown-item">View Invoice</a>
+                                            <a href="apps-invoice-create.html" class="dropdown-item">Create Invoice</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown hover-dropdown">
+                                <a class="nav-link dropdown-toggle drop-arrow-none" href="#" id="topnav-pages" role="button"
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="menu-icon"><i class="ri-file-text-line"></i></span>
+                                    <span class="menu-text">Pages</span>
+                                    <div class="menu-arrow"></div>
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="topnav-pages">
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-auth"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Authentication <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-auth">
+                                            <a href="auth-login.html" class="dropdown-item">Login</a>
+                                            <a href="auth-register.html" class="dropdown-item">Register</a>
+                                            <a href="auth-logout.html" class="dropdown-item">Logout</a>
+                                            <a href="auth-recoverpw.html" class="dropdown-item">Recover Password</a>
+                                            <a href="auth-createpw.html" class="dropdown-item">Create Password</a>
+                                            <a href="auth-lock-screen.html" class="dropdown-item">Lock Screen</a>
+                                            <a href="auth-confirm-mail.html" class="dropdown-item">Confirm Mail</a>
+                                            <a href="auth-login-pin.html" class="dropdown-item">Login with PIN</a>
+                                            <a href="auth-2fa.html" class="dropdown-item">2FA</a>
+                                            <a href="auth-account-deactivation.html" class="dropdown-item">Account
+                                                Deactivation</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-error"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Error <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-error">
+                                            <a href="error-401.html" class="dropdown-item">401 Unauthorized</a>
+                                            <a href="error-400.html" class="dropdown-item">400 Bad Request</a>
+                                            <a href="error-403.html" class="dropdown-item">403 Forbidden</a>
+                                            <a href="error-404.html" class="dropdown-item">404 Not Found</a>
+                                            <a href="error-500.html" class="dropdown-item">500 Internal Server</a>
+                                            <a href="error-service-unavailable.html" class="dropdown-item">Service
+                                                Unavailable</a>
+                                            <a href="error-404-alt.html" class="dropdown-item">Error 404 Alt</a>
+                                        </div>
+                                    </div>
+                                    <a href="pages-starter.html" class="dropdown-item">Starter Page</a>
+                                    <a href="pages-faq.html" class="dropdown-item">FAQ</a>
+                                    <a href="pages-pricing.html" class="dropdown-item">Pricing</a>
+                                    <a href="pages-maintenance.html" class="dropdown-item">Maintenance</a>
+                                    <a href="pages-timeline.html" class="dropdown-item">Timeline</a>
+                                    <a href="pages-terms-conditions.html" class="dropdown-item">Terms & Conditions</a>
+                                    <a href="pages-search-results.html" class="dropdown-item">Search Results</a>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown hover-dropdown">
+                                <a class="nav-link dropdown-toggle drop-arrow-none" href="#" id="topnav-components"
+                                    role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="menu-icon"><i class="ri-box-3-line"></i></span>
+                                    <span class="menu-text">Components</span>
+                                    <div class="menu-arrow"></div>
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="topnav-components">
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-ui-kit"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Base UI 1
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-ui-kit">
+                                            <a href="ui-accordions.html" class="dropdown-item">Accordions</a>
+                                            <a href="ui-alerts.html" class="dropdown-item">Alerts</a>
+                                            <a href="ui-avatars.html" class="dropdown-item">Avatars</a>
+                                            <a href="ui-badges.html" class="dropdown-item">Badges</a>
+                                            <a href="ui-breadcrumb.html" class="dropdown-item">Breadcrumb</a>
+                                            <a href="ui-buttons.html" class="dropdown-item">Buttons</a>
+                                            <a href="ui-cards.html" class="dropdown-item">Cards</a>
+                                            <a href="ui-carousel.html" class="dropdown-item">Carousel</a>
+                                            <a href="ui-dropdowns.html" class="dropdown-item">Dropdowns</a>
+                                            <a href="ui-embed-video.html" class="dropdown-item">Embed Video</a>
+                                            <a href="ui-grid.html" class="dropdown-item">Grid</a>
+                                            <a href="ui-list-group.html" class="dropdown-item">List Group</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-ui-kit2"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Base UI 2
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-ui-kit2">
+                                            <a href="ui-modals.html" class="dropdown-item">Modals</a>
+                                            <a href="ui-notifications.html" class="dropdown-item">Notifications</a>
+                                            <a href="ui-offcanvas.html" class="dropdown-item">Offcanvas</a>
+                                            <a href="ui-placeholders.html" class="dropdown-item">Placeholders</a>
+                                            <a href="ui-pagination.html" class="dropdown-item">Pagination</a>
+                                            <a href="ui-popovers.html" class="dropdown-item">Popovers</a>
+                                            <a href="ui-progress.html" class="dropdown-item">Progress</a>
+                                            <a href="ui-ribbons.html" class="dropdown-item">Ribbons</a>
+                                            <a href="ui-spinners.html" class="dropdown-item">Spinners</a>
+                                            <a href="ui-tabs.html" class="dropdown-item">Tabs</a>
+                                            <a href="ui-tooltips.html" class="dropdown-item">Tooltips</a>
+                                            <a href="ui-links.html" class="dropdown-item">Links</a>
+                                            <a href="ui-typography.html" class="dropdown-item">Typography</a>
+                                            <a href="ui-utilities.html" class="dropdown-item">Utilities</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#"
+                                            id="topnav-extended-ui" role="button" data-bs-toggle="dropdown" aria-haspopup="true"
+                                            aria-expanded="false">
+                                            Extended UI
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-extended-ui">
+                                            <a href="extended-dragula.html" class="dropdown-item">Dragula</a>
+                                            <a href="extended-sweetalerts.html" class="dropdown-item">Sweet Alerts</a>
+                                            <a href="extended-ratings.html" class="dropdown-item">Ratings</a>
+                                            <a href="extended-scrollbar.html" class="dropdown-item">Scrollbar</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-forms"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Forms
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-forms">
+                                            <a href="form-elements.html" class="dropdown-item">Basic Elements</a>
+                                            <a href="form-inputmask.html" class="dropdown-item">Inputmask</a>
+                                            <a href="form-picker.html" class="dropdown-item">Picker</a>
+                                            <a href="form-select.html" class="dropdown-item">Select</a>
+                                            <a href="form-range-slider.html" class="dropdown-item">Range Slider</a>
+                                            <a href="form-validation.html" class="dropdown-item">Validation</a>
+                                            <a href="form-wizard.html" class="dropdown-item">Wizard</a>
+                                            <a href="form-fileuploads.html" class="dropdown-item">File Uploads</a>
+                                            <a href="form-editors.html" class="dropdown-item">Editors</a>
+                                            <a href="form-layouts.html" class="dropdown-item">Layouts</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-charts"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Charts
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu dropdown-menu-lg" aria-labelledby="topnav-charts">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <a href="charts-apex-area.html" class="dropdown-item">Area</a>
+                                                    <a href="charts-apex-bar.html" class="dropdown-item">Bar</a>
+                                                    <a href="charts-apex-bubble.html" class="dropdown-item">Bubble</a>
+                                                    <a href="charts-apex-candlestick.html" class="dropdown-item">Candlestick</a>
+                                                    <a href="charts-apex-column.html" class="dropdown-item">Column</a>
+                                                    <a href="charts-apex-heatmap.html" class="dropdown-item">Heatmap</a>
+                                                    <a href="charts-apex-line.html" class="dropdown-item">Line</a>
+                                                    <a href="charts-apex-mixed.html" class="dropdown-item">Mixed</a>
+                                                    <a href="charts-apex-timeline.html" class="dropdown-item">Timeline</a>
+                                                    <a href="charts-apex-boxplot.html" class="dropdown-item">Boxplot</a>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <a href="charts-apex-treemap.html" class="dropdown-item">Treemap</a>
+                                                    <a href="charts-apex-pie.html" class="dropdown-item">Pie</a>
+                                                    <a href="charts-apex-radar.html" class="dropdown-item">Radar</a>
+                                                    <a href="charts-apex-radialbar.html" class="dropdown-item">RadialBar</a>
+                                                    <a href="charts-apex-scatter.html" class="dropdown-item">Scatter</a>
+                                                    <a href="charts-apex-polar-area.html" class="dropdown-item">Polar Area</a>
+                                                    <a href="charts-apex-sparklines.html" class="dropdown-item">Sparklines</a>
+                                                    <a href="charts-apex-slope.html" class="dropdown-item">Slope</a>
+                                                    <a href="charts-apex-funnel.html" class="dropdown-item">Funnel</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-tables"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Tables
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-tables">
+                                            <a href="tables-basic.html" class="dropdown-item">Basic Tables</a>
+                                            <a href="tables-gridjs.html" class="dropdown-item">Gridjs Tables</a>
+                                            <a href=".tables-datatable.html" class="dropdown-item">Datatable Tables</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-icons"
+                                            role="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            Icons
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-icons">
+                                            <a href="icons-remix.html" class="dropdown-item">Remix Icons</a>
+                                            <a href="icons-lucide.html" class="dropdown-item">Lucide Icons</a>
+                                            <a href="icons-solar.html" class="dropdown-item">Solar Design</a>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hover-dropdown">
+                                        <a class="dropdown-item dropdown-toggle drop-arrow-none" href="#" id="topnav-maps"
+                                            role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            Maps
+                                            <div class="menu-arrow"></div>
+                                        </a>
+                                        <div class="dropdown-menu" aria-labelledby="topnav-maps">
+                                            <a href="maps-google.html" class="dropdown-item">Google Maps</a>
+                                            <a href="maps-vector.html" class="dropdown-item">Vector Maps</a>
+                                            <a href="maps-leaflet.html" class="dropdown-item">Leaflet Maps</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+
+                            <li class="nav-item dropdown hover-dropdown">
+                                <a class="nav-link dropdown-toggle drop-arrow-none" href="#" id="topnav-layouts" role="button"
+                                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="menu-icon"><i class="ri-layout-line"></i></span>
+                                    <span class="menu-text">Layouts</span>
+                                    <div class="menu-arrow"></div>
+                                </a>
+                                <div class="dropdown-menu" aria-labelledby="topnav-layouts">
+                                    <a href="index.html" class="dropdown-item" target="_blank">Vertical</a>
+                                    <a href="layouts-horizontal.html" class="dropdown-item" target="_blank">Horizontal</a>
+                                    <a href="layouts-full.html" class="dropdown-item" target="_blank">Full</a>
+                                    <a href="layouts-fullscreen.html" class="dropdown-item" target="_blank">Fullscreen</a>
+                                    <a href="layouts-hover.html" class="dropdown-item" target="_blank">Hover Menu</a>
+                                    <a href="layouts-compact.html" class="dropdown-item" target="_blank">Compact Menu</a>
+                                    <a href="layouts-icon-view.html" class="dropdown-item" target="_blank">Icon View</a>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </nav>
+            </nav>
+        </header>
+        <!-- Horizontal Menu End -->
+
+        <!-- ============================================================== -->
+        <!-- Start Page Content here -->
+        <!-- ============================================================== -->
+
+        <div class="page-content">
+
+            <div class="page-container">
+
+                
+                <div class="page-title-head d-flex align-items-center gap-2">
+                    <div class="flex-grow-1">
+                        <h4 class="fs-18 fw-bold mb-0">Horizontal</h4>
+                    </div>
+
+                    <div class="text-end">
+                        <ol class="breadcrumb m-0 py-0 fs-13">
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">Abstack</a></li>
+                            
+                            <li class="breadcrumb-item"><a href="javascript: void(0);">Layout</a></li>
+                            
+                            <li class="breadcrumb-item active">Horizontal</li>
+                        </ol>
+                    </div>
+                </div>
+                
+
+                
+
+                <div class="row row-cols-xxl-4 row-cols-md-2 row-cols-1">
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-2 justify-content-between">
+                                    <div>
+                                        <h5 class="text-muted fs-13 fw-bold text-uppercase" title="Revenue">
+                                            Total Revenue</h5>
+                                        <h3 class="mt-2 mb-1 fw-bold">$1.25M</h3>
+                                        <p class="mb-0 text-muted">
+                                            <span class="text-success me-1"><i class="ri-arrow-up-line"></i>
+                                                15.34%</span>
+                                            <span class="text-nowrap">Since last month</span>
+                                        </p>
+                                    </div>
+                                    <div class="avatar-lg flex-shrink-0">
+                                        <span class="avatar-title bg-success-subtle text-success rounded fs-28">
+                                            <iconify-icon icon="solar:wallet-bold-duotone"></iconify-icon>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="apex-charts" id="chart-revenue"></div>
+                        </div>
+                    </div><!-- end col -->
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-2 justify-content-between">
+                                    <div>
+                                        <h5 class="text-muted fs-13 fw-bold text-uppercase" title="Products Sold">
+                                            Products Sold</h5>
+                                        <h3 class="mt-2 mb-1 fw-bold">48.7k</h3>
+                                        <p class="mb-0 text-muted">
+                                            <span class="text-success me-1"><i class="ri-arrow-up-line"></i>
+                                                10.12%</span>
+                                            <span class="text-nowrap">Since last month</span>
+                                        </p>
+                                    </div>
+                                    <div class="avatar-lg flex-shrink-0">
+                                        <span class="avatar-title bg-info-subtle text-info rounded fs-28">
+                                            <iconify-icon icon="solar:cart-bold-duotone"></iconify-icon>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="apex-charts" id="chart-products"></div>
+                        </div>
+                    </div><!-- end col -->
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-2 justify-content-between">
+                                    <div>
+                                        <h5 class="text-muted fs-13 fw-bold text-uppercase" title="New Customers">
+                                            New Customers</h5>
+                                        <h3 class="mt-2 mb-1 fw-bold">1.2k</h3>
+                                        <p class="mb-0 text-muted">
+                                            <span class="text-danger me-1"><i class="ri-arrow-down-line"></i>
+                                                5.47%</span>
+                                            <span class="text-nowrap">Since last month</span>
+                                        </p>
+                                    </div>
+                                    <div class="avatar-lg flex-shrink-0">
+                                        <span class="avatar-title bg-warning-subtle text-warning rounded fs-28">
+                                            <iconify-icon icon="solar:user-bold-duotone"></iconify-icon>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="apex-charts" id="chart-customers"></div>
+                        </div>
+                    </div><!-- end col -->
+
+                    <div class="col">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="d-flex align-items-start gap-2 justify-content-between">
+                                    <div>
+                                        <h5 class="text-muted fs-13 fw-bold text-uppercase" title="Profit Margin">
+                                            Profit Margin</h5>
+                                        <h3 class="mt-2 mb-1 fw-bold">38.5%</h3>
+                                        <p class="mb-0 text-muted">
+                                            <span class="text-success me-1"><i class="ri-arrow-up-line"></i>
+                                                8.21%</span>
+                                            <span class="text-nowrap">Since last month</span>
+                                        </p>
+                                    </div>
+                                    <div class="avatar-lg flex-shrink-0">
+                                        <span class="avatar-title bg-primary-subtle text-primary rounded fs-28">
+                                            <iconify-icon icon="solar:graph-up-bold-duotone"></iconify-icon>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="apex-charts" id="chart-profit"></div>
+                        </div>
+                    </div><!-- end col -->
+                </div><!-- end row -->
+
+                <div class="row">
+                    <div class="col-xl-7">
+                        <div class="card">
+                            <div class="d-flex card-header justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="header-title">Statistics</h4>
+                                </div>
+                                <div class="dropdown">
+                                    <a href="#" class="dropdown-toggle drop-arrow-none card-drop"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ri-more-2-fill fs-18"></i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-end">
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Sales Report</a>
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Export Report</a>
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Profit</a>
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Action</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-body px-0 pt-0">
+                                <div class="bg-light bg-opacity-50">
+                                    <div class="row text-center">
+                                        <div class="col-md-3 col-6">
+                                            <p class="text-muted mt-3 mb-1">Monthly Income</p>
+                                            <h4 class="mb-3">
+                                                <span data-lucide="arrow-down-left" class="text-success me-1"></span>
+                                                <span>$35,200</span>
+                                            </h4>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <p class="text-muted mt-3 mb-1">Monthly Expenses</p>
+                                            <h4 class="mb-3">
+                                                <span data-lucide="arrow-up-right" class="text-danger me-1"></span>
+                                                <span>$18,900</span>
+                                            </h4>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <p class="text-muted mt-3 mb-1">Invested Capital</p>
+                                            <h4 class="mb-3">
+                                                <span data-lucide="bar-chart" class="me-1"></span>
+                                                <span>$5,200</span>
+                                            </h4>
+                                        </div>
+                                        <div class="col-md-3 col-6">
+                                            <p class="text-muted mt-3 mb-1">Available Savings</p>
+                                            <h4 class="mb-3">
+                                                <span data-lucide="landmark" class="me-1"></span>
+                                                <span>$8,100</span>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div dir="ltr" class="px-1 mt-2">
+                                    <div id="revenue-chart" class="apex-charts" data-colors="#02c0ce,#777edd"></div>
+                                </div>
+                            </div>
+                        </div> <!-- end card-->
+                    </div> <!-- end col-->
+
+                    <div class="col-xl-5">
+                        <div class="card">
+                            <div class="d-flex card-header justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="header-title">Total Revenue</h4>
+                                </div>
+                                <div class="dropdown">
+                                    <a href="#" class="dropdown-toggle drop-arrow-none card-drop"
+                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ri-more-2-fill fs-18"></i>
+                                    </a>
+                                    <div class="dropdown-menu dropdown-menu-end">
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Sales Report</a>
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Export Report</a>
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Profit</a>
+                                        <!-- item-->
+                                        <a href="javascript:void(0);" class="dropdown-item">Action</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-body px-0 pt-0">
+                                <div class="border-top border-bottom border-light border-dashed">
+                                    <div class="row text-center align-items-center">
+                                        <div class="col-md-4">
+                                            <p class="text-muted mt-3 mb-1">Revenue</p>
+                                            <h4 class="mb-3">
+                                                <span class="ri-arrow-left-down-box-line text-success me-1"></span>
+                                                <span>$29.5k</span>
+                                            </h4>
+                                        </div>
+                                        <div class="col-md-4 border-start border-light border-dashed">
+                                            <p class="text-muted mt-3 mb-1">Expenses</p>
+                                            <h4 class="mb-3">
+                                                <span class="ri-arrow-left-up-box-line text-danger me-1"></span>
+                                                <span>$15.07k</span>
+                                            </h4>
+                                        </div>
+                                        <div class="col-md-4 border-start border-end border-light border-dashed">
+                                            <p class="text-muted mt-3 mb-1">Investment</p>
+                                            <h4 class="mb-3">
+                                                <span class="ri-bar-chart-line me-1"></span>
+                                                <span>$3.6k</span>
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div dir="ltr" class="px-2">
+                                    <div id="statistics-chart" class="apex-charts" data-colors="#0acf97,#45bbe0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <!-- end card-->
+                    </div> <!-- end col-->
+                </div> <!-- end row-->
+
+                <div class="row">
+                    <div class="col-xxl-4">
+                        <div class="card">
+                            <div class="card-header d-flex flex-wrap align-items-center gap-2">
+                                <h4 class="header-title me-auto">Recent New Users</h4>
+
+                                <div class="d-flex gap-2 justify-content-end text-end">
+                                    <a href="javascript:void(0);" class="btn btn-sm btn-light">Import <i
+                                            class="ri-download-line ms-1"></i></a>
+                                    <a href="javascript:void(0);" class="btn btn-sm btn-primary">Export <i
+                                            class="ri-reset-right-line ms-1"></i></a>
+                                </div>
+                            </div>
+
+                            <div class="card-body p-0">
+                                <div class="bg-light bg-opacity-50 py-1 text-center">
+                                    <p class="m-0"><b>895k</b> Active users out of <span class="fw-medium">965k</span>
+                                    </p>
+                                </div>
+
+                                <div class="table-responsive">
+                                    <table
+                                        class="table table-custom table-centered table-sm table-nowrap table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-md flex-shrink-0 me-2">
+                                                            <span class="avatar-title bg-primary-subtle rounded-circle">
+                                                                <img src="assets/images/users/avatar-1.jpg" alt=""
+                                                                    height="26" class="rounded-circle">
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fs-14 mt-1">John Doe</h5>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal">Administrator</h5>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal"><i
+                                                            class="ri-circle-fill fs-12 text-success"></i> Active
+                                                    </h5>
+                                                </td>
+                                                <td style="width: 30px;">
+                                                    <div class="dropdown">
+                                                        <a href="#"
+                                                            class="dropdown-toggle text-muted drop-arrow-none card-drop p-0"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="ri-more-2-fill"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-end">
+                                                            <a href="javascript:void(0);" class="dropdown-item">View
+                                                                Profile</a>
+                                                            <a href="javascript:void(0);"
+                                                                class="dropdown-item">Deactivate</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-md flex-shrink-0 me-2">
+                                                            <span class="avatar-title bg-info-subtle rounded-circle">
+                                                                <img src="assets/images/users/avatar-2.jpg" alt=""
+                                                                    height="26" class="rounded-circle">
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fs-14 mt-1">Jane Smith</h5>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal">Editor</h5>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal"><i
+                                                            class="ri-circle-fill fs-12 text-warning"></i> Pending
+                                                    </h5>
+                                                </td>
+                                                <td style="width: 30px;">
+                                                    <div class="dropdown">
+                                                        <a href="#"
+                                                            class="dropdown-toggle text-muted drop-arrow-none card-drop p-0"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="ri-more-2-fill"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-end">
+                                                            <a href="javascript:void(0);" class="dropdown-item">View
+                                                                Profile</a>
+                                                            <a href="javascript:void(0);"
+                                                                class="dropdown-item">Activate</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-md flex-shrink-0 me-2">
+                                                            <span
+                                                                class="avatar-title bg-secondary-subtle rounded-circle">
+                                                                <img src="assets/images/users/avatar-3.jpg" alt=""
+                                                                    height="26" class="rounded-circle">
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fs-14 mt-1">Michael Brown</h5>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal">Viewer</h5>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal"><i
+                                                            class="ri-circle-fill fs-12 text-danger"></i> Inactive
+                                                    </h5>
+                                                </td>
+                                                <td style="width: 30px;">
+                                                    <div class="dropdown">
+                                                        <a href="#"
+                                                            class="dropdown-toggle text-muted drop-arrow-none card-drop p-0"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="ri-more-2-fill"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-end">
+                                                            <a href="javascript:void(0);"
+                                                                class="dropdown-item">Activate</a>
+                                                            <a href="javascript:void(0);"
+                                                                class="dropdown-item">Delete</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-md flex-shrink-0 me-2">
+                                                            <span class="avatar-title bg-warning-subtle rounded-circle">
+                                                                <img src="assets/images/users/avatar-4.jpg" alt=""
+                                                                    height="26" class="rounded-circle">
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fs-14 mt-1">Emily Davis</h5>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal">Manager</h5>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal"><i
+                                                            class="ri-circle-fill fs-12 text-success"></i> Active
+                                                    </h5>
+                                                </td>
+                                                <td style="width: 30px;">
+                                                    <div class="dropdown">
+                                                        <a href="#"
+                                                            class="dropdown-toggle text-muted drop-arrow-none card-drop p-0"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="ri-more-2-fill"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-end">
+                                                            <a href="javascript:void(0);" class="dropdown-item">View
+                                                                Profile</a>
+                                                            <a href="javascript:void(0);"
+                                                                class="dropdown-item">Deactivate</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-md flex-shrink-0 me-2">
+                                                            <span class="avatar-title bg-danger-subtle rounded-circle">
+                                                                <img src="assets/images/users/avatar-5.jpg" alt=""
+                                                                    height="26" class="rounded-circle">
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <h5 class="fs-14 mt-1">Robert Taylor</h5>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal">Support</h5>
+                                                </td>
+                                                <td>
+                                                    <h5 class="fs-14 mt-1 fw-normal"><i
+                                                            class="ri-circle-fill fs-12 text-warning"></i> Pending
+                                                    </h5>
+                                                </td>
+                                                <td style="width: 30px;">
+                                                    <div class="dropdown">
+                                                        <a href="#"
+                                                            class="dropdown-toggle text-muted drop-arrow-none card-drop p-0"
+                                                            data-bs-toggle="dropdown" aria-expanded="false">
+                                                            <i class="ri-more-2-fill"></i>
+                                                        </a>
+                                                        <div class="dropdown-menu dropdown-menu-end">
+                                                            <a href="javascript:void(0);" class="dropdown-item">View
+                                                                Profile</a>
+                                                            <a href="javascript:void(0);"
+                                                                class="dropdown-item">Activate</a>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div> <!-- end table-responsive-->
+
+                            </div> <!-- end card-body-->
+
+                            <div class="card-footer">
+                                <div class="align-items-center justify-content-between row text-center text-sm-start">
+                                    <div class="col-sm">
+                                        <div class="text-muted">
+                                            Showing <span class="fw-semibold">5</span> of <span
+                                                class="fw-semibold">2596</span> Users
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-auto mt-3 mt-sm-0">
+                                        <ul
+                                            class="pagination pagination-boxed pagination-sm mb-0 justify-content-center">
+                                            <li class="page-item disabled">
+                                                <a href="#" class="page-link"><i class="ri-arrow-left-s-line"></i></a>
+                                            </li>
+                                            <li class="page-item active">
+                                                <a href="#" class="page-link">1</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a href="#" class="page-link">2</a>
+                                            </li>
+                                            <li class="page-item">
+                                                <a href="#" class="page-link"><i class="ri-arrow-right-s-line"></i></a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div> <!-- -->
+                            </div>
+                        </div> <!-- end card-->
+                    </div> <!-- end col-->
+
+                    <div class="col-xxl-4">
+                        <div class="card">
+                            <div
+                                class="d-flex card-header justify-content-between align-items-center border-bottom border-dashed">
+                                <h4 class="header-title">Transactions</h4>
+                                <a href="javascript:void(0);" class="btn btn-sm btn-light">Add New <i
+                                        class="ri-add-line ms-1"></i></a>
+                            </div>
+                            <div class="card-body" data-simplebar style="height: 400px;">
+                                <div class="timeline-alt py-0">
+                                    <div class="timeline-item">
+                                        <span class="bg-info-subtle text-info timeline-icon">
+                                            <i data-lucide="shopping-bag"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">You sold an item</a>
+                                            <span class="mb-1">Paul Burgess just purchased “My - Admin
+                                                Dashboard”!</span>
+                                            <p class="mb-0 pb-3">
+                                                <small class="text-muted">5 minutes ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <span class="bg-primary-subtle text-primary timeline-icon">
+                                            <i data-lucide="rocket"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">Product on the Theme
+                                                Market</a>
+                                            <span class="mb-1">Reviewer added
+                                                <span class="fw-medium">Admin Dashboard</span>
+                                            </span>
+                                            <p class="mb-0 pb-3">
+                                                <small class="text-muted">30 minutes ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <span class="bg-info-subtle text-info timeline-icon">
+                                            <i data-lucide="message-circle"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">Robert Delaney</a>
+                                            <span class="mb-1">Send you message
+                                                <span class="fw-medium">"Are you there?"</span>
+                                            </span>
+                                            <p class="mb-0 pb-3">
+                                                <small class="text-muted">2 hours ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <span class="bg-primary-subtle text-primary timeline-icon">
+                                            <i data-lucide="image"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">Audrey Tobey</a>
+                                            <span class="mb-1">Uploaded a photo
+                                                <span class="fw-medium">"Error.jpg"</span>
+                                            </span>
+                                            <p class="mb-0 pb-3">
+                                                <small class="text-muted">14 hours ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <span class="bg-info-subtle text-info timeline-icon">
+                                            <i data-lucide="shopping-bag"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">You sold an item</a>
+                                            <span class="mb-1">Paul Burgess just purchased “My - Admin
+                                                Dashboard”!</span>
+                                            <p class="mb-0 pb-3">
+                                                <small class="text-muted">16 hours ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <span class="bg-primary-subtle text-primary timeline-icon">
+                                            <i data-lucide="rocket"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">Product on the Bootstrap
+                                                Market</a>
+                                            <span class="mb-1">Reviewer added
+                                                <span class="fw-medium">Admin Dashboard</span>
+                                            </span>
+                                            <p class="mb-0 pb-3">
+                                                <small class="text-muted">22 hours ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div class="timeline-item">
+                                        <span class="bg-info-subtle text-info timeline-icon">
+                                            <i data-lucide="message-circle"></i>
+                                        </span>
+                                        <div class="timeline-item-info">
+                                            <a href="javascript:void(0);"
+                                                class="link-reset fw-semibold mb-1 d-block">Robert Delaney</a>
+                                            <span class="mb-1">Send you message
+                                                <span class="fw-medium">"Are you there?"</span>
+                                            </span>
+                                            <p class="mb-0 pb-2">
+                                                <small class="text-muted">2 days ago</small>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> <!-- end card-->
+                    </div> <!-- end col-->
+
+                    <div class="col-xxl-4">
+                        <div class="card">
+                            <div
+                                class="card-header d-flex flex-wrap align-items-center gap-2 border-bottom border-dashed">
+                                <h4 class="header-title me-auto">Transactions Uses</h4>
+
+                                <div class="d-flex gap-2 justify-content-end text-end">
+                                    <a href="javascript:void(0);" class="btn btn-sm btn-primary">Refresh <i
+                                            class="ri-reset-right-line ms-1"></i></a>
+                                </div>
+                            </div>
+                            <div data-simplebar style="height: 400px;">
+                                <ul class="list-unstyled transaction-list mb-0">
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">Advertising</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">07/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-up" class="fs-20 text-danger"></i>
+                                        <span class="tran-text">Support licence</span>
+                                        <span class="text-danger tran-price">-$965</span>
+                                        <span class="text-muted ms-auto">07/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">Extended licence</span>
+                                        <span class="text-success tran-price">+$830</span>
+                                        <span class="text-muted ms-auto">07/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">Advertising</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">05/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-up" class="fs-20 text-danger"></i>
+                                        <span class="tran-text">New plugins added</span>
+                                        <span class="text-danger tran-price">-$452</span>
+                                        <span class="text-muted ms-auto">05/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">Google Inc.</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">04/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-up" class="fs-20 text-danger"></i>
+                                        <span class="tran-text">Facebook Ad</span>
+                                        <span class="text-danger tran-price">-$364</span>
+                                        <span class="text-muted ms-auto">03/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">New sale</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">03/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">Advertising</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">29/08/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-up" class="fs-20 text-danger"></i>
+                                        <span class="tran-text">Support licence</span>
+                                        <span class="text-danger tran-price">-$854</span>
+                                        <span class="text-muted ms-auto">27/08/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">Google Inc.</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">04/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-up" class="fs-20 text-danger"></i>
+                                        <span class="tran-text">Facebook Ad</span>
+                                        <span class="text-danger tran-price">-$364</span>
+                                        <span class="text-muted ms-auto">03/09/2017</span>
+                                    </li>
+                                    <li class="px-3 py-2 d-flex align-items-center">
+                                        <i data-lucide="arrow-big-down" class="fs-20 text-success"></i>
+                                        <span class="tran-text">New sale</span>
+                                        <span class="text-success tran-price">+$230</span>
+                                        <span class="text-muted ms-auto">03/09/2017</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div> <!-- end card-->
+                    </div> <!-- end col-->
+                </div> <!-- end row-->
+
+            </div> <!-- container -->
+
+            <!-- Footer Start -->
+            <footer class="footer">
+                <div class="page-container">
+                    <div class="row">
+                        <div class="col-md-6 text-center text-md-start">
+                            <script>document.write(new Date().getFullYear())</script> © Abstack - By <span class="fw-bold text-decoration-underline text-uppercase text-reset fs-12">Coderthemes</span>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="text-md-end footer-links d-none d-md-block">
+                                <a href="javascript: void(0);">About</a>
+                                <a href="javascript: void(0);">Support</a>
+                                <a href="javascript: void(0);">Contact Us</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            <!-- end Footer -->
+
+        </div>
+
+        <!-- ============================================================== -->
+        <!-- End Page content -->
+        <!-- ============================================================== -->
+
+    </div>
+    <!-- END wrapper -->
+
+    <!-- Theme Settings -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="theme-settings-offcanvas">
+        <div class="d-flex align-items-center gap-2 px-3 py-3 offcanvas-header border-bottom border-dashed">
+            <h5 class="flex-grow-1 mb-0">Theme Settings</h5>
+
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+
+        <div class="offcanvas-body p-0 h-100" data-simplebar>
+            <div class="p-3 border-bottom border-dashed">
+                <h5 class="mb-3 fs-16 fw-bold">Color Scheme</h5>
+
+                <div class="row">
+                    <div class="col-4">
+                        <div class="form-check card-radio">
+                            <input class="form-check-input" type="radio" name="data-bs-theme" id="layout-color-light"
+                                value="light">
+                            <label class="form-check-label p-3 w-100 d-flex justify-content-center align-items-center"
+                                for="layout-color-light">
+                                <iconify-icon icon="solar:sun-bold-duotone" class="fs-32 text-muted"></iconify-icon>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Light</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check card-radio">
+                            <input class="form-check-input" type="radio" name="data-bs-theme" id="layout-color-dark"
+                                value="dark">
+                            <label class="form-check-label p-3 w-100 d-flex justify-content-center align-items-center"
+                                for="layout-color-dark">
+                                <iconify-icon icon="solar:cloud-sun-2-bold-duotone" class="fs-32 text-muted"></iconify-icon>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Dark</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 border-bottom border-dashed">
+                <h5 class="mb-3 fs-16 fw-bold">Topbar Color</h5>
+
+                <div class="row">
+                    <div class="col-3 darkMode">
+                        <div class="form-check card-radio">
+                            <input class="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-light"
+                                value="light">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="topbar-color-light">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle bg-white"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Light</h5>
+                    </div>
+
+                    <div class="col-3">
+                        <div class="form-check card-radio">
+                            <input class="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-dark"
+                                value="dark">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="topbar-color-dark">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle"
+                                        style="background-color: #313a46;"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Dark</h5>
+                    </div>
+
+                    <div class="col-3">
+                        <div class="form-check card-radio">
+                            <input class="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-brand"
+                                value="brand">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="topbar-color-brand">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle bg-primary"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Brand</h5>
+                    </div>
+
+                    <div class="col-3">
+                        <div class="form-check card-radio">
+                            <input class="form-check-input" type="radio" name="data-topbar-color" id="topbar-color-gradient"
+                                value="gradient">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="topbar-color-gradient">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle"
+                                        style="background: linear-gradient(to top,#5d6dc3,#3c86d8);"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Gradient</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 border-bottom border-dashed">
+                <h5 class="mb-3 fs-16 fw-bold">Menu Color</h5>
+
+                <div class="row">
+                    <div class="col-3 darkMode">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-menu-color" id="sidenav-color-light"
+                                value="light">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="sidenav-color-light">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle bg-white"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Light</h5>
+                    </div>
+
+                    <div class="col-3">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-menu-color" id="sidenav-color-dark"
+                                value="dark">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="sidenav-color-dark">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle"
+                                        style="background-color: #313a46;"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Dark</h5>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-menu-color" id="sidenav-color-brand"
+                                value="brand">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="sidenav-color-brand">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle bg-primary"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Brand</h5>
+                    </div>
+                    <div class="col-3">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-menu-color" id="sidenav-color-gradient"
+                                value="gradient">
+                            <label class="form-check-label p-0 avatar-lg w-100 bg-light" for="sidenav-color-gradient">
+                                <span class="d-flex align-items-center justify-content-center h-100">
+                                    <span class="p-2 d-inline-flex shadow rounded-circle"
+                                        style="background: linear-gradient(to top,#5d6dc3,#3c86d8);"></span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Gradient</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 .border-bottom .border-dashed">
+                <h5 class="mb-3 fs-16 fw-bold">Sidebar Size</h5>
+
+                <div class="row">
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size" id="sidenav-size-default"
+                                value="default">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-default">
+                                <span class="d-flex h-100">
+                                    <span class="flex-shrink-0">
+                                        <span class="bg-light d-flex h-100 border-end  flex-column p-1 px-2">
+                                            <span class="d-block p-1 bg-dark-subtle rounded mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                        </span>
+                                    </span>
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Default</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size" id="sidenav-size-compact"
+                                value="compact">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-compact">
+                                <span class="d-flex h-100">
+                                    <span class="flex-shrink-0">
+                                        <span class="bg-light d-flex h-100 border-end  flex-column p-1">
+                                            <span class="d-block p-1 bg-dark-subtle rounded mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                        </span>
+                                    </span>
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Compact</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size" id="sidenav-size-small"
+                                value="condensed">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-small">
+                                <span class="d-flex h-100">
+                                    <span class="flex-shrink-0">
+                                        <span class="bg-light d-flex h-100 border-end flex-column" style="padding: 2px;">
+                                            <span class="d-block p-1 bg-dark-subtle rounded mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                        </span>
+                                    </span>
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Condensed</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size"
+                                id="sidenav-size-small-hover" value="sm-hover">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-small-hover">
+                                <span class="d-flex h-100">
+                                    <span class="flex-shrink-0">
+                                        <span class="bg-light d-flex h-100 border-end flex-column" style="padding: 2px;">
+                                            <span class="d-block p-1 bg-dark-subtle rounded mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                        </span>
+                                    </span>
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Hover View</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size"
+                                id="sidenav-size-small-hover-active" value="sm-hover-active">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-small-hover-active">
+                                <span class="d-flex h-100">
+                                    <span class="flex-shrink-0">
+                                        <span class="bg-light d-flex h-100 border-end flex-column" style="padding: 2px;">
+                                            <span class="d-block p-1 bg-dark-subtle rounded mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                            <span
+                                                class="d-block border border-3 border-secondary border-opacity-25 rounded w-100 mb-1"></span>
+                                        </span>
+                                    </span>
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Hover Active</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size" id="sidenav-size-full"
+                                value="full">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-full">
+                                <span class="d-flex h-100">
+                                    <span class="flex-shrink-0">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="d-block p-1 bg-dark-subtle mb-1"></span>
+                                        </span>
+                                    </span>
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Full Layout</h5>
+                    </div>
+
+                    <div class="col-4">
+                        <div class="form-check sidebar-setting card-radio">
+                            <input class="form-check-input" type="radio" name="data-sidenav-size"
+                                id="sidenav-size-fullscreen" value="fullscreen">
+                            <label class="form-check-label p-0 avatar-xl w-100" for="sidenav-size-fullscreen">
+                                <span class="d-flex h-100">
+                                    <span class="flex-grow-1">
+                                        <span class="d-flex h-100 flex-column">
+                                            <span class="bg-light d-block p-1"></span>
+                                        </span>
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+                        <h5 class="fs-14 text-center text-muted mt-2">Hidden</h5>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 border-bottom border-dashed d-none">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fs-16 fw-bold mb-0">Container Width</h5>
+
+                    <div class="btn-group radio" role="group">
+                        <input type="radio" class="btn-check" name="data-container-position" id="container-width-fixed"
+                            value="fixed">
+                        <label class="btn btn-sm btn-soft-primary w-sm" for="container-width-fixed">Full</label>
+
+                        <input type="radio" class="btn-check" name="data-container-position" id="container-width-scrollable"
+                            value="scrollable">
+                        <label class="btn btn-sm btn-soft-primary w-sm ms-0" for="container-width-scrollable">Boxed</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-3 border-bottom border-dashed d-none">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="fs-16 fw-bold mb-0">Layout Position</h5>
+
+                    <div class="btn-group radio" role="group">
+                        <input type="radio" class="btn-check" name="data-layout-position" id="layout-position-fixed"
+                            value="fixed">
+                        <label class="btn btn-sm btn-soft-primary w-sm" for="layout-position-fixed">Fixed</label>
+
+                        <input type="radio" class="btn-check" name="data-layout-position" id="layout-position-scrollable"
+                            value="scrollable">
+                        <label class="btn btn-sm btn-soft-primary w-sm ms-0"
+                            for="layout-position-scrollable">Scrollable</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 px-3 py-2 offcanvas-header border-top border-dashed">
+            <button type="button" class="btn w-50 btn-soft-danger" id="reset-layout">Reset</button>
+            <a href="https://1.envato.market/coderthemes" target="_blank" class="btn w-50 btn-soft-info">Buy Now</a>
+        </div>
+
+    </div>
+
+    <!-- Vendor js -->
+    <script src="assets/js/vendor.min.js"></script>
+
+    <!-- App js -->
+    <script src="assets/js/app.js"></script>
+
+    <!-- Apex Chart js -->
+    <script src="assets/vendor/apexcharts/apexcharts.min.js"></script>
+
+    <!-- Projects Analytics Dashboard App js -->
+    <script src="assets/js/pages/dashboard.js"></script>
+
+</body>
+
+</html>
