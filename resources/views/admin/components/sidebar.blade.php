@@ -39,26 +39,31 @@
             <li class="side-nav-title">HSE Management</li>
 
             <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#sidebarReports" aria-expanded="false" aria-controls="sidebarReports"
-                    class="side-nav-link">
+                <a data-bs-toggle="collapse" href="#sidebarReports"
+                    aria-expanded="{{ request()->routeIs('admin.reports.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarReports"
+                    class="side-nav-link {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="file-text"></i></span>
                     <span class="menu-text"> Reports</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse" id="sidebarReports">
+                <div class="collapse {{ request()->routeIs('admin.reports.*') ? 'show' : '' }}" id="sidebarReports">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.reports.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.reports.index') && !request()->has('status') ? 'text-primary' : '' }}">
                                 <span class="menu-text">All Reports</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.reports.index') }}?status=waiting"
+                                class="side-nav-link {{ request()->routeIs('admin.reports.index') && request()->get('status') == 'waiting' ? 'text-primary' : '' }}">
                                 <span class="menu-text">Pending Reports</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.reports.index') }}?view=analytics"
+                                class="side-nav-link {{ request()->routeIs('admin.reports.index') && request()->get('view') == 'analytics' ? 'text-primary' : '' }}">
                                 <span class="menu-text">Report Analytics</span>
                             </a>
                         </li>
@@ -203,36 +208,14 @@
             </li>
 
             <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#sidebarPagesAuth" aria-expanded="false"
-                    aria-controls="sidebarPagesAuth" class="side-nav-link">
+                <a href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                    class="side-nav-link">
                     <span class="menu-icon"><i data-lucide="log-out"></i></span>
-                    <span class="menu-text"> Auth Pages </span>
-                    <span class="menu-arrow"></span>
+                    <span class="menu-text"> Logout </span>
                 </a>
-                <div class="collapse" id="sidebarPagesAuth">
-                    <ul class="sub-menu">
-                        <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
-                                <span class="menu-text">Login</span>
-                            </a>
-                        </li>
-                        <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
-                                <span class="menu-text">Register</span>
-                            </a>
-                        </li>
-                        <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
-                                <span class="menu-text">Logout</span>
-                            </a>
-                        </li>
-                        <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
-                                <span class="menu-text">Recover Password</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                <form id="logout-form" action="{{ route('admin.logout') }}" method="POST" style="display: none;">
+                    @csrf
+                </form>
             </li>
 
         </ul>
@@ -305,6 +288,20 @@
                 contributingToggle.setAttribute('aria-expanded', 'true');
             }
         }
+
+        if (currentPath.includes('/admin/reports')) {
+            const reportsCollapse = document.getElementById('sidebarReports');
+            const reportsToggle = document.querySelector('[href="#sidebarReports"]');
+
+            if (reportsCollapse) {
+                reportsCollapse.classList.add('show');
+            }
+
+            if (reportsToggle) {
+                reportsToggle.classList.add('active');
+                reportsToggle.setAttribute('aria-expanded', 'true');
+            }
+        }
     });
 
     // Handle collapse state when clicking on role filter links
@@ -322,12 +319,19 @@
 
         // Handle contributing factors section
         if (target && target.getAttribute('href') && (target.getAttribute('href').includes(
-                'admin/contributing') ||
+                    'admin/contributing') ||
                 target.getAttribute('href').includes('admin/actions'))) {
             // Ensure the collapse stays open when navigating between contributing sections
             const contributingCollapse = document.getElementById('sidebarContributing');
             if (contributingCollapse) {
                 sessionStorage.setItem('keepContributingOpen', 'true');
+            }
+        }
+
+        if (target && target.getAttribute('href') && target.getAttribute('href').includes('admin/reports')) {
+            const reportsCollapse = document.getElementById('sidebarReports');
+            if (reportsCollapse) {
+                sessionStorage.setItem('keepReportsOpen', 'true');
             }
         }
     });

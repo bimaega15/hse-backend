@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ReportController; // Add this import
 
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -61,6 +62,20 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::post('/image/upload', [ProfileController::class, 'uploadProfileImage'])->name('image.upload');
         Route::delete('/image', [ProfileController::class, 'deleteProfileImage'])->name('image.delete');
         Route::get('/data', [ProfileController::class, 'getProfile'])->name('data');
+    });
+
+    // Reports Management Routes
+    Route::prefix('admin/reports')->name('admin.reports.')->group(function () {
+        Route::get('/', [ReportController::class, 'index'])->name('index');
+        Route::get('/data', [ReportController::class, 'getData'])->name('data');
+        Route::get('/create', [ReportController::class, 'create'])->name('create');
+        Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics');
+        Route::get('/actions/by-contributing/{contributingId}', [ReportController::class, 'getActionsByContributing'])->name('actions.by-contributing');
+        Route::post('/', [ReportController::class, 'store'])->name('store');
+        Route::get('/{id}', [ReportController::class, 'show'])->name('show');
+        Route::put('/{id}', [ReportController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ReportController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/status', [ReportController::class, 'updateStatus'])->name('update-status');
     });
 
     // Categories Management Routes
