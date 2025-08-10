@@ -76,6 +76,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::put('/{id}', [ReportController::class, 'update'])->name('update');
         Route::delete('/{id}', [ReportController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/status', [ReportController::class, 'updateStatus'])->name('update-status');
+
+
+        // Statistics and analytics
+        Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics.data');
+
+        // Actions by contributing
+        Route::get('/actions/by-contributing/{contributingId}', [ReportController::class, 'getActionsByContributing'])->name('actions.by-contributing');
     });
 
     // Categories Management Routes

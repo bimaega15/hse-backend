@@ -17,202 +17,6 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ReportController extends Controller
 {
-    public function index()
-    {
-        return view('admin.reports.index');
-    }
-
-    public function getData(Request $request)
-    {
-        try {
-            Log::info('DataTables Request Parameters:', $request->all());
-
-            $query = Report::with([
-                'employee:id,name,email',
-                'hseStaff:id,name,email',
-                'categoryMaster:id,name',
-                'contributingMaster:id,name',
-                'actionMaster:id,name'
-            ]);
-
-            // Apply filters with validation
-            if ($request->filled('status') && in_array($request->status, ['waiting', 'in-progress', 'done'])) {
-                $query->where('status', $request->status);
-            }
-
-            if ($request->filled('severity') && in_array($request->severity, ['low', 'medium', 'high', 'critical'])) {
-                $query->where('severity_rating', $request->severity);
-            }
-
-            if ($request->filled('start_date') && strtotime($request->start_date)) {
-                $query->whereDate('created_at', '>=', $request->start_date);
-            }
-
-            if ($request->filled('end_date') && strtotime($request->end_date)) {
-                $query->whereDate('created_at', '<=', $request->end_date);
-            }
-
-            return DataTables::of($query)
-                ->addIndexColumn()
-                ->addColumn('employee_info', function ($report) {
-                    try {
-                        $employeeName = optional($report->employee)->name ?? 'N/A';
-                        // employee_id di reports adalah foreign key ke users.id
-                        $userId = $report->employee_id ?? 'N/A';
-                        return "<div class='fw-bold'>{$employeeName}</div><small class='text-muted'>User ID: {$userId}</small>";
-                    } catch (\Exception $e) {
-                        Log::error('Error in employee_info column: ' . $e->getMessage());
-                        return 'Error loading employee';
-                    }
-                })
-                ->addColumn('hse_staff_info', function ($report) {
-                    try {
-                        if ($report->hseStaff) {
-                            $hseName = $report->hseStaff->name;
-                            // hse_staff_id di reports adalah foreign key ke users.id
-                            $hseUserId = $report->hse_staff_id;
-                            return "<div class='fw-bold'>{$hseName}</div><small class='text-muted'>User ID: {$hseUserId}</small>";
-                        }
-                        return '<span class="text-muted">Not Assigned</span>';
-                    } catch (\Exception $e) {
-                        Log::error('Error in hse_staff_info column: ' . $e->getMessage());
-                        return 'Error loading HSE staff';
-                    }
-                })
-                ->addColumn('report_info', function ($report) {
-                    try {
-                        $category = optional($report->categoryMaster)->name ?? 'N/A';
-                        $location = $report->location ?: 'N/A';
-                        return "<div class='fw-bold'>{$category}</div><small class='text-muted'><i class='ri-map-pin-line'></i> {$location}</small>";
-                    } catch (\Exception $e) {
-                        Log::error('Error in report_info column: ' . $e->getMessage());
-                        return 'Error loading report info';
-                    }
-                })
-                ->addColumn('severity_badge', function ($report) {
-                    $colors = [
-                        'low' => 'success',
-                        'medium' => 'warning',
-                        'high' => 'danger',
-                        'critical' => 'dark'
-                    ];
-                    $severity = $report->severity_rating ?? 'unknown';
-                    $color = $colors[$severity] ?? 'secondary';
-                    return "<span class='badge bg-{$color}'>" . ucfirst($severity) . "</span>";
-                })
-                ->addColumn('status_badge', function ($report) {
-                    $colors = [
-                        'waiting' => 'warning',
-                        'in-progress' => 'info',
-                        'done' => 'success'
-                    ];
-                    $labels = [
-                        'waiting' => 'Waiting',
-                        'in-progress' => 'In Progress',
-                        'done' => 'Completed'
-                    ];
-                    $status = $report->status ?? 'unknown';
-                    $color = $colors[$status] ?? 'secondary';
-                    $label = $labels[$status] ?? $status;
-                    return "<span class='badge bg-{$color}'>{$label}</span>";
-                })
-                ->addColumn('report_details_count', function ($report) {
-                    try {
-                        $totalDetails = $report->reportDetails()->count();
-                        if ($totalDetails === 0) {
-                            return '<span class="text-muted">No CAR</span>';
-                        }
-
-                        $closedDetails = $report->reportDetails()->where('status_car', 'closed')->count();
-                        $openDetails = $report->reportDetails()->where('status_car', 'open')->count();
-
-                        $completionPercentage = $totalDetails > 0 ? round(($closedDetails / $totalDetails) * 100, 2) : 0;
-                        $progressClass = $completionPercentage >= 80 ? 'success' : ($completionPercentage >= 50 ? 'warning' : 'danger');
-
-                        return "
-                            <div class='small'>
-                                <div class='fw-bold'>CAR: {$totalDetails}</div>
-                                <div class='text-success'>Closed: {$closedDetails}</div>
-                                <div class='text-danger'>Open: {$openDetails}</div>
-                                <div class='progress mt-1' style='height: 4px;'>
-                                    <div class='progress-bar bg-{$progressClass}' style='width: {$completionPercentage}%'></div>
-                                </div>
-                                <small class='text-muted'>{$completionPercentage}% Complete</small>
-                            </div>
-                        ";
-                    } catch (\Exception $e) {
-                        Log::error('Error in report_details_count: ' . $e->getMessage());
-                        return '<span class="text-muted">Error loading CAR</span>';
-                    }
-                })
-                ->addColumn('dates_info', function ($report) {
-                    try {
-                        $created = $report->created_at ? $report->created_at->format('d M Y') : 'N/A';
-                        $started = $report->start_process_at ? $report->start_process_at->format('d M Y') : 'Not Started';
-                        $completed = $report->completed_at ? $report->completed_at->format('d M Y') : 'Not Completed';
-
-                        return "
-                            <div class='small'>
-                                <div><strong>Created:</strong> {$created}</div>
-                                <div><strong>Started:</strong> {$started}</div>
-                                <div><strong>Completed:</strong> {$completed}</div>
-                            </div>
-                        ";
-                    } catch (\Exception $e) {
-                        Log::error('Error in dates_info: ' . $e->getMessage());
-                        return 'Error loading dates';
-                    }
-                })
-                ->addColumn('description_short', function ($report) {
-                    $description = $report->description ?? '';
-                    return strlen($description) > 100
-                        ? substr($description, 0, 100) . '...'
-                        : $description;
-                })
-                ->addColumn('action', function ($report) {
-                    $buttons = "
-                        <div class='btn-group btn-group-sm' role='group'>
-                            <button type='button' class='btn btn-outline-info' onclick='viewReport({$report->id})' title='View Details'>
-                                <i class='ri-eye-line'></i>
-                            </button>
-                            <button type='button' class='btn btn-outline-primary' onclick='editReport({$report->id})' title='Edit Report'>
-                                <i class='ri-edit-line'></i>
-                            </button>";
-
-                    if ($report->status !== 'done') {
-                        $nextStatus = $report->status === 'waiting' ? 'in-progress' : 'done';
-                        $buttons .= "
-                            <button type='button' class='btn btn-outline-success' onclick='updateStatus({$report->id}, \"{$nextStatus}\")' title='Update Status'>
-                                <i class='ri-check-line'></i>
-                            </button>";
-                    }
-
-                    $buttons .= "
-                            <button type='button' class='btn btn-outline-danger' onclick='deleteReport({$report->id})' title='Delete Report'>
-                                <i class='ri-delete-bin-line'></i>
-                            </button>
-                        </div>
-                    ";
-
-                    return $buttons;
-                })
-                ->rawColumns(['employee_info', 'hse_staff_info', 'report_info', 'severity_badge', 'status_badge', 'report_details_count', 'dates_info', 'action'])
-                ->make(true);
-        } catch (\Exception $e) {
-            Log::error('DataTables Error: ' . $e->getMessage());
-            Log::error('DataTables Error File: ' . $e->getFile());
-            Log::error('DataTables Error Line: ' . $e->getLine());
-            Log::error('DataTables Error Trace: ' . $e->getTraceAsString());
-
-            return response()->json([
-                'error' => 'Failed to load data: ' . $e->getMessage(),
-                'draw' => $request->get('draw', 0),
-                'recordsTotal' => 0,
-                'recordsFiltered' => 0,
-                'data' => []
-            ], 500);
-        }
-    }
 
     public function create()
     {
@@ -548,5 +352,375 @@ class ReportController extends Controller
                 'message' => 'Failed to get actions: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function index(Request $request)
+    {
+        // Determine view type - default, pending, or analytics
+        $view = $request->get('view', 'default');
+        $status = $request->get('status');
+
+        // Pass additional data for analytics view
+        $additionalData = [];
+
+        if ($view === 'analytics') {
+            $additionalData = $this->getAnalyticsData();
+        }
+
+        return view('admin.reports.index', compact('view', 'status', 'additionalData'));
+    }
+
+    public function getData(Request $request)
+    {
+        try {
+            Log::info('DataTables Request Parameters:', $request->all());
+
+            $query = Report::with([
+                'employee:id,name,email',
+                'hseStaff:id,name,email',
+                'categoryMaster:id,name',
+                'contributingMaster:id,name',
+                'actionMaster:id,name'
+            ]);
+
+            // Apply filters with validation
+            if ($request->filled('status') && in_array($request->status, ['waiting', 'in-progress', 'done'])) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('severity') && in_array($request->severity, ['low', 'medium', 'high', 'critical'])) {
+                $query->where('severity_rating', $request->severity);
+            }
+
+            if ($request->filled('start_date') && strtotime($request->start_date)) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+
+            if ($request->filled('end_date') && strtotime($request->end_date)) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            // NEW: Handle URL filters (like from sidebar)
+            if ($request->filled('url_status') && in_array($request->url_status, ['waiting', 'in-progress', 'done'])) {
+                $query->where('status', $request->url_status);
+            }
+
+            return DataTables::of($query)
+                ->addIndexColumn()
+                ->addColumn('employee_info', function ($report) {
+                    try {
+                        $employeeName = optional($report->employee)->name ?? 'N/A';
+                        $userId = $report->employee_id ?? 'N/A';
+                        return "<div class='fw-bold'>{$employeeName}</div><small class='text-muted'>User ID: {$userId}</small>";
+                    } catch (\Exception $e) {
+                        Log::error('Error in employee_info column: ' . $e->getMessage());
+                        return 'Error loading employee';
+                    }
+                })
+                ->addColumn('hse_staff_info', function ($report) {
+                    try {
+                        if ($report->hseStaff) {
+                            $hseName = $report->hseStaff->name;
+                            $hseUserId = $report->hse_staff_id;
+                            return "<div class='fw-bold'>{$hseName}</div><small class='text-muted'>User ID: {$hseUserId}</small>";
+                        }
+                        return '<span class="text-muted">Not Assigned</span>';
+                    } catch (\Exception $e) {
+                        Log::error('Error in hse_staff_info column: ' . $e->getMessage());
+                        return 'Error loading HSE staff';
+                    }
+                })
+                ->addColumn('report_info', function ($report) {
+                    try {
+                        $category = optional($report->categoryMaster)->name ?? 'N/A';
+                        $location = $report->location ?: 'N/A';
+                        return "<div class='fw-bold'>{$category}</div><small class='text-muted'><i class='ri-map-pin-line'></i> {$location}</small>";
+                    } catch (\Exception $e) {
+                        Log::error('Error in report_info column: ' . $e->getMessage());
+                        return 'Error loading report info';
+                    }
+                })
+                ->addColumn('severity_badge', function ($report) {
+                    $colors = [
+                        'low' => 'success',
+                        'medium' => 'warning',
+                        'high' => 'danger',
+                        'critical' => 'dark'
+                    ];
+                    $severity = $report->severity_rating ?? 'unknown';
+                    $color = $colors[$severity] ?? 'secondary';
+                    return "<span class='badge bg-{$color}'>" . ucfirst($severity) . "</span>";
+                })
+                ->addColumn('status_badge', function ($report) {
+                    $colors = [
+                        'waiting' => 'warning',
+                        'in-progress' => 'info',
+                        'done' => 'success'
+                    ];
+                    $labels = [
+                        'waiting' => 'Waiting',
+                        'in-progress' => 'In Progress',
+                        'done' => 'Completed'
+                    ];
+                    $status = $report->status ?? 'unknown';
+                    $color = $colors[$status] ?? 'secondary';
+                    $label = $labels[$status] ?? $status;
+                    return "<span class='badge bg-{$color}'>{$label}</span>";
+                })
+                ->addColumn('report_details_count', function ($report) {
+                    try {
+                        $totalDetails = $report->reportDetails()->count();
+                        if ($totalDetails === 0) {
+                            return '<span class="text-muted">No CAR</span>';
+                        }
+
+                        $closedDetails = $report->reportDetails()->where('status_car', 'closed')->count();
+                        $openDetails = $report->reportDetails()->where('status_car', 'open')->count();
+
+                        $completionPercentage = $totalDetails > 0 ? round(($closedDetails / $totalDetails) * 100, 2) : 0;
+                        $progressClass = $completionPercentage >= 80 ? 'success' : ($completionPercentage >= 50 ? 'warning' : 'danger');
+
+                        return "
+                            <div class='small'>
+                                <div class='fw-bold'>CAR: {$totalDetails}</div>
+                                <div class='text-success'>Closed: {$closedDetails}</div>
+                                <div class='text-danger'>Open: {$openDetails}</div>
+                                <div class='progress mt-1' style='height: 4px;'>
+                                    <div class='progress-bar bg-{$progressClass}' style='width: {$completionPercentage}%'></div>
+                                </div>
+                                <small class='text-muted'>{$completionPercentage}% Complete</small>
+                            </div>
+                        ";
+                    } catch (\Exception $e) {
+                        Log::error('Error in report_details_count: ' . $e->getMessage());
+                        return '<span class="text-muted">Error loading CAR</span>';
+                    }
+                })
+                ->addColumn('dates_info', function ($report) {
+                    try {
+                        $created = $report->created_at ? $report->created_at->format('d M Y') : 'N/A';
+                        $started = $report->start_process_at ? $report->start_process_at->format('d M Y') : 'Not Started';
+                        $completed = $report->completed_at ? $report->completed_at->format('d M Y') : 'Not Completed';
+
+                        return "
+                            <div class='small'>
+                                <div><strong>Created:</strong> {$created}</div>
+                                <div><strong>Started:</strong> {$started}</div>
+                                <div><strong>Completed:</strong> {$completed}</div>
+                            </div>
+                        ";
+                    } catch (\Exception $e) {
+                        Log::error('Error in dates_info: ' . $e->getMessage());
+                        return 'Error loading dates';
+                    }
+                })
+                ->addColumn('description_short', function ($report) {
+                    $description = $report->description ?? '';
+                    return strlen($description) > 100
+                        ? substr($description, 0, 100) . '...'
+                        : $description;
+                })
+                ->addColumn('action', function ($report) {
+                    $buttons = "
+                        <div class='btn-group btn-group-sm' role='group'>
+                            <button type='button' class='btn btn-outline-info' onclick='viewReport({$report->id})' title='View Details'>
+                                <i class='ri-eye-line'></i>
+                            </button>
+                            <button type='button' class='btn btn-outline-primary' onclick='editReport({$report->id})' title='Edit Report'>
+                                <i class='ri-edit-line'></i>
+                            </button>";
+
+                    if ($report->status !== 'done') {
+                        $nextStatus = $report->status === 'waiting' ? 'in-progress' : 'done';
+                        $buttons .= "
+                            <button type='button' class='btn btn-outline-success' onclick='updateStatus({$report->id}, \"{$nextStatus}\")' title='Update Status'>
+                                <i class='ri-check-line'></i>
+                            </button>";
+                    }
+
+                    $buttons .= "
+                            <button type='button' class='btn btn-outline-danger' onclick='deleteReport({$report->id})' title='Delete Report'>
+                                <i class='ri-delete-bin-line'></i>
+                            </button>
+                        </div>
+                    ";
+
+                    return $buttons;
+                })
+                ->rawColumns(['employee_info', 'hse_staff_info', 'report_info', 'severity_badge', 'status_badge', 'report_details_count', 'dates_info', 'action'])
+                ->make(true);
+        } catch (\Exception $e) {
+            Log::error('DataTables Error: ' . $e->getMessage());
+            Log::error('DataTables Error File: ' . $e->getFile());
+            Log::error('DataTables Error Line: ' . $e->getLine());
+            Log::error('DataTables Error Trace: ' . $e->getTraceAsString());
+
+            return response()->json([
+                'error' => 'Failed to load data: ' . $e->getMessage(),
+                'draw' => $request->get('draw', 0),
+                'recordsTotal' => 0,
+                'recordsFiltered' => 0,
+                'data' => []
+            ], 500);
+        }
+    }
+
+    // NEW: Get analytics data
+    private function getAnalyticsData()
+    {
+        try {
+            $currentMonth = now()->startOfMonth();
+            $lastMonth = now()->subMonth()->startOfMonth();
+
+            return [
+                'summary' => [
+                    'total_reports' => Report::count(),
+                    'this_month' => Report::whereMonth('created_at', now()->month)->count(),
+                    'last_month' => Report::whereBetween('created_at', [$lastMonth, $lastMonth->copy()->endOfMonth()])->count(),
+                    'critical_incidents' => Report::whereIn('severity_rating', ['high', 'critical'])->count(),
+                    'overdue_cars' => DB::table('report_details')
+                        ->where('due_date', '<', now())
+                        ->where('status_car', '!=', 'closed')
+                        ->count(),
+                ],
+                'trends' => $this->getMonthlyTrends(),
+                'categories' => $this->getCategoryBreakdown(),
+                'severity_analysis' => $this->getSeverityAnalysis(),
+                'completion_metrics' => $this->getCompletionMetrics(),
+                'hse_performance' => $this->getHSEPerformance(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get analytics data: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    private function getMonthlyTrends()
+    {
+        return Report::selectRaw('
+                YEAR(created_at) as year,
+                MONTH(created_at) as month,
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN severity_rating IN ("high", "critical") THEN 1 ELSE 0 END) as critical
+            ')
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $item->month_name = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
+                $item->completion_rate = $item->total > 0 ? round(($item->completed / $item->total) * 100, 1) : 0;
+                return $item;
+            });
+    }
+
+    private function getCategoryBreakdown()
+    {
+        return Report::join('categories', 'reports.category_id', '=', 'categories.id')
+            ->selectRaw('
+                categories.name as category,
+                COUNT(*) as total,
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as completed,
+                AVG(CASE 
+                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL 
+                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at) 
+                    ELSE NULL 
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('categories.id', 'categories.name')
+            ->orderBy('total', 'desc')
+            ->get();
+    }
+
+    private function getSeverityAnalysis()
+    {
+        return Report::selectRaw('
+                severity_rating,
+                COUNT(*) as count,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as completed,
+                AVG(CASE 
+                    WHEN start_process_at IS NOT NULL AND completed_at IS NOT NULL 
+                    THEN TIMESTAMPDIFF(HOUR, start_process_at, completed_at) 
+                    ELSE NULL 
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('severity_rating')
+            ->get();
+    }
+
+    private function getCompletionMetrics()
+    {
+        $totalReports = Report::count();
+        $completedReports = Report::where('status', 'done')->count();
+        $avgResolutionTime = Report::whereNotNull('start_process_at')
+            ->whereNotNull('completed_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, start_process_at, completed_at)) as avg_hours')
+            ->value('avg_hours');
+
+        return [
+            'total_reports' => $totalReports,
+            'completed_reports' => $completedReports,
+            'completion_rate' => $totalReports > 0 ? round(($completedReports / $totalReports) * 100, 1) : 0,
+            'avg_resolution_hours' => $avgResolutionTime ? round($avgResolutionTime, 1) : 0,
+            'sla_compliance' => $this->calculateSLACompliance(),
+        ];
+    }
+
+    private function getHSEPerformance()
+    {
+        return User::where('role', 'hse_staff')
+            ->where('is_active', true)
+            ->withCount([
+                'assignedReports',
+                'assignedReports as completed_reports_count' => function ($query) {
+                    $query->where('status', 'done');
+                },
+                'assignedReports as this_month_reports_count' => function ($query) {
+                    $query->whereMonth('created_at', now()->month);
+                }
+            ])
+            ->get()
+            ->map(function ($staff) {
+                $staff->completion_rate = $staff->assigned_reports_count > 0
+                    ? round(($staff->completed_reports_count / $staff->assigned_reports_count) * 100, 1)
+                    : 0;
+                return $staff;
+            });
+    }
+
+    private function calculateSLACompliance()
+    {
+        // Define SLA targets (in hours) based on severity
+        $slaTargets = [
+            'critical' => 4,   // 4 hours
+            'high' => 24,      // 24 hours
+            'medium' => 72,    // 72 hours
+            'low' => 168       // 168 hours (1 week)
+        ];
+
+        $compliance = [];
+
+        foreach ($slaTargets as $severity => $targetHours) {
+            $reports = Report::where('severity_rating', $severity)
+                ->whereNotNull('start_process_at')
+                ->whereNotNull('completed_at')
+                ->get();
+
+            $withinSLA = $reports->filter(function ($report) use ($targetHours) {
+                $resolutionHours = $report->start_process_at->diffInHours($report->completed_at);
+                return $resolutionHours <= $targetHours;
+            })->count();
+
+            $compliance[$severity] = [
+                'total' => $reports->count(),
+                'within_sla' => $withinSLA,
+                'compliance_rate' => $reports->count() > 0 ? round(($withinSLA / $reports->count()) * 100, 1) : 0,
+                'target_hours' => $targetHours
+            ];
+        }
+
+        return $compliance;
     }
 }

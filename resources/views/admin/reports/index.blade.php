@@ -4,6 +4,107 @@
 
 @push('cssSection')
     <style>
+        /* Analytics Cards */
+        .analytics-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+        }
+
+        .analytics-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .analytics-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 1.5rem;
+        }
+
+        .analytics-metric {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .analytics-metric .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .analytics-metric .metric-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .analytics-metric .metric-change {
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        .trend-up {
+            color: #28a745;
+        }
+
+        .trend-down {
+            color: #dc3545;
+        }
+
+        .trend-neutral {
+            color: #6c757d;
+        }
+
+        /* Chart containers */
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .chart-small {
+            height: 200px;
+        }
+
+        /* SLA indicator */
+        .sla-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .sla-good {
+            background-color: #28a745;
+        }
+
+        .sla-warning {
+            background-color: #ffc107;
+        }
+
+        .sla-critical {
+            background-color: #dc3545;
+        }
+
+        /* Tab styling */
+        .nav-tabs .nav-link {
+            border: none;
+            border-radius: 25px;
+            margin-right: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
         /* Detail Timeline Styles for Modal */
         .detail-timeline {
             display: flex;
@@ -176,7 +277,6 @@
             }
         }
 
-        /* Additional hover effects */
         .detail-timeline-step:hover .detail-timeline-icon {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
@@ -190,7 +290,6 @@
             transform: scale(1.15) translateY(-2px);
         }
 
-        /* Timeline header styling */
         .timeline-header {
             display: flex;
             align-items: center;
@@ -213,7 +312,18 @@
         <!-- Page Title -->
         <div class="page-title-head d-flex align-items-center gap-2">
             <div class="flex-grow-1">
-                <h4 class="fs-18 fw-bold mb-0">Reports Management</h4>
+                <h4 class="fs-18 fw-bold mb-0">
+                    Reports Management
+                    @if ($view === 'analytics')
+                        - Analytics Dashboard
+                    @elseif($status === 'waiting')
+                        - Pending Reports
+                    @elseif($status === 'in-progress')
+                        - Reports In Progress
+                    @elseif($status === 'done')
+                        - Completed Reports
+                    @endif
+                </h4>
             </div>
             <div class="text-end">
                 <ol class="breadcrumb m-0 py-0 fs-13">
@@ -225,383 +335,18 @@
         </div>
 
         <div class="page-container">
-            <!-- Statistics Cards -->
-            <div class="row mb-4" id="statisticsCards">
-                <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
-                                        <i class="ri-file-text-line fs-16 text-white"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <p class="text-uppercase fw-medium text-muted mb-0">Total Reports</p>
-                                    <h4 class="fs-16 fw-semibold mb-0" id="totalReports">-</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
-                                        <i class="ri-time-line fs-16 text-white"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <p class="text-uppercase fw-medium text-muted mb-0">Pending</p>
-                                    <h4 class="fs-16 fw-semibold mb-0" id="pendingReports">-</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-info bg-gradient rounded">
-                                        <i class="ri-refresh-line fs-16 text-white"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <p class="text-uppercase fw-medium text-muted mb-0">In Progress</p>
-                                    <h4 class="fs-16 fw-semibold mb-0" id="inProgressReports">-</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-xl-3 col-md-6">
-                    <div class="card">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
-                                        <i class="ri-check-line fs-16 text-white"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <p class="text-uppercase fw-medium text-muted mb-0">Completed</p>
-                                    <h4 class="fs-16 fw-semibold mb-0" id="completedReports">-</h4>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="col-12">
-                    <div class="card">
-                        <div
-                            class="card-header border-bottom border-dashed d-flex align-items-center justify-content-between">
-                            <h4 class="header-title mb-0">Reports List</h4>
-                            <div class="d-flex gap-2">
-                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="showFilters()">
-                                    <i class="ri-filter-line me-1"></i>Filters
-                                </button>
-                                <button type="button" class="btn btn-primary" onclick="createReport()">
-                                    <i class="ri-add-line me-1"></i>Add New Report
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Filters Panel -->
-                        <div class="card-body border-bottom d-none" id="filtersPanel">
-                            <form id="filtersForm" class="row g-3">
-                                <div class="col-md-3">
-                                    <label for="statusFilter" class="form-label">Status</label>
-                                    <select class="form-select" id="statusFilter" name="status">
-                                        <option value="">All Status</option>
-                                        <option value="waiting">Waiting</option>
-                                        <option value="in-progress">In Progress</option>
-                                        <option value="done">Completed</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="severityFilter" class="form-label">Severity</label>
-                                    <select class="form-select" id="severityFilter" name="severity">
-                                        <option value="">All Severity</option>
-                                        <option value="low">Low</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="high">High</option>
-                                        <option value="critical">Critical</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="startDateFilter" class="form-label">Start Date</label>
-                                    <input type="date" class="form-control" id="startDateFilter" name="start_date">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="endDateFilter" class="form-label">End Date</label>
-                                    <input type="date" class="form-control" id="endDateFilter" name="end_date">
-                                </div>
-                                <div class="col-12">
-                                    <div class="d-flex gap-2">
-                                        <button type="button" class="btn btn-primary" onclick="applyFilters()">
-                                            <i class="ri-search-line me-1"></i>Apply Filters
-                                        </button>
-                                        <button type="button" class="btn btn-secondary" onclick="clearFilters()">
-                                            <i class="ri-refresh-line me-1"></i>Clear Filters
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-
-                        <div class="card-body">
-                            <div class="table-responsive">
-                                <table id="reportsTable" class="table table-striped table-bordered dt-responsive nowrap"
-                                    style="width:100%">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th width="3%">#</th>
-                                            <th width="12%">Employee</th>
-                                            <th width="12%">HSE Staff</th>
-                                            <th width="12%">Report Info</th>
-                                            <th width="20%">Description</th>
-                                            <th width="8%">Severity</th>
-                                            <th width="8%">Status</th>
-                                            <th width="10%">CAR Progress</th>
-                                            <th width="12%">Dates</th>
-                                            <th width="3%">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Data will be loaded via DataTables -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @if ($view === 'analytics')
+                <!-- Analytics View -->
+                @include('admin.reports.partials.analytics')
+            @else
+                <!-- Default Reports View -->
+                @include('admin.reports.partials.reports-list')
+            @endif
         </div>
     </div>
 
-    <!-- Create/Edit Report Modal -->
-    <div class="modal fade" id="reportModal" tabindex="-1" aria-labelledby="reportModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <form id="reportForm" enctype="multipart/form-data">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="reportModalLabel">Add New Report</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="reportId" name="id">
-
-                        <div class="row">
-                            <!-- Employee Information -->
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="employeeId" class="form-label">Employee <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select" id="employeeId" name="employee_id" required>
-                                        <option value="">Select Employee</option>
-                                    </select>
-                                    <div class="invalid-feedback" id="employeeIdError"></div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="hseStaffId" class="form-label">HSE Staff</label>
-                                    <select class="form-select" id="hseStaffId" name="hse_staff_id">
-                                        <option value="">Select HSE Staff</option>
-                                    </select>
-                                    <div class="invalid-feedback" id="hseStaffIdError"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <!-- Report Classification -->
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="categoryId" class="form-label">Category <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select" id="categoryId" name="category_id" required>
-                                        <option value="">Select Category</option>
-                                    </select>
-                                    <div class="invalid-feedback" id="categoryIdError"></div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="contributingId" class="form-label">Contributing Factor <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select" id="contributingId" name="contributing_id" required>
-                                        <option value="">Select Contributing Factor</option>
-                                    </select>
-                                    <div class="invalid-feedback" id="contributingIdError"></div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="mb-3">
-                                    <label for="actionId" class="form-label">Action <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select" id="actionId" name="action_id" required>
-                                        <option value="">Select Action</option>
-                                    </select>
-                                    <div class="invalid-feedback" id="actionIdError"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="severityRating" class="form-label">Severity Rating <span
-                                            class="text-danger">*</span></label>
-                                    <select class="form-select" id="severityRating" name="severity_rating" required>
-                                        <option value="">Select Severity</option>
-                                        <option value="low">Low</option>
-                                        <option value="medium">Medium</option>
-                                        <option value="high">High</option>
-                                        <option value="critical">Critical</option>
-                                    </select>
-                                    <div class="invalid-feedback" id="severityRatingError"></div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="location" class="form-label">Location <span
-                                            class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="location" name="location" required
-                                        maxlength="255" placeholder="Enter incident location">
-                                    <div class="invalid-feedback" id="locationError"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description <span
-                                    class="text-danger">*</span></label>
-                            <textarea class="form-control" id="description" name="description" rows="4" required maxlength="2000"
-                                placeholder="Describe the incident in detail"></textarea>
-                            <div class="form-text">Maximum 2000 characters</div>
-                            <div class="invalid-feedback" id="descriptionError"></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="actionTaken" class="form-label">Action Taken</label>
-                            <textarea class="form-control" id="actionTaken" name="action_taken" rows="3" maxlength="1000"
-                                placeholder="Describe immediate actions taken (optional)"></textarea>
-                            <div class="form-text">Maximum 1000 characters</div>
-                            <div class="invalid-feedback" id="actionTakenError"></div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="images" class="form-label">Images</label>
-                            <input type="file" class="form-control" id="images" name="images[]" multiple
-                                accept="image/*">
-                            <div class="form-text">You can upload multiple images (JPEG, PNG, JPG, GIF). Maximum 2MB per
-                                file.</div>
-                            <div class="invalid-feedback" id="imagesError"></div>
-                            <div id="imagePreview" class="mt-2"></div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">
-                            <span class="spinner-border spinner-border-sm d-none" id="submitSpinner"
-                                role="status"></span>
-                            <span id="submitText">Save Report</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- View Report Modal -->
-    <div class="modal fade" id="viewReportModal" tabindex="-1" aria-labelledby="viewReportModalLabel"
-        aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="viewReportModalLabel">Report Details</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <!-- Report details will be loaded here -->
-                    <div id="reportDetailsContent">
-                        <div class="text-center py-4">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading...</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-warning" onclick="editReportFromView()">
-                        <i class="ri-edit-line me-1"></i>Edit Report
-                    </button>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown"
-                            aria-expanded="false">
-                            <i class="ri-check-line me-1"></i>Update Status
-                        </button>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#" onclick="updateReportStatus('in-progress')">Mark
-                                    In Progress</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="updateReportStatus('done')">Mark
-                                    Completed</a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Status Update Modal -->
-    <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <form id="statusForm">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="statusModalLabel">Update Report Status</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="statusReportId" name="report_id">
-                        <input type="hidden" id="newStatus" name="status">
-
-                        <div class="mb-3">
-                            <label class="form-label">New Status:</label>
-                            <p class="fw-bold" id="statusDisplay"></p>
-                        </div>
-
-                        <div class="mb-3" id="hseStaffSelection" style="display: none;">
-                            <label for="statusHseStaffId" class="form-label">Assign HSE Staff</label>
-                            <select class="form-select" id="statusHseStaffId" name="hse_staff_id">
-                                <option value="">Select HSE Staff</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Update Status</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Include Modals -->
+    @include('admin.reports.partials.modals')
 @endsection
 
 @push('jsSection')
@@ -615,6 +360,11 @@
 
             // Set filters from URL params if any
             setFiltersFromUrl();
+
+            // Initialize analytics if on analytics page
+            @if ($view === 'analytics')
+                initAnalytics();
+            @endif
         });
 
         let reportsTable;
@@ -624,7 +374,7 @@
 
         function loadStatistics() {
             $.ajax({
-                url: "/admin/reports/statistics/data",
+                url: "{{ route('admin.reports.statistics.data') }}",
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -641,19 +391,50 @@
             });
         }
 
+        function setFiltersFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const status = urlParams.get('status');
+            const view = urlParams.get('view');
+
+            if (status && view !== 'analytics') {
+                $('#statusFilter').val(status);
+                showFilters();
+                updatePageTitle(status);
+            }
+        }
+
+        function updatePageTitle(status) {
+            const titles = {
+                'waiting': 'Pending Reports',
+                'in-progress': 'Reports In Progress',
+                'done': 'Completed Reports'
+            };
+
+            if (titles[status]) {
+                $('.page-title-head h4').text(`Reports Management - ${titles[status]}`);
+            }
+        }
+
         function initDataTable() {
             reportsTable = $('#reportsTable').DataTable({
                 processing: true,
                 serverSide: true,
                 responsive: true,
                 ajax: {
-                    url: "/admin/reports/data",
+                    url: "{{ route('admin.reports.data') }}",
                     type: 'GET',
                     data: function(d) {
                         d.status = $('#statusFilter').val();
                         d.severity = $('#severityFilter').val();
                         d.start_date = $('#startDateFilter').val();
                         d.end_date = $('#endDateFilter').val();
+
+                        // Add URL status filter
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const urlStatus = urlParams.get('status');
+                        if (urlStatus && !d.status) {
+                            d.url_status = urlStatus;
+                        }
                     }
                 },
                 columns: [{
@@ -722,26 +503,27 @@
                     [8, 'desc']
                 ],
                 drawCallback: function() {
-                    // Reinitialize tooltips if using Bootstrap tooltips
                     $('[data-bs-toggle="tooltip"]').tooltip();
                 }
             });
         }
 
+        function initAnalytics() {
+            // Initialize charts and analytics widgets
+            console.log('Initializing analytics...');
+        }
+
         function initForms() {
-            // Report form submission
             $('#reportForm').on('submit', function(e) {
                 e.preventDefault();
                 submitReport();
             });
 
-            // Status form submission  
             $('#statusForm').on('submit', function(e) {
                 e.preventDefault();
                 submitStatusUpdate();
             });
 
-            // Reset forms when modals are closed
             $('#reportModal').on('hidden.bs.modal', function() {
                 resetReportForm();
             });
@@ -750,13 +532,11 @@
                 resetStatusForm();
             });
 
-            // Handle contributing factor change to load actions
             $('#contributingId').on('change', function() {
                 const contributingId = $(this).val();
                 loadActionsByContributing(contributingId);
             });
 
-            // Handle image preview
             $('#images').on('change', function() {
                 previewImages(this.files);
             });
@@ -764,7 +544,7 @@
 
         function loadFormData() {
             $.ajax({
-                url: "/admin/reports/create",
+                url: "{{ route('admin.reports.create') }}",
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -779,27 +559,23 @@
         }
 
         function populateFormSelects() {
-            // Populate employees
             $('#employeeId').empty().append('<option value="">Select Employee</option>');
             formData.employees.forEach(function(employee) {
                 $('#employeeId').append(
-                    `<option value="${employee.id}">${employee.name} (${employee.employee_id})</option>`);
+                    `<option value="${employee.id}">${employee.name}</option>`);
             });
 
-            // Populate HSE staff
             $('#hseStaffId, #statusHseStaffId').empty().append('<option value="">Select HSE Staff</option>');
             formData.hse_staff.forEach(function(staff) {
                 $('#hseStaffId, #statusHseStaffId').append(
-                    `<option value="${staff.id}">${staff.name} (${staff.employee_id})</option>`);
+                    `<option value="${staff.id}">${staff.name}</option>`);
             });
 
-            // Populate categories
             $('#categoryId').empty().append('<option value="">Select Category</option>');
             formData.categories.forEach(function(category) {
                 $('#categoryId').append(`<option value="${category.id}">${category.name}</option>`);
             });
 
-            // Populate contributing factors
             $('#contributingId').empty().append('<option value="">Select Contributing Factor</option>');
             formData.contributing_factors.forEach(function(contributing) {
                 $('#contributingId').append(`<option value="${contributing.id}">${contributing.name}</option>`);
@@ -828,15 +604,6 @@
                     console.error('Failed to load actions');
                 }
             });
-        }
-
-        function setFiltersFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const status = urlParams.get('status');
-            if (status) {
-                $('#statusFilter').val(status);
-                showFilters();
-            }
         }
 
         function showFilters() {
@@ -948,10 +715,9 @@
             const started = report.start_process_at ? formatDateTime(report.start_process_at) : 'Pending';
             const completed = report.completed_at ? formatDateTime(report.completed_at) : 'Pending';
 
-            // Determine current progress
-            let progressClass = 'progress-1'; // Created
-            if (report.status === 'in-progress') progressClass = 'progress-2'; // Started
-            if (report.status === 'done') progressClass = 'progress-3'; // Completed
+            let progressClass = 'progress-1';
+            if (report.status === 'in-progress') progressClass = 'progress-2';
+            if (report.status === 'done') progressClass = 'progress-3';
 
             let createdClass = 'completed';
             let startedClass = report.status === 'in-progress' || report.status === 'done' ? 'completed' : (report
@@ -1354,12 +1120,10 @@
             $.each(errors, function(field, messages) {
                 let input;
 
-                // Handle nested field names
                 if (field.includes('.')) {
                     const parts = field.split('.');
                     input = $(`#${parts[0]}`);
                 } else {
-                    // Convert snake_case to camelCase for ID matching
                     const camelField = field.replace(/_([a-z])/g, function(g) {
                         return g[1].toUpperCase();
                     });
