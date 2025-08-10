@@ -135,26 +135,33 @@
             <li class="side-nav-title">User Management</li>
 
             <li class="side-nav-item">
-                <a data-bs-toggle="collapse" href="#sidebarUsers" aria-expanded="false" aria-controls="sidebarUsers"
-                    class="side-nav-link">
+                <a href="{{ route('admin.users.index') }}" class="side-nav-link">
                     <span class="menu-icon"><i data-lucide="users"></i></span>
-                    <span class="menu-text"> Users</span>
+                    <span class="menu-text"> All Users </span>
+                </a>
+            </li>
+
+            <li class="side-nav-item">
+                <a data-bs-toggle="collapse" href="#sidebarUsersByRole" aria-expanded="false"
+                    aria-controls="sidebarUsersByRole" class="side-nav-link">
+                    <span class="menu-icon"><i data-lucide="user-check"></i></span>
+                    <span class="menu-text"> Users by Role</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse" id="sidebarUsers">
+                <div class="collapse" id="sidebarUsersByRole">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
-                                <span class="menu-text">All Users</span>
+                            <a href="{{ route('admin.users.index') }}?role=admin" class="side-nav-link">
+                                <span class="menu-text">Administrators</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.users.index') }}?role=hse_staff" class="side-nav-link">
                                 <span class="menu-text">HSE Staff</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
-                            <a href="#" class="side-nav-link">
+                            <a href="{{ route('admin.users.index') }}?role=employee" class="side-nav-link">
                                 <span class="menu-text">Employees</span>
                             </a>
                         </li>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\UserController;
 
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -82,8 +83,19 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::post('/reorder', [BannerController::class, 'reorder'])->name('reorder');
     });
 
+    // User Management Routes
+    Route::prefix('admin/users')->name('admin.users.')->group(function () {
+        Route::get('/', [UserController::class, 'index'])->name('index');
+        Route::get('/data', [UserController::class, 'getData'])->name('data');
+        Route::get('/statistics', [UserController::class, 'getStatistics'])->name('statistics');
+        Route::post('/', [UserController::class, 'store'])->name('store');
+        Route::get('/{id}', [UserController::class, 'show'])->name('show');
+        Route::put('/{id}', [UserController::class, 'update'])->name('update');
+        Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [UserController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
     // Tambahkan routes khusus admin lainnya disini
-    // Route::get('/admin/users', [UserController::class, 'index'])->name('admin.users');
     // Route::get('/admin/settings', [SettingController::class, 'index'])->name('admin.settings');
 });
 
