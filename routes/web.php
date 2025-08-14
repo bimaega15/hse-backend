@@ -109,7 +109,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/statistics/data', [ObservationController::class, 'getStatistics'])->name('statistics.data');
 
         // ADD THIS: Recent observations for dashboard
-        Route::get('/recent', [ObservationController::class, 'getRecent'])->name('recent');
+        Route::get('/recent/graphic', [ObservationController::class, 'getRecent'])->name('recent');
     });
 
     // Categories Management Routes

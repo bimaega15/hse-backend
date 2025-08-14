@@ -507,7 +507,7 @@
 
             function loadRecentObservations() {
                 // Load recent observations from API
-                fetch('/admin/observations/recent')
+                fetch('/admin/observations/recent/graphic')
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
