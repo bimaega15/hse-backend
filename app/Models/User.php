@@ -23,6 +23,11 @@ class User extends Authenticatable
     ];
 
     // Relationships
+    public function observations()
+    {
+        return $this->hasMany(Observation::class);
+    }
+
     public function reports()
     {
         return $this->hasMany(Report::class, 'employee_id');

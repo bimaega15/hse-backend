@@ -194,6 +194,70 @@ class ObservationController extends Controller
         }
     }
 
+    // NEW METHOD: Get Recent Observations for Dashboard
+    public function getRecent(Request $request)
+    {
+        try {
+            $limit = $request->get('limit', 5); // Default 5 recent observations
+
+            $observations = Observation::with([
+                'user:id,name,email,department',
+                'details:id,observation_id,observation_type,severity'
+            ])
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get();
+
+            $formattedObservations = $observations->map(function ($observation) {
+                // Get the primary observation type (most frequent)
+                $detailCounts = $observation->details->groupBy('observation_type');
+                $primaryType = $detailCounts->sortByDesc(function ($details) {
+                    return $details->count();
+                })->keys()->first();
+
+                // Format type name
+                $typeMap = [
+                    'at_risk_behavior' => 'At Risk',
+                    'nearmiss_incident' => 'Near Miss',
+                    'informal_risk_mgmt' => 'Risk Mgmt',
+                    'sim_k3' => 'SIM K3'
+                ];
+
+                // Get avatar class based on observation type
+                $avatarClassMap = [
+                    'at_risk_behavior' => 'bg-danger-subtle',
+                    'nearmiss_incident' => 'bg-warning-subtle',
+                    'informal_risk_mgmt' => 'bg-info-subtle',
+                    'sim_k3' => 'bg-primary-subtle'
+                ];
+
+                return [
+                    'id' => $observation->id,
+                    'observer' => optional($observation->user)->name ?? 'N/A',
+                    'department' => optional($observation->user)->department ?? 'N/A',
+                    'type' => $typeMap[$primaryType] ?? 'Unknown',
+                    'count' => $observation->total_observations,
+                    'status' => ucfirst($observation->status),
+                    'date' => $observation->created_at->diffForHumans(),
+                    'avatarClass' => $avatarClassMap[$primaryType] ?? 'bg-secondary-subtle'
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedObservations
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error fetching recent observations: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load recent observations: ' . $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
+    }
+
     public function show($id)
     {
         try {

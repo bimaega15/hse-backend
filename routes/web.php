@@ -107,6 +107,9 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
         // Statistics and analytics
         Route::get('/statistics/data', [ObservationController::class, 'getStatistics'])->name('statistics.data');
+
+        // ADD THIS: Recent observations for dashboard
+        Route::get('/recent', [ObservationController::class, 'getRecent'])->name('recent');
     });
 
     // Categories Management Routes
@@ -187,6 +190,7 @@ Route::middleware(['auth', 'role:hse_staff,admin'])->group(function () {
         Route::get('/data', [ObservationController::class, 'getData'])->name('data');
         Route::get('/{id}', [ObservationController::class, 'show'])->name('show');
         Route::get('/statistics/data', [ObservationController::class, 'getStatistics'])->name('statistics.data');
+        Route::get('/recent', [ObservationController::class, 'getRecent'])->name('recent');
 
         // HSE Staff can review observations
         Route::patch('/{id}/status', [ObservationController::class, 'updateStatus'])->name('update-status');
@@ -212,6 +216,7 @@ Route::middleware(['auth', 'role:employee,hse_staff,admin'])->group(function () 
         Route::put('/{id}', [ObservationController::class, 'update'])->name('update');
         Route::delete('/{id}', [ObservationController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/status', [ObservationController::class, 'updateStatus'])->name('update-status');
+        Route::get('/recent', [ObservationController::class, 'getRecent'])->name('recent');
     });
 });
 
