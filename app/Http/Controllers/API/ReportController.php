@@ -1,5 +1,5 @@
 <?php
-// app/Http/Controllers/API/ReportController.php (Updated - Removed ObservationForm)
+// app/Http/Controllers/API/ReportController.php (Updated - Added Base64 Image Support)
 
 namespace App\Http\Controllers\API;
 
@@ -126,9 +126,9 @@ class ReportController extends Controller
                 'status' => 'waiting'
             ];
 
-            // Handle image uploads
-            if ($request->hasFile('images')) {
-                $imagePaths = $this->uploadReportImages($request->file('images'));
+            // Handle image uploads (both file uploads and base64)
+            if ($request->has('images') && !empty($request->images)) {
+                $imagePaths = $this->handleImages($request);
                 $reportData['images'] = $imagePaths;
             }
 
@@ -145,7 +145,8 @@ class ReportController extends Controller
                 'report_id' => $report->id,
                 'employee_id' => $user->id,
                 'category_id' => $request->category_id,
-                'severity_rating' => $request->severity_rating
+                'severity_rating' => $request->severity_rating,
+                'image_count' => count($reportData['images'] ?? [])
             ]);
 
             return response()->json([
@@ -260,17 +261,8 @@ class ReportController extends Controller
                 ], 400);
             }
 
-            // Validate input data
-            $validator = Validator::make($request->all(), [
-                'category_id' => 'required|exists:categories,id',
-                'contributing_id' => 'required|exists:contributings,id',
-                'action_id' => 'required|exists:actions,id',
-                'severity_rating' => 'required|in:low,medium,high,critical',
-                'action_taken' => 'nullable|string|max:1000',
-                'description' => 'required|string|max:1000',
-                'location' => 'required|string|max:255',
-                'images.*' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
-            ]);
+            // Enhanced validation for mixed image types
+            $validator = $this->validateReportData($request->all(), true);
 
             if ($validator->fails()) {
                 return response()->json([
@@ -292,20 +284,9 @@ class ReportController extends Controller
                 'location'
             ]);
 
-            // Handle image uploads if new images are provided
-            if ($request->hasFile('images')) {
-                // Delete old images
-                $this->deleteReportImages($report);
-
-                // Upload new images
-                $imagePaths = $this->uploadReportImages($request->file('images'));
-                $updateData['images'] = $imagePaths;
-
-                Log::info('Report images updated', [
-                    'report_id' => $report->id,
-                    'old_images_count' => count($report->images ?? []),
-                    'new_images_count' => count($imagePaths)
-                ]);
+            // Handle image updates dengan logic baru
+            if ($request->has('images')) {
+                $updateData['images'] = $this->handleImageUpdates($request, $report);
             }
 
             // Update the report
@@ -321,7 +302,8 @@ class ReportController extends Controller
             Log::info('Report updated successfully', [
                 'report_id' => $report->id,
                 'updated_by' => $user->id,
-                'updated_fields' => array_keys($updateData)
+                'updated_fields' => array_keys($updateData),
+                'image_count' => count($updateData['images'] ?? [])
             ]);
 
             return response()->json([
@@ -604,21 +586,304 @@ class ReportController extends Controller
     }
 
     /**
-     * Upload report images
+     * Handle images (both file uploads and base64 images)
      */
-    private function uploadReportImages($images)
+    private function handleImages(Request $request): array
     {
         $imagePaths = [];
+        $images = $request->images;
 
-        if ($images) {
-            foreach ($images as $image) {
-                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
-                $imagePath = $image->storeAs('report_images', $imageName, 'public');
-                $imagePaths[] = $imagePath;
+        if (!is_array($images)) {
+            return $imagePaths;
+        }
+
+        foreach ($images as $index => $image) {
+            try {
+                if (is_string($image)) {
+                    // Handle base64 image
+                    $path = $this->saveBase64Image($image);
+                    if ($path) {
+                        $imagePaths[] = $path;
+                    }
+                } elseif ($image instanceof \Illuminate\Http\UploadedFile) {
+                    // Handle file upload
+                    if ($image->isValid()) {
+                        $path = $this->saveUploadedFile($image);
+                        if ($path) {
+                            $imagePaths[] = $path;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to process image', [
+                    'index' => $index,
+                    'type' => is_string($image) ? 'base64' : 'file',
+                    'error' => $e->getMessage()
+                ]);
+                // Continue processing other images
             }
         }
 
         return $imagePaths;
+    }
+
+    /**
+     * Handle image updates - mempertahankan file existing dan upload file baru
+     */
+    private function handleImageUpdates(Request $request, Report $report): array
+    {
+        $currentImages = $report->images ?? [];
+        $newImages = $request->images ?? [];
+
+        if (empty($newImages)) {
+            // Jika images kosong, hapus semua file lama
+            foreach ($currentImages as $image) {
+                Storage::disk('public')->delete($image);
+            }
+            return [];
+        }
+
+        $finalImages = [];
+        $filesToDelete = [];
+
+        // Pisahkan antara file path existing dan base64 baru
+        $existingPaths = [];
+        $base64Images = [];
+
+        foreach ($newImages as $image) {
+            if (is_string($image)) {
+                // Cek apakah ini path file existing atau base64
+                if (strpos($image, 'report_images/') === 0) {
+                    // Ini adalah path file existing
+                    $existingPaths[] = $image;
+                } elseif ($this->isBase64Image($image)) {
+                    // Ini adalah base64 image
+                    $base64Images[] = $image;
+                }
+            } elseif ($image instanceof \Illuminate\Http\UploadedFile) {
+                // Handle file upload langsung
+                $base64Images[] = $image;
+            }
+        }
+
+        // Tentukan file mana yang perlu dihapus
+        foreach ($currentImages as $currentImage) {
+            if (!in_array($currentImage, $existingPaths)) {
+                $filesToDelete[] = $currentImage;
+            }
+        }
+
+        // Hapus file yang tidak ada di payload
+        foreach ($filesToDelete as $fileToDelete) {
+            Storage::disk('public')->delete($fileToDelete);
+            Log::info('Deleted old image file', ['file' => $fileToDelete]);
+        }
+
+        // Tambahkan file existing yang dipertahankan
+        $finalImages = array_merge($finalImages, $existingPaths);
+
+        // Upload file/base64 baru
+        foreach ($base64Images as $newImage) {
+            try {
+                if ($newImage instanceof \Illuminate\Http\UploadedFile) {
+                    // Handle file upload
+                    $path = $this->saveUploadedFile($newImage);
+                    if ($path) {
+                        $finalImages[] = $path;
+                    }
+                } else {
+                    // Handle base64 image
+                    $path = $this->saveBase64Image($newImage);
+                    if ($path) {
+                        $finalImages[] = $path;
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to process new image', [
+                    'type' => $newImage instanceof \Illuminate\Http\UploadedFile ? 'file' : 'base64',
+                    'error' => $e->getMessage()
+                ]);
+                // Continue processing other images
+            }
+        }
+
+        return $finalImages;
+    }
+
+    /**
+     * Save base64 image to storage
+     */
+    private function saveBase64Image(string $base64Data): ?string
+    {
+        try {
+            // Remove data:image/...;base64, prefix if present
+            if (strpos($base64Data, ',') !== false) {
+                $base64Data = explode(',', $base64Data)[1];
+            }
+
+            // Decode base64
+            $imageData = base64_decode($base64Data);
+
+            if ($imageData === false) {
+                throw new \Exception('Invalid base64 data');
+            }
+
+            // Validate image and get info
+            $imageInfo = $this->validateBase64Image($imageData);
+            if (!$imageInfo) {
+                throw new \Exception('Invalid image data');
+            }
+
+            // Generate unique filename
+            $extension = $imageInfo['extension'];
+            $filename = 'report_' . time() . '_' . uniqid() . '.' . $extension;
+            $path = 'report_images/' . $filename;
+
+            // Save to storage
+            if (Storage::disk('public')->put($path, $imageData)) {
+                return $path;
+            }
+
+            throw new \Exception('Failed to save image to storage');
+        } catch (\Exception $e) {
+            Log::error('Failed to save base64 image', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Save uploaded file to storage
+     */
+    private function saveUploadedFile(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        try {
+            $filename = 'report_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('report_images', $filename, 'public');
+            return $path;
+        } catch (\Exception $e) {
+            Log::error('Failed to save uploaded file', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Validate base64 image data
+     */
+    private function validateBase64Image(string $imageData): ?array
+    {
+        try {
+            // Get image info
+            $imageInfo = getimagesizefromstring($imageData);
+
+            if ($imageInfo === false) {
+                return null;
+            }
+
+            // Check mime type
+            $allowedMimes = [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/gif' => 'gif',
+                'image/jpg' => 'jpg'
+            ];
+
+            if (!isset($allowedMimes[$imageInfo['mime']])) {
+                return null;
+            }
+
+            // Check file size (max 5MB)
+            if (strlen($imageData) > 5242880) { // 5MB in bytes
+                return null;
+            }
+
+            return [
+                'width' => $imageInfo[0],
+                'height' => $imageInfo[1],
+                'mime' => $imageInfo['mime'],
+                'extension' => $allowedMimes[$imageInfo['mime']],
+                'size' => strlen($imageData)
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Check if string is base64 image
+     */
+    private function isBase64Image(string $data): bool
+    {
+        try {
+            // Cek apakah ada prefix data:image
+            if (strpos($data, 'data:image') === 0) {
+                return true;
+            }
+
+            // Cek apakah string valid base64 dan bisa di-decode sebagai image
+            if (strpos($data, ',') !== false) {
+                $base64Data = explode(',', $data)[1];
+            } else {
+                $base64Data = $data;
+            }
+
+            $decoded = base64_decode($base64Data, true);
+            if ($decoded === false) {
+                return false;
+            }
+
+            // Cek apakah hasil decode adalah valid image
+            $imageInfo = getimagesizefromstring($decoded);
+            return $imageInfo !== false;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * Enhanced validation for mixed image types
+     */
+    private function validateReportData(array $data, bool $isUpdate = false): \Illuminate\Contracts\Validation\Validator
+    {
+        $rules = [
+            'category_id' => $isUpdate ? 'sometimes|required|exists:categories,id' : 'required|exists:categories,id',
+            'contributing_id' => $isUpdate ? 'sometimes|required|exists:contributings,id' : 'required|exists:contributings,id',
+            'action_id' => $isUpdate ? 'sometimes|required|exists:actions,id' : 'required|exists:actions,id',
+            'severity_rating' => $isUpdate ? 'sometimes|required|in:low,medium,high,critical' : 'required|in:low,medium,high,critical',
+            'action_taken' => 'nullable|string|max:1000',
+            'description' => $isUpdate ? 'sometimes|required|string|max:1000' : 'required|string|max:1000',
+            'location' => $isUpdate ? 'sometimes|required|string|max:255' : 'required|string|max:255',
+            'images' => 'nullable|array|max:10', // Maximum 10 images
+        ];
+
+        // Custom validation for images array
+        if (isset($data['images']) && is_array($data['images'])) {
+            foreach ($data['images'] as $index => $image) {
+                if (is_string($image)) {
+                    // Cek apakah ini path existing atau base64
+                    if (strpos($image, 'report_images/') === 0) {
+                        // Path existing file - validasi bahwa file exists
+                        $rules["images.{$index}"] = 'string';
+                    } else {
+                        // Base64 validation
+                        $rules["images.{$index}"] = 'string|max:10485760'; // ~8MB base64
+                    }
+                } else {
+                    // File upload validation
+                    $rules["images.{$index}"] = 'image|mimes:jpeg,png,jpg,gif|max:5120'; // 5MB
+                }
+            }
+        }
+
+        return Validator::make($data, $rules, [
+            'images.max' => 'Maksimal 10 file gambar yang dapat diupload',
+            'images.*.max' => 'Ukuran file gambar maksimal 5MB',
+            'images.*.image' => 'File harus berupa gambar',
+            'images.*.mimes' => 'Gambar harus berformat jpeg, png, jpg, atau gif',
+        ]);
     }
 
     /**
@@ -633,6 +898,25 @@ class ReportController extends Controller
                 }
             }
         }
+    }
+
+    /**
+     * Upload report images (legacy method for backward compatibility)
+     * @deprecated Use handleImages() instead
+     */
+    private function uploadReportImages($images)
+    {
+        $imagePaths = [];
+
+        if ($images) {
+            foreach ($images as $image) {
+                $imageName = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+                $imagePath = $image->storeAs('report_images', $imageName, 'public');
+                $imagePaths[] = $imagePath;
+            }
+        }
+
+        return $imagePaths;
     }
 
     /**
@@ -658,7 +942,6 @@ class ReportController extends Controller
                 return $item;
             });
     }
-
 
     public function dashboard(Request $request): JsonResponse
     {
