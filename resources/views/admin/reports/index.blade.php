@@ -877,7 +877,7 @@
 
             let html = '<div class="table-responsive"><table class="table table-sm table-bordered">';
             html +=
-                '<thead class="table-light"><tr><th>Action</th><th>Due Date</th><th>PIC</th><th>Status</th><th>Approved By</th></tr></thead><tbody>';
+                '<thead class="table-light"><tr><th>Action</th><th>Due Date</th><th>PIC</th><th>Status</th><th>Approved By</th><th>Images</th></tr></thead><tbody>';
 
             reportDetails.forEach(function(detail) {
                 const statusColors = {
@@ -893,6 +893,15 @@
                         <td>${detail.pic}</td>
                         <td><span class="badge bg-${statusColors[detail.status_car]}">${detail.status_car.replace('_', ' ')}</span></td>
                         <td>${detail.approved_by ? detail.approved_by.name : 'N/A'}</td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                ${detail.evidences.map(img => `
+                                                                            <a href="javascript:void(0);" class="avatar-md" onclick="showImageModal('/storage/${img}')">
+                                                                                <img src="${'/storage/' + img}" alt="Report Image" class="img-fluid rounded" >
+                                                                            </a>
+                                                                        `).join('')}
+                            </div>
+                        </td>
                     </tr>
                 `;
             });

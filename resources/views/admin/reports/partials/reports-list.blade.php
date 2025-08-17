@@ -5,7 +5,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
                             <i class="ri-file-text-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -23,7 +24,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
                             <i class="ri-time-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -41,7 +43,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-info bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-info bg-gradient rounded">
                             <i class="ri-refresh-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -59,7 +62,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
                             <i class="ri-check-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -396,151 +400,153 @@
     </div>
 @endif
 
-<script>
-    // Additional JavaScript for reports list specific functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Update quick action badges
-        updateQuickActionBadges();
+@push('jsSection')
+    <script>
+        // Additional JavaScript for reports list specific functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update quick action badges
+            updateQuickActionBadges();
 
-        // Update recent activity summary
-        updateRecentActivity();
-    });
-
-    function updateQuickActionBadges() {
-        // Update badges in quick actions widget
-        $('#pendingBadge').text($('#pendingReports').text());
-        $('#progressBadge').text($('#inProgressReports').text());
-    }
-
-    function updateRecentActivity() {
-        // This would typically come from an API call
-        // For now, we'll use placeholder logic
-        $.ajax({
-            url: "{{ route('admin.reports.statistics.data') }}",
-            type: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    const stats = response.data;
-
-                    // Update recent activity numbers (you would get these from backend)
-                    $('#todayReports').text(stats.today_reports || '0');
-                    $('#weekReports').text(stats.week_reports || '0');
-                    $('#monthReports').text(stats.month_reports || '0');
-
-                    // Calculate and display completion rate
-                    const completionRate = stats.total_reports > 0 ?
-                        Math.round((stats.completed_reports / stats.total_reports) * 100) :
-                        0;
-                    $('#completionRate').text(completionRate + '%');
-                }
-            },
-            error: function() {
-                // Set fallback values
-                $('#todayReports').text('0');
-                $('#weekReports').text('0');
-                $('#monthReports').text('0');
-                $('#completionRate').text('0%');
-            }
+            // Update recent activity summary
+            updateRecentActivity();
         });
-    }
 
-    // Auto-refresh data every 5 minutes for real-time updates
-    setInterval(function() {
-        if (reportsTable) {
-            reportsTable.ajax.reload(null, false); // Don't reset pagination
+        function updateQuickActionBadges() {
+            // Update badges in quick actions widget
+            $('#pendingBadge').text($('#pendingReports').text());
+            $('#progressBadge').text($('#inProgressReports').text());
         }
-        loadStatistics();
-        updateQuickActionBadges();
-        updateRecentActivity();
-    }, 300000); // 5 minutes
 
-    // Table state management
-    $(document).ready(function() {
-        // Show/hide empty state based on table data
-        if (typeof reportsTable !== 'undefined') {
-            reportsTable.on('draw', function() {
-                const info = reportsTable.page.info();
-                if (info.recordsTotal === 0) {
-                    $('#emptyState').removeClass('d-none');
-                    $('#reportsTable').addClass('d-none');
-                } else {
-                    $('#emptyState').addClass('d-none');
-                    $('#reportsTable').removeClass('d-none');
+        function updateRecentActivity() {
+            // This would typically come from an API call
+            // For now, we'll use placeholder logic
+            $.ajax({
+                url: "{{ route('admin.reports.statistics.data') }}",
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const stats = response.data;
 
-                    // Update table info
-                    $('#tableInfo').text(
-                        `Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} reports`);
+                        // Update recent activity numbers (you would get these from backend)
+                        $('#todayReports').text(stats.today_reports || '0');
+                        $('#weekReports').text(stats.week_reports || '0');
+                        $('#monthReports').text(stats.month_reports || '0');
+
+                        // Calculate and display completion rate
+                        const completionRate = stats.total_reports > 0 ?
+                            Math.round((stats.completed_reports / stats.total_reports) * 100) :
+                            0;
+                        $('#completionRate').text(completionRate + '%');
+                    }
+                },
+                error: function() {
+                    // Set fallback values
+                    $('#todayReports').text('0');
+                    $('#weekReports').text('0');
+                    $('#monthReports').text('0');
+                    $('#completionRate').text('0%');
                 }
             });
         }
-    });
 
-    // Export functionality (future enhancement)
-    function exportReports(format) {
-        const filters = {
-            status: $('#statusFilter').val(),
-            severity: $('#severityFilter').val(),
-            start_date: $('#startDateFilter').val(),
-            end_date: $('#endDateFilter').val()
-        };
+        // Auto-refresh data every 5 minutes for real-time updates
+        setInterval(function() {
+            if (reportsTable) {
+                reportsTable.ajax.reload(null, false); // Don't reset pagination
+            }
+            loadStatistics();
+            updateQuickActionBadges();
+            updateRecentActivity();
+        }, 300000); // 5 minutes
 
-        // Build query string
-        const params = new URLSearchParams();
-        Object.keys(filters).forEach(key => {
-            if (filters[key]) {
-                params.append(key, filters[key]);
+        // Table state management
+        $(document).ready(function() {
+            // Show/hide empty state based on table data
+            if (typeof reportsTable !== 'undefined') {
+                reportsTable.on('draw', function() {
+                    const info = reportsTable.page.info();
+                    if (info.recordsTotal === 0) {
+                        $('#emptyState').removeClass('d-none');
+                        $('#reportsTable').addClass('d-none');
+                    } else {
+                        $('#emptyState').addClass('d-none');
+                        $('#reportsTable').removeClass('d-none');
+
+                        // Update table info
+                        $('#tableInfo').text(
+                            `Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} reports`);
+                    }
+                });
             }
         });
-        params.append('format', format);
 
-        // Open export URL
-        window.open(`/admin/reports/export?${params.toString()}`, '_blank');
-    }
+        // Export functionality (future enhancement)
+        function exportReports(format) {
+            const filters = {
+                status: $('#statusFilter').val(),
+                severity: $('#severityFilter').val(),
+                start_date: $('#startDateFilter').val(),
+                end_date: $('#endDateFilter').val()
+            };
 
-    // Print functionality
-    function printReports() {
-        window.print();
-    }
+            // Build query string
+            const params = new URLSearchParams();
+            Object.keys(filters).forEach(key => {
+                if (filters[key]) {
+                    params.append(key, filters[key]);
+                }
+            });
+            params.append('format', format);
 
-    // Bulk operations (future enhancement)
-    function bulkUpdateStatus(status) {
-        const selectedIds = [];
-        $('.report-checkbox:checked').each(function() {
-            selectedIds.push($(this).val());
-        });
-
-        if (selectedIds.length === 0) {
-            showAlert('warning', 'No Selection', 'Please select at least one report');
-            return;
+            // Open export URL
+            window.open(`/admin/reports/export?${params.toString()}`, '_blank');
         }
 
-        // Implement bulk update logic
-        console.log('Bulk update status:', status, selectedIds);
-    }
-
-    // Advanced search functionality
-    function performAdvancedSearch() {
-        const searchTerm = $('#advancedSearchInput').val();
-        if (searchTerm.length < 3) {
-            showAlert('info', 'Search Term Too Short', 'Please enter at least 3 characters');
-            return;
+        // Print functionality
+        function printReports() {
+            window.print();
         }
 
-        // Apply search to DataTable
-        reportsTable.search(searchTerm).draw();
-    }
+        // Bulk operations (future enhancement)
+        function bulkUpdateStatus(status) {
+            const selectedIds = [];
+            $('.report-checkbox:checked').each(function() {
+                selectedIds.push($(this).val());
+            });
 
-    // Reset all filters and search
-    function resetAllFilters() {
-        $('#filtersForm')[0].reset();
-        if (reportsTable) {
-            reportsTable.search('').columns().search('').draw();
+            if (selectedIds.length === 0) {
+                showAlert('warning', 'No Selection', 'Please select at least one report');
+                return;
+            }
+
+            // Implement bulk update logic
+            console.log('Bulk update status:', status, selectedIds);
         }
 
-        // Clear URL parameters
-        window.history.pushState({}, '', '{{ route('admin.reports.index') }}');
+        // Advanced search functionality
+        function performAdvancedSearch() {
+            const searchTerm = $('#advancedSearchInput').val();
+            if (searchTerm.length < 3) {
+                showAlert('info', 'Search Term Too Short', 'Please enter at least 3 characters');
+                return;
+            }
 
-        // Reload page to reset everything
-        window.location.reload();
-    }
-</script>
+            // Apply search to DataTable
+            reportsTable.search(searchTerm).draw();
+        }
+
+        // Reset all filters and search
+        function resetAllFilters() {
+            $('#filtersForm')[0].reset();
+            if (reportsTable) {
+                reportsTable.search('').columns().search('').draw();
+            }
+
+            // Clear URL parameters
+            window.history.pushState({}, '', '{{ route('admin.reports.index') }}');
+
+            // Reload page to reset everything
+            window.location.reload();
+        }
+    </script>
+@endpush
