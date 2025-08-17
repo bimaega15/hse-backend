@@ -894,13 +894,13 @@
                         <td><span class="badge bg-${statusColors[detail.status_car]}">${detail.status_car.replace('_', ' ')}</span></td>
                         <td>${detail.approved_by ? detail.approved_by.name : 'N/A'}</td>
                         <td>
-                            <div class="d-flex gap-1">
-                                ${detail.evidences.map(img => `
+                        ${detail.evidences.length > 0 ? `<div class="d-flex gap-1">
+                                    ${detail.evidences.map(img => `
                                                                             <a href="javascript:void(0);" class="avatar-md" onclick="showImageModal('/storage/${img}')">
                                                                                 <img src="${'/storage/' + img}" alt="Report Image" class="img-fluid rounded" >
                                                                             </a>
                                                                         `).join('')}
-                            </div>
+                                </div>` : '<p class="text-muted">No images available</p>'}
                         </td>
                     </tr>
                 `;
