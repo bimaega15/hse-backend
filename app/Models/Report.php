@@ -28,6 +28,12 @@ class Report extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',                    // TAMBAHKAN
+        'employee_id' => 'integer',           // TAMBAHKAN
+        'hse_staff_id' => 'integer',          // TAMBAHKAN
+        'category_id' => 'integer',           // TAMBAHKAN
+        'contributing_id' => 'integer',       // TAMBAHKAN
+        'action_id' => 'integer',             // TAMBAHKAN
         'images' => 'array',
         'start_process_at' => 'datetime',
         'completed_at' => 'datetime',

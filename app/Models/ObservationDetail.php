@@ -20,6 +20,9 @@ class ObservationDetail extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',           // TAMBAHKAN
+        'observation_id' => 'integer', // TAMBAHKAN
+        'category_id' => 'integer',  // TAMBAHKAN
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

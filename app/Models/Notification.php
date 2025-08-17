@@ -21,8 +21,12 @@ class Notification extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',           // TAMBAHKAN
+        'user_id' => 'integer',      // TAMBAHKAN
         'data' => 'array',
         'read_at' => 'datetime',
+        'created_at' => 'datetime',  // TAMBAHKAN
+        'updated_at' => 'datetime',  // TAMBAHKAN
     ];
 
     // Relationships

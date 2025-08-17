@@ -17,9 +17,12 @@ class User extends Authenticatable
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
+        'id' => 'integer',                    // TAMBAHKAN
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_active' => 'boolean',
+        'created_at' => 'datetime',           // TAMBAHKAN
+        'updated_at' => 'datetime',
     ];
 
     // Relationships

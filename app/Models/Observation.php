@@ -25,6 +25,12 @@ class Observation extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',                    // TAMBAHKAN
+        'user_id' => 'integer',               // TAMBAHKAN
+        'at_risk_behavior' => 'integer',      // TAMBAHKAN
+        'nearmiss_incident' => 'integer',     // TAMBAHKAN
+        'informal_risk_mgmt' => 'integer',    // TAMBAHKAN
+        'sim_k3' => 'integer',                // TAMBAHKAN
         'waktu_observasi' => 'datetime:H:i',
         'waktu_mulai' => 'datetime:H:i',
         'waktu_selesai' => 'datetime:H:i',

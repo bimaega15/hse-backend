@@ -23,6 +23,10 @@ class ReportDetail extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',           // TAMBAHKAN
+        'report_id' => 'integer',    // TAMBAHKAN
+        'approved_by' => 'integer',  // TAMBAHKAN
+        'created_by' => 'integer',   // TAMBAHKAN
         'evidences' => 'array',
         'due_date' => 'date',
         'created_at' => 'datetime',

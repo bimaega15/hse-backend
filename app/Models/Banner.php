@@ -22,8 +22,11 @@ class Banner extends Model
     ];
 
     protected $casts = [
+        'id' => 'integer',
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'created_at' => 'datetime',  // TAMBAHKAN
+        'updated_at' => 'datetime',  // TAMBAHKAN
     ];
 
     // Scope for active banners
