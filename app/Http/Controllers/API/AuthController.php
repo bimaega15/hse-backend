@@ -27,7 +27,6 @@ class AuthController extends Controller
         $validator = Validator::make($request->all(), [
             'email' => 'required|email',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:employee,hse_staff',
         ]);
 
         if ($validator->fails()) {
@@ -42,14 +41,6 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
-
-            // Check if role matches
-            if ($user->role !== $request->role) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Role tidak sesuai',
-                ], 401);
-            }
 
             // Check if user is active
             if (!$user->is_active) {
