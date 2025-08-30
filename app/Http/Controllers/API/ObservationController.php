@@ -101,7 +101,7 @@ class ObservationController extends Controller
                 'waktu_mulai' => $request->waktu_mulai,
                 'waktu_selesai' => $request->waktu_selesai,
                 'notes' => $request->notes,
-                'status' => 'draft',
+                'status' => 'submitted',
                 'at_risk_behavior' => 0,
                 'nearmiss_incident' => 0,
                 'informal_risk_mgmt' => 0,

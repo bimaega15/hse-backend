@@ -51,7 +51,7 @@ class ObservationSeeder extends Seeder
                 'sim_k3' => 2,
                 'waktu_mulai' => '14:00:00',
                 'waktu_selesai' => '14:20:00',
-                'status' => 'reviewed',
+                'status' => 'submitted',
                 'notes' => 'Observasi sore hari, kondisi umumnya baik',
                 'created_at' => Carbon::now()->subDays(1),
             ],
