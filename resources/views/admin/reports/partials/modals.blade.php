@@ -25,9 +25,9 @@
 
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="hseStaffId" class="form-label">HSE Staff</label>
+                                <label for="hseStaffId" class="form-label">BAIK Staff</label>
                                 <select class="form-select" id="hseStaffId" name="hse_staff_id">
-                                    <option value="">Select HSE Staff</option>
+                                    <option value="">Select BAIK Staff</option>
                                 </select>
                                 <div class="invalid-feedback" id="hseStaffIdError"></div>
                             </div>
@@ -197,7 +197,7 @@
                     </div>
 
                     <div class="mb-3" id="hseStaffSelection" style="display: none;">
-                        <label for="statusHseStaffId" class="form-label">Assign HSE Staff</label>
+                        <label for="statusHseStaffId" class="form-label">Assign BAIK Staff</label>
                         <select class="form-select" id="statusHseStaffId" name="hse_staff_id">
                             <option value="">Select HSE Staff</option>
                         </select>

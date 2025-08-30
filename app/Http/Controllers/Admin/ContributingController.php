@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Contributing;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
@@ -16,7 +17,8 @@ class ContributingController extends Controller
      */
     public function index()
     {
-        return view('admin.contributing.index');
+        $categories = Category::active()->orderBy('name')->get();
+        return view('admin.contributing.index', compact('categories'));
     }
 
     /**
@@ -24,7 +26,7 @@ class ContributingController extends Controller
      */
     public function getData(Request $request)
     {
-        $contributings = Contributing::with('actions')->select(['id', 'name', 'description', 'is_active', 'created_at']);
+        $contributings = Contributing::with(['actions', 'category'])->select(['id', 'category_id', 'name', 'description', 'is_active', 'created_at']);
 
         return DataTables::of($contributings)
             ->addIndexColumn()
@@ -40,6 +42,9 @@ class ContributingController extends Controller
             })
             ->addColumn('active_actions_count', function ($contributing) {
                 return $contributing->active_actions_count ?? 0;
+            })
+            ->addColumn('category_name', function ($contributing) {
+                return $contributing->category ? $contributing->category->name : '-';
             })
             ->addColumn('status', function ($contributing) {
                 $badgeClass = $contributing->is_active ? 'bg-success' : 'bg-danger';
@@ -74,10 +79,13 @@ class ContributingController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
+                'category_id' => 'required|exists:categories,id',
                 'name' => 'required|string|max:255|unique:contributings,name',
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'required|boolean'
             ], [
+                'category_id.required' => 'Category is required.',
+                'category_id.exists' => 'Selected category is invalid.',
                 'name.required' => 'Contributing factor name is required.',
                 'name.unique' => 'This contributing factor name already exists.',
                 'name.max' => 'Contributing factor name must not exceed 255 characters.',
@@ -94,6 +102,7 @@ class ContributingController extends Controller
             }
 
             $contributing = Contributing::create([
+                'category_id' => $request->category_id,
                 'name' => $request->name,
                 'description' => $request->description,
                 'is_active' => $request->is_active
@@ -118,7 +127,7 @@ class ContributingController extends Controller
     public function show($id)
     {
         try {
-            $contributing = Contributing::with('actions')->findOrFail($id);
+            $contributing = Contributing::with(['actions', 'category'])->findOrFail($id);
 
             return response()->json([
                 'success' => true,
@@ -141,10 +150,13 @@ class ContributingController extends Controller
             $contributing = Contributing::findOrFail($id);
 
             $validator = Validator::make($request->all(), [
+                'category_id' => 'required|exists:categories,id',
                 'name' => 'required|string|max:255|unique:contributings,name,' . $id,
                 'description' => 'nullable|string|max:1000',
                 'is_active' => 'required|boolean'
             ], [
+                'category_id.required' => 'Category is required.',
+                'category_id.exists' => 'Selected category is invalid.',
                 'name.required' => 'Contributing factor name is required.',
                 'name.unique' => 'This contributing factor name already exists.',
                 'name.max' => 'Contributing factor name must not exceed 255 characters.',
@@ -161,6 +173,7 @@ class ContributingController extends Controller
             }
 
             $contributing->update([
+                'category_id' => $request->category_id,
                 'name' => $request->name,
                 'description' => $request->description,
                 'is_active' => $request->is_active

@@ -3,15 +3,13 @@
     <!-- Brand Logo -->
     <a href="index.html" class="logo">
         <span class="logo-light">
-            <span class="logo-lg"><img src="{{ asset('admin/backend/dist') }}/assets/images/logo.png"
-                    alt="logo"></span>
+            <span class="logo-lg"><img src="{{ asset('assets/logo/logo-app.jpg') }}" alt="logo"></span>
             <span class="logo-sm"><img src="{{ asset('admin/backend/dist') }}/assets/images/logo-sm.png"
                     alt="small logo"></span>
         </span>
 
         <span class="logo-dark">
-            <span class="logo-lg"><img src="{{ asset('admin/backend/dist') }}/assets/images/logo-dark.png"
-                    alt="dark logo"></span>
+            <span class="logo-lg"><img src="{{ asset('assets/logo/logo-app.jpg') }}" alt="dark logo"></span>
             <span class="logo-sm"><img src="{{ asset('admin/backend/dist') }}/assets/images/logo-sm.png"
                     alt="small logo"></span>
         </span>
@@ -36,7 +34,7 @@
                 </a>
             </li>
 
-            <li class="side-nav-title">HSE Management</li>
+            <li class="side-nav-title">BAIK Management</li>
 
             <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarReports"
@@ -108,35 +106,33 @@
             <li class="side-nav-title">Master Data</li>
 
             <li class="side-nav-item">
-                <a href="{{ route('admin.categories.index') }}"
-                    class="side-nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                    <span class="menu-icon"><i data-lucide="tag"></i></span>
-                    <span class="menu-text"> Categories </span>
-                </a>
-            </li>
-
-            <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarContributing"
-                    aria-expanded="{{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') ? 'true' : 'false' }}"
+                    aria-expanded="{{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') || request()->routeIs('admin.categories.*') ? 'true' : 'false' }}"
                     aria-controls="sidebarContributing"
-                    class="side-nav-link {{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') ? 'active' : '' }}">
+                    class="side-nav-link {{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') || request()->routeIs('admin.categories.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="layers"></i></span>
-                    <span class="menu-text"> Contributing Factors</span>
+                    <span class="menu-text"> Risk Management</span>
                     <span class="menu-arrow"></span>
                 </a>
-                <div class="collapse {{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') ? 'show' : '' }}"
+                <div class="collapse {{ request()->routeIs('admin.contributing.*') || request()->routeIs('admin.actions.*') || request()->routeIs('admin.categories.*') ? 'show' : '' }}"
                     id="sidebarContributing">
                     <ul class="sub-menu">
                         <li class="side-nav-item">
+                            <a href="{{ route('admin.categories.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.categories.*') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Risk Categories</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
                             <a href="{{ route('admin.contributing.index') }}"
                                 class="side-nav-link {{ request()->routeIs('admin.contributing.*') ? 'text-primary' : '' }}">
-                                <span class="menu-text">All Contributing Factors</span>
+                                <span class="menu-text">Contributing Factors</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
                             <a href="{{ route('admin.actions.index') }}"
                                 class="side-nav-link {{ request()->routeIs('admin.actions.*') ? 'text-primary' : '' }}">
-                                <span class="menu-text">Actions Management</span>
+                                <span class="menu-text">Corrective Actions</span>
                             </a>
                         </li>
                     </ul>
@@ -182,7 +178,7 @@
                         <li class="side-nav-item">
                             <a href="{{ route('admin.users.index') }}?role=hse_staff"
                                 class="side-nav-link {{ request()->routeIs('admin.users.*') && request()->get('role') == 'hse_staff' ? 'text-primary' : '' }}">
-                                <span class="menu-text">HSE Staff</span>
+                                <span class="menu-text">BAIK Staff</span>
                             </a>
                         </li>
                         <li class="side-nav-item">
@@ -280,8 +276,9 @@
             }
         }
 
-        // Handle sidebar active states for contributing factors
-        if (currentPath.includes('/admin/contributing') || currentPath.includes('/admin/actions')) {
+        // Handle sidebar active states for risk factor management (categories, contributing factors, actions)
+        if (currentPath.includes('/admin/contributing') || currentPath.includes('/admin/actions') || currentPath
+            .includes('/admin/categories')) {
             const contributingCollapse = document.getElementById('sidebarContributing');
             const contributingToggle = document.querySelector('[href="#sidebarContributing"]');
 
@@ -323,11 +320,12 @@
             }
         }
 
-        // Handle contributing factors section
+        // Handle risk factor management section
         if (target && target.getAttribute('href') && (target.getAttribute('href').includes(
                     'admin/contributing') ||
-                target.getAttribute('href').includes('admin/actions'))) {
-            // Ensure the collapse stays open when navigating between contributing sections
+                target.getAttribute('href').includes('admin/actions') ||
+                target.getAttribute('href').includes('admin/categories'))) {
+            // Ensure the collapse stays open when navigating between risk factor sections
             const contributingCollapse = document.getElementById('sidebarContributing');
             if (contributingCollapse) {
                 sessionStorage.setItem('keepContributingOpen', 'true');

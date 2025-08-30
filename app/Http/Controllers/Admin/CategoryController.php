@@ -230,13 +230,21 @@ class CategoryController extends Controller
                 ], 404);
             }
 
-            // Check if category is being used in reports
+            // Check if category is being used in reports or contributing factors
             $reportsCount = \DB::table('reports')->where('category_id', $id)->count();
+            $contributingsCount = \DB::table('contributings')->where('category_id', $id)->count();
 
             if ($reportsCount > 0) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Kategori tidak dapat dihapus karena masih digunakan dalam ' . $reportsCount . ' laporan'
+                ], 400);
+            }
+
+            if ($contributingsCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak dapat dihapus karena masih memiliki ' . $contributingsCount . ' contributing factor'
                 ], 400);
             }
 
@@ -299,6 +307,38 @@ class CategoryController extends Controller
                     'id' => $category->id,
                     'is_active' => $category->is_active
                 ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get contributing factors by category
+     */
+    public function getContributings($id): JsonResponse
+    {
+        try {
+            $category = Category::find($id);
+
+            if (!$category) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Kategori tidak ditemukan'
+                ], 404);
+            }
+
+            $contributings = $category->activeContributings()
+                ->select(['id', 'name', 'description'])
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $contributings
             ]);
         } catch (\Exception $e) {
             return response()->json([

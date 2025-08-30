@@ -6,9 +6,8 @@
             <div class="col-xl-3 col-lg-4 col-md-6">
                 <div class="card overflow-hidden text-center rounded-4 p-xxl-4 p-3 mb-0">
                     <a href="{{ route('admin.login') }}" class="auth-brand mb-4">
-                        <img src="{{ asset('admin/backend/dist') }}/assets/images/logo-dark.png" alt="dark logo" height="26"
-                            class="logo-dark">
-                        <img src="{{ asset('admin/backend/dist') }}/assets/images/logo.png" alt="logo light" height="26"
+                        <img src="{{ asset('assets/logo/logo-app.jpg') }}" alt="dark logo" height="26" class="logo-dark">
+                        <img src="{{ asset('assets/logo/logo-app.jpg') }}" alt="logo light" height="26"
                             class="logo-light">
                     </a>
 
@@ -59,8 +58,8 @@
                 <p class="mt-4 text-center mb-0">
                     <script>
                         document.write(new Date().getFullYear())
-                    </script> © HSE Management System - By <span
-                        class="fw-bold text-decoration-underline text-uppercase text-reset fs-12">Your Company</span>
+                    </script> © BAIK Management System - By <span
+                        class="fw-bold text-decoration-underline text-uppercase text-reset fs-12">BAIK TECHNOLOGY</span>
                 </p>
             </div>
         </div>

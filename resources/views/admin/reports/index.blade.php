@@ -328,7 +328,7 @@
             <div class="text-end">
                 <ol class="breadcrumb m-0 py-0 fs-13">
                     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">HSE Management</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">BAIK Management</a></li>
                     <li class="breadcrumb-item active">Reports</li>
                 </ol>
             </div>
@@ -565,7 +565,7 @@
                     `<option value="${employee.id}">${employee.name}</option>`);
             });
 
-            $('#hseStaffId, #statusHseStaffId').empty().append('<option value="">Select HSE Staff</option>');
+            $('#hseStaffId, #statusHseStaffId').empty().append('<option value="">Select BAIK Staff</option>');
             formData.hse_staff.forEach(function(staff) {
                 $('#hseStaffId, #statusHseStaffId').append(
                     `<option value="${staff.id}">${staff.name}</option>`);
@@ -800,7 +800,7 @@
                         </table>
                     </div>
                     <div class="col-md-6">
-                        <h6 class="fw-bold">HSE Staff Information</h6>
+                        <h6 class="fw-bold">BAIK Staff Information</h6>
                         <table class="table table-sm">
                             <tr><td class="fw-bold">Name:</td><td>${report.hse_staff ? report.hse_staff.name : 'Not Assigned'}</td></tr>
                             <tr><td class="fw-bold">User ID:</td><td>${report.hse_staff_id || 'N/A'}</td></tr>

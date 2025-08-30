@@ -51,8 +51,16 @@ class MasterDataSeeder extends Seeder
 
     private function seedContributingsWithActions()
     {
+        // Get categories for assigning to contributings
+        $unsafeCondition = Category::where('name', 'UNSAFE CONDITION')->first();
+        $unsafeBehavior = Category::where('name', 'UNSAFE BEHAVIOR')->first();
+        $environmentalHazard = Category::where('name', 'ENVIRONMENTAL HAZARD')->first();
+        $equipmentFailure = Category::where('name', 'EQUIPMENT FAILURE')->first();
+        $emergencySituation = Category::where('name', 'EMERGENCY SITUATION')->first();
+
         $contributings = [
             [
+                'category_id' => $unsafeCondition->id,
                 'name' => 'Peralatan (hand tool atau alat) yang cacat',
                 'description' => 'Alat kerja yang mengalami kerusakan atau cacat',
                 'actions' => [
@@ -70,6 +78,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $unsafeCondition->id,
                 'name' => 'Peralatan pelindung diri yang tidak memadai',
                 'description' => 'APD yang tidak sesuai standar atau rusak',
                 'actions' => [
@@ -83,6 +92,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $unsafeCondition->id,
                 'name' => 'Pengamanan/pengaman yang tidak memadai',
                 'description' => 'Sistem pengaman yang kurang memadai',
                 'actions' => [
@@ -96,6 +106,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $unsafeBehavior->id,
                 'name' => 'Mengoperasikan peralatan tanpa wewenang',
                 'description' => 'Menggunakan peralatan tanpa izin atau sertifikasi',
                 'actions' => [
@@ -108,6 +119,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $unsafeBehavior->id,
                 'name' => 'Gagal menggunakan alat pelindung diri',
                 'description' => 'Tidak menggunakan APD sesuai ketentuan',
                 'actions' => [
@@ -121,6 +133,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $unsafeBehavior->id,
                 'name' => 'Mengabaikan prosedur keselamatan',
                 'description' => 'Tidak mengikuti SOP yang telah ditetapkan',
                 'actions' => [
@@ -133,6 +146,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $environmentalHazard->id,
                 'name' => 'Kondisi pencahayaan yang buruk',
                 'description' => 'Pencahayaan tidak memadai untuk aktivitas kerja',
                 'actions' => [
@@ -145,6 +159,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $environmentalHazard->id,
                 'name' => 'Ventilasi yang tidak memadai',
                 'description' => 'Sirkulasi udara yang buruk di area kerja',
                 'actions' => [
@@ -157,6 +172,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $environmentalHazard->id,
                 'name' => 'Kebisingan berlebihan',
                 'description' => 'Tingkat kebisingan melebihi batas aman',
                 'actions' => [
@@ -169,6 +185,7 @@ class MasterDataSeeder extends Seeder
                 ]
             ],
             [
+                'category_id' => $equipmentFailure->id,
                 'name' => 'Kegagalan sistem mekanik',
                 'description' => 'Kerusakan pada sistem mekanik peralatan',
                 'actions' => [
@@ -184,6 +201,7 @@ class MasterDataSeeder extends Seeder
 
         foreach ($contributings as $contributingData) {
             $contributing = Contributing::create([
+                'category_id' => $contributingData['category_id'],
                 'name' => $contributingData['name'],
                 'description' => $contributingData['description']
             ]);

@@ -1,6 +1,6 @@
 @extends('admin.layouts')
 
-@section('title', 'HSE Profile')
+@section('title', 'BAIK Profile')
 @section('content')
     <div class="page-content">
         <div class="page-title-head d-flex align-items-center gap-2">

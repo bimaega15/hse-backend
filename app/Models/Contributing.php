@@ -11,6 +11,7 @@ class Contributing extends Model
     use HasFactory;
 
     protected $fillable = [
+        'category_id',
         'name',
         'description',
         'is_active'
@@ -18,12 +19,18 @@ class Contributing extends Model
 
     protected $casts = [
         'id' => 'integer',
+        'category_id' => 'integer',
         'is_active' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'
     ];
 
     // Relationships
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
+    }
+
     public function actions()
     {
         return $this->hasMany(Action::class, 'contributing_id');
@@ -38,6 +45,11 @@ class Contributing extends Model
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeByCategory($query, $categoryId)
+    {
+        return $query->where('category_id', $categoryId);
     }
 
     // Accessors

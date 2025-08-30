@@ -1,18 +1,18 @@
 @extends('admin.layouts')
 
-@section('title', 'HSE Dashboard')
+@section('title', 'BAIK Dashboard')
 
 @section('content')
     <div class="page-content">
         <div class="page-title-head d-flex align-items-center gap-2">
             <div class="flex-grow-1">
-                <h4 class="fs-18 fw-bold mb-0">HSE Dashboard</h4>
+                <h4 class="fs-18 fw-bold mb-0">BAIK Dashboard</h4>
                 <p class="text-muted mb-0">Monitoring & Overview Health, Safety & Environment</p>
             </div>
 
             <div class="text-end">
                 <ol class="breadcrumb m-0 py-0 fs-13">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">HSE Admin</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">BAIK Admin</a></li>
                     <li class="breadcrumb-item active">Dashboard</li>
                 </ol>
             </div>
@@ -124,7 +124,7 @@
                     <div class="card">
                         <div class="d-flex card-header justify-content-between align-items-center">
                             <div>
-                                <h4 class="header-title">HSE Reports Overview</h4>
+                                <h4 class="header-title">BAIK Reports Overview</h4>
                                 <p class="text-muted mb-0">Monthly trend of safety reports and incidents</p>
                             </div>
                             <div class="dropdown">
@@ -225,7 +225,7 @@
                 <div class="col-xxl-6">
                     <div class="card">
                         <div class="card-header d-flex flex-wrap align-items-center gap-2">
-                            <h4 class="header-title me-auto">Recent HSE Reports</h4>
+                            <h4 class="header-title me-auto">Recent BAIK Reports</h4>
                             <div class="d-flex gap-2 justify-content-end text-end">
                                 <a href="{{ route('admin.reports.index') }}" class="btn btn-sm btn-light">View All</a>
                                 <a href="javascript:void(0);" class="btn btn-sm btn-primary" onclick="createReport()">New
@@ -296,14 +296,14 @@
                     <div class="col-md-6 text-center text-md-start">
                         <script>
                             document.write(new Date().getFullYear())
-                        </script> © HSE Management System -
+                        </script> © BAIK Management System -
                         <span class="fw-bold text-decoration-underline text-uppercase text-reset fs-12">Safety First</span>
                     </div>
                     <div class="col-md-6">
                         <div class="text-md-end footer-links d-none d-md-block">
                             <a href="javascript: void(0);">Documentation</a>
                             <a href="javascript: void(0);">Support</a>
-                            <a href="javascript: void(0);">Contact HSE Team</a>
+                            <a href="javascript: void(0);">Contact BAIK Team</a>
                         </div>
                     </div>
                 </div>
@@ -563,7 +563,7 @@
                 const sampleObservations = [{
                         id: 1,
                         observer: 'Alice Brown',
-                        department: 'HSE Team',
+                        department: 'BAIK Team',
                         type: 'At Risk',
                         count: 3,
                         status: 'Reviewed',

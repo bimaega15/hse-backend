@@ -187,13 +187,13 @@
     </div>
 </div>
 
-<!-- HSE Performance -->
+<!-- BAIK Performance -->
 <div class="row">
     <div class="col-12">
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-team-line me-2"></i>HSE Staff Performance
+                    <i class="ri-team-line me-2"></i>BAIK Staff Performance
                 </h5>
             </div>
             <div class="card-body">
@@ -201,7 +201,7 @@
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>HSE Staff</th>
+                                <th>BAIK Staff</th>
                                 <th>Total Assigned</th>
                                 <th>Completed</th>
                                 <th>This Month</th>
@@ -244,7 +244,7 @@
                                 <tr>
                                     <td colspan="6" class="text-center text-muted py-4">
                                         <i class="ri-team-line fs-48 mb-3"></i>
-                                        <p>No HSE staff performance data available</p>
+                                        <p>No BAIK staff performance data available</p>
                                     </td>
                                 </tr>
                             @endif

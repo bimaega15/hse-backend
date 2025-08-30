@@ -71,7 +71,7 @@
                                     </div>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <p class="text-muted mb-1">HSE Staff</p>
+                                    <p class="text-muted mb-1">BAIK Staff</p>
                                     <h5 class="mb-0" id="hseStaff">-</h5>
                                 </div>
                             </div>
@@ -122,7 +122,7 @@
                                                 Roles</a></li>
                                         <li><a class="dropdown-item" href="#"
                                                 onclick="filterByRole('admin')">Admin</a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="filterByRole('hse_staff')">HSE
+                                        <li><a class="dropdown-item" href="#" onclick="filterByRole('hse_staff')">BAIK
                                                 Staff</a></li>
                                         <li><a class="dropdown-item" href="#"
                                                 onclick="filterByRole('employee')">Employee</a></li>
@@ -244,7 +244,7 @@
                                             <select class="form-select" id="userRole" name="role" required>
                                                 <option value="">Select Role</option>
                                                 <option value="admin">Administrator</option>
-                                                <option value="hse_staff">HSE Staff</option>
+                                                <option value="hse_staff">BAIK Staff</option>
                                                 <option value="employee">Employee</option>
                                             </select>
                                             <div class="invalid-feedback" id="roleError"></div>
@@ -582,7 +582,7 @@
                         class: 'bg-danger'
                     },
                     'hse_staff': {
-                        text: 'HSE Staff',
+                        text: 'BAIK Staff',
                         class: 'bg-warning'
                     },
                     'employee': {
@@ -659,7 +659,7 @@
             // Update role filter button text
             const roleText = currentFilters.role === 'all' ? 'All Roles' :
                 currentFilters.role === 'admin' ? 'Admin' :
-                currentFilters.role === 'hse_staff' ? 'HSE Staff' :
+                currentFilters.role === 'hse_staff' ? 'BAIK Staff' :
                 currentFilters.role === 'employee' ? 'Employee' : 'All Roles';
 
             $('.dropdown-toggle').each(function() {
@@ -691,7 +691,7 @@
             if (currentFilters.role && currentFilters.role !== 'all') {
                 const roleLabels = {
                     'admin': 'Admin',
-                    'hse_staff': 'HSE Staff',
+                    'hse_staff': 'BAIK Staff',
                     'employee': 'Employee'
                 };
                 const badgeText = roleLabels[currentFilters.role] || currentFilters.role;
@@ -823,7 +823,7 @@
                                 class: 'bg-danger'
                             },
                             'hse_staff': {
-                                text: 'HSE Staff',
+                                text: 'BAIK Staff',
                                 class: 'bg-warning'
                             },
                             'employee': {

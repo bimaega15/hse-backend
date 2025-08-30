@@ -98,9 +98,9 @@
                         </h6>
                         <p class="mb-0">
                             @if ($status === 'waiting')
-                                These reports are waiting for HSE staff assignment and processing.
+                                These reports are waiting for BAIK staff assignment and processing.
                             @elseif($status === 'in-progress')
-                                These reports are currently being processed by HSE staff.
+                                These reports are currently being processed by BAIK staff.
                             @elseif($status === 'done')
                                 These reports have been completed and closed.
                             @endif
@@ -237,7 +237,7 @@
                             <tr>
                                 <th width="3%">#</th>
                                 <th width="12%">Employee</th>
-                                <th width="12%">HSE Staff</th>
+                                <th width="12%">BAIK Staff</th>
                                 <th width="12%">Report Info</th>
                                 <th width="20%">Description</th>
                                 <th width="8%">Severity</th>

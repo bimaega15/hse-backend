@@ -1,19 +1,20 @@
 @extends('admin.layouts')
 
-@section('title', 'Categories Management')
+@section('title', 'Risk Categories Management')
 
 @section('content')
     <div class="page-content">
         <!-- Page Title -->
         <div class="page-title-head d-flex align-items-center gap-2">
             <div class="flex-grow-1">
-                <h4 class="fs-18 fw-bold mb-0">Categories Management</h4>
+                <h4 class="fs-18 fw-bold mb-0">Risk Categories Management</h4>
             </div>
             <div class="text-end">
                 <ol class="breadcrumb m-0 py-0 fs-13">
                     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0);">Master Data</a></li>
-                    <li class="breadcrumb-item active">Categories</li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Risk Factor Management</a></li>
+                    <li class="breadcrumb-item active">Risk Categories</li>
                 </ol>
             </div>
         </div>
@@ -24,9 +25,9 @@
                     <div class="card">
                         <div
                             class="card-header border-bottom border-dashed d-flex align-items-center justify-content-between">
-                            <h4 class="header-title mb-0">Categories List</h4>
+                            <h4 class="header-title mb-0">Risk Categories List</h4>
                             <button type="button" class="btn btn-primary" onclick="createCategory()">
-                                <i class="ri-add-line me-1"></i>Add New Category
+                                <i class="ri-add-line me-1"></i>Add New Risk Category
                             </button>
                         </div>
 

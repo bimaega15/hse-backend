@@ -23,9 +23,31 @@ class Category extends Model
         'updated_at' => 'datetime'
     ];
 
+    // Relationships
+    public function contributings()
+    {
+        return $this->hasMany(Contributing::class);
+    }
+
+    public function activeContributings()
+    {
+        return $this->hasMany(Contributing::class)->where('is_active', true);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
+    }
+
+    // Accessors
+    public function getContributingsCountAttribute()
+    {
+        return $this->contributings()->count();
+    }
+
+    public function getActiveContributingsCountAttribute()
+    {
+        return $this->activeContributings()->count();
     }
 }

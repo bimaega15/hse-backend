@@ -14,7 +14,7 @@ class UserSeeder extends Seeder
         // Create Admin User
         User::create([
             'name' => 'Super Admin',
-            'email' => 'admin@company.com',
+            'email' => 'admin@baiktech.com',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
             'department' => 'Management',
@@ -25,7 +25,7 @@ class UserSeeder extends Seeder
         // Create Second Admin
         User::create([
             'name' => 'System Administrator',
-            'email' => 'sysadmin@company.com',
+            'email' => 'sysadmin@baiktech.com',
             'password' => Hash::make('admin123'),
             'role' => 'admin',
             'department' => 'Information Technology',
@@ -36,7 +36,7 @@ class UserSeeder extends Seeder
         // Create HSE Staff
         User::create([
             'name' => 'Jane HSE',
-            'email' => 'jane.hse@company.com',
+            'email' => 'jane.hse@baiktech.com',
             'password' => Hash::make('demo123'),
             'role' => 'hse_staff',
             'department' => 'Health, Safety & Environment',
@@ -47,7 +47,7 @@ class UserSeeder extends Seeder
         // Create Employee
         User::create([
             'name' => 'John Doe',
-            'email' => 'john.doe@company.com',
+            'email' => 'john.doe@baiktech.com',
             'password' => Hash::make('demo123'),
             'role' => 'employee',
             'department' => 'IT Department',
@@ -58,7 +58,7 @@ class UserSeeder extends Seeder
         // Create more sample users
         User::create([
             'name' => 'Alice Smith',
-            'email' => 'alice.smith@company.com',
+            'email' => 'alice.smith@baiktech.com',
             'password' => Hash::make('demo123'),
             'role' => 'employee',
             'department' => 'Operations',
@@ -68,7 +68,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name' => 'Bob Wilson',
-            'email' => 'bob.wilson@company.com',
+            'email' => 'bob.wilson@baiktech.com',
             'password' => Hash::make('demo123'),
             'role' => 'hse_staff',
             'department' => 'Health, Safety & Environment',
@@ -78,7 +78,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name' => 'Carol Brown',
-            'email' => 'carol.brown@company.com',
+            'email' => 'carol.brown@baiktech.com',
             'password' => Hash::make('demo123'),
             'role' => 'employee',
             'department' => 'Production',

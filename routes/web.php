@@ -116,6 +116,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::prefix('admin/categories')->name('admin.categories.')->group(function () {
         Route::get('/', [CategoryController::class, 'index'])->name('index');
         Route::get('/data', [CategoryController::class, 'getData'])->name('data');
+        Route::get('/{id}/contributings', [CategoryController::class, 'getContributings'])->name('contributings');
         Route::post('/', [CategoryController::class, 'store'])->name('store');
         Route::get('/{id}', [CategoryController::class, 'show'])->name('show');
         Route::put('/{id}', [CategoryController::class, 'update'])->name('update');

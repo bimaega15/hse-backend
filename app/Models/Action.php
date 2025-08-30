@@ -52,4 +52,14 @@ class Action extends Model
     {
         return $this->contributing->name;
     }
+
+    public function getCategoryNameAttribute()
+    {
+        return $this->contributing->category->name ?? null;
+    }
+
+    public function getCategoryIdAttribute()
+    {
+        return $this->contributing->category_id ?? null;
+    }
 }

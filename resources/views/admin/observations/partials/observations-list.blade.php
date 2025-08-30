@@ -96,9 +96,9 @@
                             @if ($status === 'draft')
                                 These observations are still being edited and haven't been submitted for review.
                             @elseif($status === 'submitted')
-                                These observations have been submitted and are awaiting HSE staff review.
+                                These observations have been submitted and are awaiting BAIK staff review.
                             @elseif($status === 'reviewed')
-                                These observations have been reviewed and completed by HSE staff.
+                                These observations have been reviewed and completed by BAIK staff.
                             @endif
                             <a href="{{ route('admin.observations.index') }}"
                                 class="text-decoration-underline fw-medium">View all observations</a>

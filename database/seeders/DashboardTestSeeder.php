@@ -126,14 +126,14 @@ class DashboardTestSeeder extends Seeder
 
         // Employees
         $employees = [
-            ['name' => 'John Doe', 'email' => 'john.doe@company.com', 'department' => 'Production'],
-            ['name' => 'Jane Smith', 'email' => 'jane.smith@company.com', 'department' => 'Maintenance'],
-            ['name' => 'Mike Wilson', 'email' => 'mike.wilson@company.com', 'department' => 'Quality Control'],
-            ['name' => 'Lisa Garcia', 'email' => 'lisa.garcia@company.com', 'department' => 'Warehouse'],
-            ['name' => 'Robert Taylor', 'email' => 'robert.taylor@company.com', 'department' => 'Engineering'],
-            ['name' => 'Amanda White', 'email' => 'amanda.white@company.com', 'department' => 'Operations'],
-            ['name' => 'James Miller', 'email' => 'james.miller@company.com', 'department' => 'Production'],
-            ['name' => 'Maria Lopez', 'email' => 'maria.lopez@company.com', 'department' => 'Safety'],
+            ['name' => 'John Doe', 'email' => 'john.doe@baiktech.com', 'department' => 'Production'],
+            ['name' => 'Jane Smith', 'email' => 'jane.smith@baiktech.com', 'department' => 'Maintenance'],
+            ['name' => 'Mike Wilson', 'email' => 'mike.wilson@baiktech.com', 'department' => 'Quality Control'],
+            ['name' => 'Lisa Garcia', 'email' => 'lisa.garcia@baiktech.com', 'department' => 'Warehouse'],
+            ['name' => 'Robert Taylor', 'email' => 'robert.taylor@baiktech.com', 'department' => 'Engineering'],
+            ['name' => 'Amanda White', 'email' => 'amanda.white@baiktech.com', 'department' => 'Operations'],
+            ['name' => 'James Miller', 'email' => 'james.miller@baiktech.com', 'department' => 'Production'],
+            ['name' => 'Maria Lopez', 'email' => 'maria.lopez@baiktech.com', 'department' => 'Safety'],
         ];
 
         foreach ($employees as $employee) {
@@ -367,7 +367,7 @@ class DashboardTestSeeder extends Seeder
         $banners = [
             [
                 'title' => 'Safety First Initiative',
-                'description' => 'Join our company-wide safety first initiative. Report incidents and help create a safer workplace.',
+                'description' => 'Join our organization-wide safety first initiative. Report incidents and help create a safer workplace.',
                 'icon' => 'shield-check',
                 'background_color' => '#28a745',
                 'text_color' => '#ffffff',

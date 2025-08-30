@@ -1,21 +1,20 @@
 @extends('admin.layouts')
 
-@section('title', 'Actions Management')
+@section('title', 'Corrective Actions Management')
 
 @section('content')
     <div class="page-content">
         <!-- Page Title -->
         <div class="page-title-head d-flex align-items-center gap-2">
             <div class="flex-grow-1">
-                <h4 class="fs-18 fw-bold mb-0">Actions Management</h4>
+                <h4 class="fs-18 fw-bold mb-0">Corrective Actions Management</h4>
             </div>
             <div class="text-end">
                 <ol class="breadcrumb m-0 py-0 fs-13">
                     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0);">Master Data</a></li>
-                    <li class="breadcrumb-item"><a href="{{ route('admin.contributing.index') }}">Contributing Factors</a>
-                    </li>
-                    <li class="breadcrumb-item active">Actions</li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Risk Management</a></li>
+                    <li class="breadcrumb-item active">Corrective Actions</li>
                 </ol>
             </div>
         </div>

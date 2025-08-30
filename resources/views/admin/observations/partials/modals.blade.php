@@ -182,11 +182,11 @@
             switch (status) {
                 case 'submitted':
                     description =
-                        'This observation will be submitted for HSE staff review. Once submitted, it cannot be edited until reviewed.';
+                        'This observation will be submitted for BAIK staff review. Once submitted, it cannot be edited until reviewed.';
                     break;
                 case 'reviewed':
                     description =
-                        'This observation will be marked as reviewed and completed. This action indicates HSE staff has reviewed the observation.';
+                        'This observation will be marked as reviewed and completed. This action indicates BAIK staff has reviewed the observation.';
                     break;
                 default:
                     description = 'Status will be updated.';

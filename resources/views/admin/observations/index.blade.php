@@ -143,7 +143,7 @@
             <div class="text-end">
                 <ol class="breadcrumb m-0 py-0 fs-13">
                     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">HSE Management</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">BAIK Management</a></li>
                     <li class="breadcrumb-item active">Observations</li>
                 </ol>
             </div>

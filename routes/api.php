@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('master-data')->group(function () {
         Route::get('/all', [MasterDataController::class, 'getAllMasterData']);
         Route::get('/categories', [MasterDataController::class, 'getCategories']);
+        Route::get('/categories/{categoryId}/contributings', [MasterDataController::class, 'getContributingsByCategory']);
         Route::get('/contributings', [MasterDataController::class, 'getContributings']);
         Route::get('/contributings/{contributingId}', [MasterDataController::class, 'getContributingDetail']);
         Route::get('/contributings/{contributingId}/actions', [MasterDataController::class, 'getActionsByContributing']);

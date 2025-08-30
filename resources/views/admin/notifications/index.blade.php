@@ -93,7 +93,7 @@
                                                         <i class="ri-team-line"></i>
                                                     </div>
                                                     <h5 class="feature-title">Team Updates</h5>
-                                                    <p class="feature-desc">Stay connected with your HSE team activities and
+                                                    <p class="feature-desc">Stay connected with your BAIK team activities and
                                                         assignments</p>
                                                 </div>
                                             </div>

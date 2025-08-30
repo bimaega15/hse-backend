@@ -13,6 +13,7 @@
                 <ol class="breadcrumb m-0 py-0 fs-13">
                     <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="javascript: void(0);">Master Data</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">Risk Management</a></li>
                     <li class="breadcrumb-item active">Contributing Factors</li>
                 </ol>
             </div>
@@ -37,8 +38,9 @@
                                     <thead class="table-dark">
                                         <tr>
                                             <th width="5%">#</th>
+                                            <th width="15%">Category</th>
                                             <th width="20%">Name</th>
-                                            <th width="30%">Description</th>
+                                            <th width="25%">Description</th>
                                             <th width="10%">Actions Count</th>
                                             <th width="10%">Status</th>
                                             <th width="10%">Created At</th>
@@ -73,11 +75,15 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="contributingName" class="form-label">Contributing Factor Name <span
+                                    <label for="contributingCategory" class="form-label">Category <span
                                             class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" id="contributingName" name="name" required
-                                        maxlength="255">
-                                    <div class="invalid-feedback" id="nameError"></div>
+                                    <select class="form-select" id="contributingCategory" name="category_id" required>
+                                        <option value="">Select Category</option>
+                                        @foreach ($categories as $category)
+                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <div class="invalid-feedback" id="categoryIdError"></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -89,9 +95,17 @@
                                         <option value="1">Active</option>
                                         <option value="0">Inactive</option>
                                     </select>
-                                    <div class="invalid-feedback" id="statusError"></div>
+                                    <div class="invalid-feedback" id="isActiveError"></div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="contributingName" class="form-label">Contributing Factor Name <span
+                                    class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="contributingName" name="name" required
+                                maxlength="255">
+                            <div class="invalid-feedback" id="nameError"></div>
                         </div>
 
                         <div class="mb-3">
@@ -105,7 +119,8 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                         <button type="submit" class="btn btn-primary">
-                            <span class="spinner-border spinner-border-sm d-none" id="submitSpinner" role="status"></span>
+                            <span class="spinner-border spinner-border-sm d-none" id="submitSpinner"
+                                role="status"></span>
                             <span id="submitText">Save Contributing Factor</span>
                         </button>
                     </div>
@@ -127,8 +142,8 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Contributing Factor Name:</label>
-                                <p class="form-control-plaintext" id="viewContributingName">-</p>
+                                <label class="form-label fw-bold">Category:</label>
+                                <p class="form-control-plaintext" id="viewContributingCategory">-</p>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -137,6 +152,11 @@
                                 <p class="form-control-plaintext" id="viewContributingStatus">-</p>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Contributing Factor Name:</label>
+                        <p class="form-control-plaintext" id="viewContributingName">-</p>
                     </div>
 
                     <div class="mb-3">
@@ -220,6 +240,10 @@
                         searchable: false
                     },
                     {
+                        data: 'category_name',
+                        name: 'category_name'
+                    },
+                    {
                         data: 'name',
                         name: 'name'
                     },
@@ -265,7 +289,7 @@
                 },
                 pageLength: 10,
                 order: [
-                    [5, 'desc']
+                    [6, 'desc']
                 ] // Order by created_at desc
             });
         }
@@ -307,6 +331,7 @@
                     if (response.success) {
                         const contributing = response.data;
                         $('#contributingId').val(contributing.id);
+                        $('#contributingCategory').val(contributing.category_id);
                         $('#contributingName').val(contributing.name);
                         $('#contributingDescription').val(contributing.description);
                         $('#contributingStatus').val(contributing.is_active ? '1' : '0');
@@ -336,6 +361,8 @@
                 success: function(response) {
                     if (response.success) {
                         const contributing = response.data;
+                        $('#viewContributingCategory').text(contributing.category ? contributing.category.name :
+                            '-');
                         $('#viewContributingName').text(contributing.name);
                         $('#viewContributingDescription').text(contributing.description || '-');
                         $('#viewContributingStatus').html(
