@@ -381,7 +381,7 @@ class ReportController extends Controller
                 'categoryMaster:id,name',
                 'contributingMaster:id,name',
                 'actionMaster:id,name'
-            ]);
+            ])->orderBy('created_at', 'desc');
 
             // Apply filters with validation
             if ($request->filled('status') && in_array($request->status, ['waiting', 'in-progress', 'done'])) {

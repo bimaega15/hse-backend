@@ -39,7 +39,7 @@ class ObservationController extends Controller
             $query = Observation::with([
                 'user:id,name,email,department',
                 'details.category:id,name'
-            ]);
+            ])->orderBy('created_at', 'desc');
 
             // Apply filters with validation
             if ($request->filled('status') && in_array($request->status, ['draft', 'submitted', 'reviewed'])) {
