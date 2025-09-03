@@ -776,7 +776,7 @@
                 report.images.forEach(function(image) {
                     imagesHtml += `
                         <div class="col-md-3 mb-2">
-                            <img src="{{ asset('storage/' . ${image}) }}" class="img-fluid rounded" onclick="showImageModal('{{ asset('storage/' . ${image}) }}')" style="cursor: pointer;">
+                            <img src="{{ asset('storage/') }}/${image}" class="img-fluid rounded" onclick="showImageModal('{{ asset('storage/') }}/${image}')" style="cursor: pointer;">
                         </div>
                     `;
                 });
