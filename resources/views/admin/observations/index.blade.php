@@ -257,39 +257,47 @@
                         data: 'DT_RowIndex',
                         name: 'DT_RowIndex',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        responsivePriority: 1
                     },
                     {
                         data: 'observer_info',
-                        name: 'user.name'
+                        name: 'user.name',
+                        responsivePriority: 2
                     },
                     {
                         data: 'observation_summary',
-                        name: 'waktu_observasi'
+                        name: 'waktu_observasi',
+                        responsivePriority: 5
                     },
                     {
                         data: 'observations_breakdown',
                         name: 'observations_breakdown',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        responsivePriority: 6
                     },
                     {
                         data: 'status_badge',
-                        name: 'status'
+                        name: 'status',
+                        responsivePriority: 4
                     },
                     {
                         data: 'notes_excerpt',
-                        name: 'notes'
+                        name: 'notes',
+                        responsivePriority: 7
                     },
                     {
                         data: 'created_at_formatted',
-                        name: 'created_at'
+                        name: 'created_at',
+                        responsivePriority: 3
                     },
                     {
                         data: 'action',
                         name: 'action',
                         orderable: false,
-                        searchable: false
+                        searchable: false,
+                        responsivePriority: 1
                     }
                 ],
                 language: {
