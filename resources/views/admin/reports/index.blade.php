@@ -776,7 +776,7 @@
                 report.images.forEach(function(image) {
                     imagesHtml += `
                         <div class="col-md-3 mb-2">
-                            <img src="/storage/${image}" class="img-fluid rounded" onclick="showImageModal('/storage/${image}')" style="cursor: pointer;">
+                            <img src="{{ asset('storage/' . ${image}) }}" class="img-fluid rounded" onclick="showImageModal('{{ asset('storage/' . ${image}) }}')" style="cursor: pointer;">
                         </div>
                     `;
                 });
@@ -892,8 +892,8 @@
                         <td>
                         ${detail.evidences.length > 0 ? `<div class="d-flex gap-1">
                                         ${detail.evidences.map(img => `
-                                                                            <a href="javascript:void(0);" class="avatar-md" onclick="showImageModal('/storage/${img}')">
-                                                                                <img src="${'/storage/' + img}" alt="Report Image" class="img-fluid rounded" >
+                                                                            <a href="javascript:void(0);" class="avatar-md" onclick="showImageModal('{{ asset('storage/') }}/${img}')">
+                                                                                <img src="{{ asset('storage/') }}/${img}" alt="Report Image" class="img-fluid rounded" >
                                                                             </a>
                                                                         `).join('')}
                                     </div>` : '<p class="text-muted">No images available</p>'}
