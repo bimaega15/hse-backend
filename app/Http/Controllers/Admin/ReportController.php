@@ -498,27 +498,17 @@ class ReportController extends Controller
                 })
                 ->addColumn('dates_info', function ($report) {
                     try {
-                        $created = $report->created_at ? $report->created_at->format('d M Y') : 'N/A';
-                        $started = $report->start_process_at ? $report->start_process_at->format('d M Y') : 'Not Started';
-                        $completed = $report->completed_at ? $report->completed_at->format('d M Y') : 'Not Completed';
+                        $created = $report->created_at ? $report->created_at->locale('id')->isoFormat('DD MMMM YYYY') : 'N/A';
 
                         return "
                             <div class='small'>
-                                <div><strong>Created:</strong> {$created}</div>
-                                <div><strong>Started:</strong> {$started}</div>
-                                <div><strong>Completed:</strong> {$completed}</div>
+                                <div> {$created}</div>
                             </div>
                         ";
                     } catch (\Exception $e) {
                         Log::error('Error in dates_info: ' . $e->getMessage());
                         return 'Error loading dates';
                     }
-                })
-                ->addColumn('description_short', function ($report) {
-                    $description = $report->description ?? '';
-                    return strlen($description) > 100
-                        ? substr($description, 0, 100) . '...'
-                        : $description;
                 })
                 ->addColumn('action', function ($report) {
                     $buttons = "
@@ -722,5 +712,139 @@ class ReportController extends Controller
         }
 
         return $compliance;
+    }
+
+    public function exportExcel(Request $request)
+    {
+        try {
+            $query = Report::with([
+                'employee:id,name,email',
+                'hseStaff:id,name,email',
+                'categoryMaster:id,name',
+                'contributingMaster:id,name',
+                'actionMaster:id,name'
+            ]);
+
+            // Apply same filters as DataTables
+            if ($request->filled('status') && in_array($request->status, ['waiting', 'in-progress', 'done'])) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('severity') && in_array($request->severity, ['low', 'medium', 'high', 'critical'])) {
+                $query->where('severity_rating', $request->severity);
+            }
+
+            if ($request->filled('start_date') && strtotime($request->start_date)) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+
+            if ($request->filled('end_date') && strtotime($request->end_date)) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            $reports = $query->orderBy('created_at', 'desc')->get();
+
+            // Create CSV content with proper Excel formatting
+            $csvContent = $this->generateExcelContent($reports);
+
+            $filename = 'reports_export_' . date('Y-m-d_H-i-s') . '.csv';
+
+            return response($csvContent)
+                ->header('Content-Type', 'application/vnd.ms-excel')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Pragma', 'no-cache')
+                ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+                ->header('Expires', '0');
+
+        } catch (\Exception $e) {
+            Log::error('Export Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function generateExcelContent($reports)
+    {
+        // Create CSV with BOM for proper Excel UTF-8 support
+        $csvContent = "\xEF\xBB\xBF";
+        
+        // Headers
+        $headers = [
+            'No',
+            'Tanggal Dibuat',
+            'ID Employee',
+            'Nama Employee',
+            'Email Employee',
+            'ID BAIK Staff',
+            'Nama BAIK Staff',
+            'Email BAIK Staff',
+            'Kategori',
+            'Contributing Factor',
+            'Action',
+            'Lokasi',
+            'Deskripsi',
+            'Severity Rating',
+            'Status',
+            'Action Taken',
+            'Tanggal Mulai Proses',
+            'Tanggal Selesai'
+        ];
+        
+        $csvContent .= '"' . implode('","', $headers) . '"' . "\r\n";
+        
+        // Data rows
+        $no = 1;
+        foreach ($reports as $report) {
+            $row = [
+                $no++,
+                $report->created_at ? $report->created_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'N/A',
+                $report->employee_id ?? 'N/A',
+                optional($report->employee)->name ?? 'N/A',
+                optional($report->employee)->email ?? 'N/A',
+                $report->hse_staff_id ?? 'N/A',
+                optional($report->hseStaff)->name ?? 'Belum Ditugaskan',
+                optional($report->hseStaff)->email ?? 'N/A',
+                optional($report->categoryMaster)->name ?? 'N/A',
+                optional($report->contributingMaster)->name ?? 'N/A',
+                optional($report->actionMaster)->name ?? 'N/A',
+                $report->location ?? 'N/A',
+                $this->cleanTextForCsv($report->description ?? 'N/A'),
+                ucfirst($report->severity_rating ?? 'N/A'),
+                $this->getStatusLabel($report->status ?? 'N/A'),
+                $this->cleanTextForCsv($report->action_taken ?? 'Belum Ada Tindakan'),
+                $report->start_process_at ? $report->start_process_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'Belum Dimulai',
+                $report->completed_at ? $report->completed_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'Belum Selesai'
+            ];
+            
+            // Escape and format each field
+            $escapedRow = array_map(function($field) {
+                return '"' . str_replace('"', '""', $field) . '"';
+            }, $row);
+            
+            $csvContent .= implode(',', $escapedRow) . "\r\n";
+        }
+        
+        return $csvContent;
+    }
+
+    private function cleanTextForCsv($text)
+    {
+        // Remove HTML tags and clean up text for CSV
+        $text = strip_tags($text);
+        $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+        $text = preg_replace('/\s+/', ' ', $text);
+        return trim($text);
+    }
+
+    private function getStatusLabel($status)
+    {
+        $labels = [
+            'waiting' => 'Menunggu',
+            'in-progress' => 'Sedang Diproses',
+            'done' => 'Selesai'
+        ];
+        return $labels[$status] ?? $status;
     }
 }

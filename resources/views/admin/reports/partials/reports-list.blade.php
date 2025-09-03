@@ -165,6 +165,9 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="showFilters()">
                         <i class="ri-filter-line me-1"></i>Advanced Filters
                     </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="exportExcel()">
+                        <i class="ri-file-excel-2-line me-1"></i>Export Excel
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="createReport()">
                         <i class="ri-add-line me-1"></i>Add New Report
                     </button>
@@ -239,11 +242,10 @@
                                 <th width="12%">Employee</th>
                                 <th width="12%">BAIK Staff</th>
                                 <th width="12%">Report Info</th>
-                                <th width="20%">Description</th>
                                 <th width="8%">Severity</th>
                                 <th width="8%">Status</th>
                                 <th width="10%">CAR Progress</th>
-                                <th width="12%">Dates</th>
+                                <th width="12%">Created At</th>
                                 <th width="3%">Actions</th>
                             </tr>
                         </thead>
@@ -480,7 +482,75 @@
             }
         });
 
-        // Export functionality (future enhancement)
+        // Export Excel functionality
+        function exportExcel() {
+            // Get the button element
+            const exportButton = $('button[onclick="exportExcel()"]');
+            
+            const filters = {
+                status: $('#statusFilter').val(),
+                severity: $('#severityFilter').val(),
+                start_date: $('#startDateFilter').val(),
+                end_date: $('#endDateFilter').val()
+            };
+
+            // Add URL status filter if exists
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlStatus = urlParams.get('status');
+            if (urlStatus && !filters.status) {
+                filters.status = urlStatus;
+            }
+
+            // Build query string
+            const params = new URLSearchParams();
+            Object.keys(filters).forEach(key => {
+                if (filters[key]) {
+                    params.append(key, filters[key]);
+                }
+            });
+
+            // Show loading indicator
+            const originalText = exportButton.html();
+            exportButton.html('<i class="ri-loader-2-line spinner-border spinner-border-sm me-1"></i>Exporting...');
+            exportButton.prop('disabled', true);
+
+            // Create temporary link and trigger download
+            const exportUrl = `{{ route('admin.reports.export.excel') }}?${params.toString()}`;
+            
+            // Use fetch to handle the download properly
+            fetch(exportUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Export failed');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `reports_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    // Show success message
+                    showAlert('success', 'Success!', 'Excel file has been exported successfully');
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showAlert('error', 'Export Failed', 'Failed to export Excel file. Please try again.');
+                })
+                .finally(() => {
+                    // Restore button state
+                    exportButton.html(originalText);
+                    exportButton.prop('disabled', false);
+                });
+        }
+
+        // Legacy export functionality (keeping for future enhancement)
         function exportReports(format) {
             const filters = {
                 status: $('#statusFilter').val(),

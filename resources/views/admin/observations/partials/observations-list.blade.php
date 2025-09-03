@@ -164,6 +164,9 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="showFilters()">
                         <i class="ri-filter-line me-1"></i>Advanced Filters
                     </button>
+                    <button type="button" class="btn btn-outline-success btn-sm" onclick="exportObservationExcel()">
+                        <i class="ri-file-excel-2-line me-1"></i>Export Excel
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="createObservation()">
                         <i class="ri-add-line me-1"></i>Add New Observation
                     </button>
@@ -444,6 +447,74 @@
                 $('#reviewRate').text('0%');
             }
         });
+    }
+
+    // Export Excel functionality for observations
+    function exportObservationExcel() {
+        // Get the button element
+        const exportButton = $('button[onclick="exportObservationExcel()"]');
+        
+        const filters = {
+            status: $('#statusFilter').val(),
+            observation_type: $('#observationTypeFilter').val(),
+            start_date: $('#startDateFilter').val(),
+            end_date: $('#endDateFilter').val()
+        };
+
+        // Add URL status filter if exists
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlStatus = urlParams.get('status');
+        if (urlStatus && !filters.status) {
+            filters.url_status = urlStatus;
+        }
+
+        // Build query string
+        const params = new URLSearchParams();
+        Object.keys(filters).forEach(key => {
+            if (filters[key]) {
+                params.append(key, filters[key]);
+            }
+        });
+
+        // Show loading indicator
+        const originalText = exportButton.html();
+        exportButton.html('<i class="ri-loader-2-line spinner-border spinner-border-sm me-1"></i>Exporting...');
+        exportButton.prop('disabled', true);
+
+        // Create temporary link and trigger download
+        const exportUrl = `{{ route('admin.observations.export.excel') }}?${params.toString()}`;
+        
+        // Use fetch to handle the download properly
+        fetch(exportUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Export failed');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `observations_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                // Show success message
+                showAlert('success', 'Success!', 'Observations Excel file has been exported successfully');
+            })
+            .catch(error => {
+                console.error('Export error:', error);
+                showAlert('error', 'Export Failed', 'Failed to export observations Excel file. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                exportButton.html(originalText);
+                exportButton.prop('disabled', false);
+            });
     }
 
     // Auto-refresh data every 5 minutes for real-time updates

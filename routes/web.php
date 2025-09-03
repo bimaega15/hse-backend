@@ -72,19 +72,14 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/', [ReportController::class, 'index'])->name('index');
         Route::get('/data', [ReportController::class, 'getData'])->name('data');
         Route::get('/create', [ReportController::class, 'create'])->name('create');
-        Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics');
+        Route::get('/export/excel', [ReportController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics.data');
         Route::get('/actions/by-contributing/{contributingId}', [ReportController::class, 'getActionsByContributing'])->name('actions.by-contributing');
         Route::post('/', [ReportController::class, 'store'])->name('store');
         Route::get('/{id}', [ReportController::class, 'show'])->name('show');
         Route::put('/{id}', [ReportController::class, 'update'])->name('update');
         Route::delete('/{id}', [ReportController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/status', [ReportController::class, 'updateStatus'])->name('update-status');
-
-        // Statistics and analytics
-        Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics.data');
-
-        // Actions by contributing
-        Route::get('/actions/by-contributing/{contributingId}', [ReportController::class, 'getActionsByContributing'])->name('actions.by-contributing');
     });
 
     // Observations Management Routes
@@ -108,7 +103,10 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         // Statistics and analytics
         Route::get('/statistics/data', [ObservationController::class, 'getStatistics'])->name('statistics.data');
 
-        // ADD THIS: Recent observations for dashboard
+        // Export Excel
+        Route::get('/export/excel', [ObservationController::class, 'exportExcel'])->name('export.excel');
+
+        // Recent observations for dashboard
         Route::get('/recent/graphic', [ObservationController::class, 'getRecent'])->name('recent');
     });
 

@@ -665,4 +665,178 @@ class ObservationController extends Controller
                 return $user;
             });
     }
+
+    public function exportExcel(Request $request)
+    {
+        try {
+            $query = Observation::with([
+                'user:id,name,email,department',
+                'details.category:id,name'
+            ]);
+
+            // Apply same filters as DataTables
+            if ($request->filled('status') && in_array($request->status, ['draft', 'submitted', 'reviewed'])) {
+                $query->where('status', $request->status);
+            }
+
+            if ($request->filled('observation_type')) {
+                $query->whereHas('details', function ($q) use ($request) {
+                    $q->where('observation_type', $request->observation_type);
+                });
+            }
+
+            if ($request->filled('start_date') && strtotime($request->start_date)) {
+                $query->whereDate('created_at', '>=', $request->start_date);
+            }
+
+            if ($request->filled('end_date') && strtotime($request->end_date)) {
+                $query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            // Handle URL filters
+            if ($request->filled('url_status') && in_array($request->url_status, ['draft', 'submitted', 'reviewed'])) {
+                $query->where('status', $request->url_status);
+            }
+
+            $observations = $query->orderBy('created_at', 'desc')->get();
+
+            // Create CSV content with proper Excel formatting
+            $csvContent = $this->generateObservationExcelContent($observations);
+
+            $filename = 'observations_export_' . date('Y-m-d_H-i-s') . '.csv';
+
+            return response($csvContent)
+                ->header('Content-Type', 'application/vnd.ms-excel')
+                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
+                ->header('Pragma', 'no-cache')
+                ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
+                ->header('Expires', '0');
+
+        } catch (\Exception $e) {
+            Log::error('Observation Export Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to export observation data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function generateObservationExcelContent($observations)
+    {
+        // Create CSV with BOM for proper Excel UTF-8 support
+        $csvContent = "\xEF\xBB\xBF";
+        
+        // Headers
+        $headers = [
+            'No',
+            'Tanggal Dibuat',
+            'ID Observer',
+            'Nama Observer', 
+            'Email Observer',
+            'Departemen',
+            'Waktu Observasi',
+            'Waktu Mulai',
+            'Waktu Selesai',
+            'Durasi (Menit)',
+            'Total Observasi',
+            'At Risk Behavior',
+            'Near Miss',
+            'Risk Management',
+            'SIM K3',
+            'Status',
+            'Catatan',
+            'Detail Observasi'
+        ];
+        
+        $csvContent .= '"' . implode('","', $headers) . '"' . "\r\n";
+        
+        // Data rows
+        $no = 1;
+        foreach ($observations as $observation) {
+            // Calculate duration
+            $duration = 0;
+            if ($observation->waktu_mulai && $observation->waktu_selesai) {
+                $start = strtotime($observation->waktu_mulai);
+                $end = strtotime($observation->waktu_selesai);
+                $duration = ($end - $start) / 60; // Convert to minutes
+            }
+
+            // Get observation details summary
+            $detailsSummary = $this->getObservationDetailsSummary($observation->details);
+
+            $row = [
+                $no++,
+                $observation->created_at ? $observation->created_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'N/A',
+                $observation->user_id ?? 'N/A',
+                optional($observation->user)->name ?? 'N/A',
+                optional($observation->user)->email ?? 'N/A',
+                optional($observation->user)->department ?? 'N/A',
+                $observation->waktu_observasi ?? 'N/A',
+                $observation->waktu_mulai ?? 'N/A',
+                $observation->waktu_selesai ?? 'N/A',
+                $duration > 0 ? round($duration, 0) . ' menit' : 'N/A',
+                $observation->total_observations ?? 0,
+                $observation->at_risk_behavior ?? 0,
+                $observation->nearmiss_incident ?? 0,
+                $observation->informal_risk_mgmt ?? 0,
+                $observation->sim_k3 ?? 0,
+                $this->getObservationStatusLabel($observation->status ?? 'N/A'),
+                $this->cleanTextForCsv($observation->notes ?? 'Tidak ada catatan'),
+                $detailsSummary
+            ];
+            
+            // Escape and format each field
+            $escapedRow = array_map(function($field) {
+                return '"' . str_replace('"', '""', $field) . '"';
+            }, $row);
+            
+            $csvContent .= implode(',', $escapedRow) . "\r\n";
+        }
+        
+        return $csvContent;
+    }
+
+    private function getObservationDetailsSummary($details)
+    {
+        if ($details->isEmpty()) {
+            return 'Tidak ada detail observasi';
+        }
+
+        $summary = [];
+        $typeMap = [
+            'at_risk_behavior' => 'At Risk',
+            'nearmiss_incident' => 'Near Miss', 
+            'informal_risk_mgmt' => 'Risk Mgmt',
+            'sim_k3' => 'SIM K3'
+        ];
+
+        foreach ($details as $detail) {
+            $type = $typeMap[$detail->observation_type] ?? $detail->observation_type;
+            $category = optional($detail->category)->name ?? 'N/A';
+            $severity = ucfirst($detail->severity ?? 'N/A');
+            
+            $summary[] = "{$type} - {$category} ({$severity}): " . substr($detail->description, 0, 100);
+        }
+
+        return implode(' | ', $summary);
+    }
+
+    private function cleanTextForCsv($text)
+    {
+        // Remove HTML tags and clean up text for CSV
+        $text = strip_tags($text);
+        $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+        $text = preg_replace('/\s+/', ' ', $text);
+        return trim($text);
+    }
+
+    private function getObservationStatusLabel($status)
+    {
+        $labels = [
+            'draft' => 'Draft',
+            'submitted' => 'Disubmit',
+            'reviewed' => 'Sudah Direview'
+        ];
+        return $labels[$status] ?? $status;
+    }
 }

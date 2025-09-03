@@ -122,7 +122,7 @@
         .detail-timeline::before {
             content: '';
             position: absolute;
-            top: 50%;
+            top: 33%;
             left: 8%;
             right: 8%;
             height: 4px;
@@ -454,10 +454,6 @@
                     {
                         data: 'report_info',
                         name: 'categoryMaster.name'
-                    },
-                    {
-                        data: 'description_short',
-                        name: 'description'
                     },
                     {
                         data: 'severity_badge',
@@ -895,12 +891,12 @@
                         <td>${detail.approved_by ? detail.approved_by.name : 'N/A'}</td>
                         <td>
                         ${detail.evidences.length > 0 ? `<div class="d-flex gap-1">
-                                    ${detail.evidences.map(img => `
+                                        ${detail.evidences.map(img => `
                                                                             <a href="javascript:void(0);" class="avatar-md" onclick="showImageModal('/storage/${img}')">
                                                                                 <img src="${'/storage/' + img}" alt="Report Image" class="img-fluid rounded" >
                                                                             </a>
                                                                         `).join('')}
-                                </div>` : '<p class="text-muted">No images available</p>'}
+                                    </div>` : '<p class="text-muted">No images available</p>'}
                         </td>
                     </tr>
                 `;
