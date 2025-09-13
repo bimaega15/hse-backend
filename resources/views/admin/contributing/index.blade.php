@@ -325,7 +325,7 @@
 
             // Fetch contributing factor data
             $.ajax({
-                url: `/admin/contributing/${id}`,
+                url: `{{ url('/') }}/admin/contributing/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -356,7 +356,7 @@
 
             // Fetch contributing factor data
             $.ajax({
-                url: `/admin/contributing/${id}`,
+                url: `{{ url('/') }}/admin/contributing/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -421,7 +421,7 @@
 
         function performDelete(id) {
             $.ajax({
-                url: `/admin/contributing/${id}?_method=delete`,
+                url: `{{ url('/') }}/admin/contributing/${id}?_method=delete`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -446,7 +446,7 @@
             clearFormErrors();
 
             const formData = new FormData($('#contributingForm')[0]);
-            let url = isEditMode ? `/admin/contributing/${$('#contributingId').val()}` : '/admin/contributing';
+            let url = isEditMode ? `{{ url('/') }}/admin/contributing/${$('#contributingId').val()}` : '{{ url('/') }}/admin/contributing';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {

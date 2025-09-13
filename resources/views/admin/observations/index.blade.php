@@ -408,7 +408,7 @@
             $('#observationModal').modal('show');
 
             $.ajax({
-                url: `/admin/observations/${id}`,
+                url: `{{ url('/') }}/admin/observations/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -458,7 +458,7 @@
             $('#viewObservationModal').modal('show');
 
             $.ajax({
-                url: `/admin/observations/${id}`,
+                url: `{{ url('/') }}/admin/observations/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -636,7 +636,7 @@
 
         function performDelete(id) {
             $.ajax({
-                url: `/admin/observations/${id}?_method=delete`,
+                url: `{{ url('/') }}/admin/observations/${id}?_method=delete`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -682,7 +682,7 @@
                 details: details
             };
 
-            let url = isEditMode ? `/admin/observations/${currentObservationId}` : '/admin/observations';
+            let url = isEditMode ? `{{ url('/') }}/admin/observations/${currentObservationId}` : '{{ url('/') }}/admin/observations';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {
@@ -730,7 +730,7 @@
             };
 
             $.ajax({
-                url: `/admin/observations/${$('#statusObservationId').val()}/status?_method=PATCH`,
+                url: `{{ url('/') }}/admin/observations/${$('#statusObservationId').val()}/status?_method=PATCH`,
                 type: 'POST',
                 data: formData,
                 headers: {

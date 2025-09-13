@@ -71,7 +71,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="severityRating" class="form-label">Severity Rating <span
                                         class="text-danger">*</span></label>
@@ -86,13 +86,22 @@
                             </div>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="location" class="form-label">Location <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="location" name="location" required
                                     maxlength="255" placeholder="Enter incident location">
                                 <div class="invalid-feedback" id="locationError"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="createdAt" class="form-label">Report Date <span
+                                        class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" id="createdAt" name="created_at" required>
+                                <div class="invalid-feedback" id="createdAtError"></div>
                             </div>
                         </div>
                     </div>

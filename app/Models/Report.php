@@ -24,7 +24,8 @@ class Report extends Model
         'images',
         'status',
         'start_process_at',
-        'completed_at'
+        'completed_at',
+        'created_at'
     ];
 
     protected $casts = [

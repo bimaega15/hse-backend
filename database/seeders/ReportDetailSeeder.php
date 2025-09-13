@@ -16,8 +16,16 @@ class ReportDetailSeeder extends Seeder
         // Get HSE staff users
         $hseStaffs = User::where('role', 'hse_staff')->get();
 
+        // Get employee users for PIC
+        $employees = User::where('role', 'employee')->get();
+
         if ($hseStaffs->isEmpty()) {
             $this->command->warn('No HSE staff found. Please seed users first.');
+            return;
+        }
+
+        if ($employees->isEmpty()) {
+            $this->command->warn('No employees found for PIC. Please seed users first.');
             return;
         }
 
@@ -32,61 +40,51 @@ class ReportDetailSeeder extends Seeder
         $sampleCorrectiveActions = [
             [
                 'action' => 'Melakukan penggantian alat safety yang rusak dengan yang baru sesuai standar K3',
-                'pic' => 'Safety Officer',
                 'status' => 'open',
                 'days_ahead' => 7
             ],
             [
                 'action' => 'Memberikan training ulang kepada pekerja mengenai penggunaan APD yang benar',
-                'pic' => 'HSE Supervisor',
                 'status' => 'in_progress',
                 'days_ahead' => 14
             ],
             [
                 'action' => 'Memperbaiki sistem ventilasi di area kerja untuk mengurangi paparan debu',
-                'pic' => 'Maintenance Team',
                 'status' => 'open',
                 'days_ahead' => 21
             ],
             [
                 'action' => 'Melakukan audit mendalam terhadap prosedur kerja di ketinggian',
-                'pic' => 'HSE Manager',
                 'status' => 'closed',
                 'days_ahead' => -5 // Already passed (completed)
             ],
             [
                 'action' => 'Menambah rambu-rambu peringatan di area berbahaya',
-                'pic' => 'Safety Coordinator',
                 'status' => 'in_progress',
                 'days_ahead' => 10
             ],
             [
                 'action' => 'Melakukan kalibrasi ulang pada alat deteksi gas berbahaya',
-                'pic' => 'Technical Staff',
                 'status' => 'open',
                 'days_ahead' => 30
             ],
             [
                 'action' => 'Mengadakan sosialisasi prosedur emergency di seluruh departemen',
-                'pic' => 'HSE Team',
                 'status' => 'closed',
                 'days_ahead' => -10 // Already completed
             ],
             [
                 'action' => 'Melakukan pengecekan rutin terhadap kondisi scaffolding setiap minggu',
-                'pic' => 'Site Supervisor',
                 'status' => 'in_progress',
                 'days_ahead' => 7
             ],
             [
                 'action' => 'Menyediakan eye wash station di area kimia dan melakukan testing bulanan',
-                'pic' => 'Chemical Handler',
                 'status' => 'open',
                 'days_ahead' => 14
             ],
             [
                 'action' => 'Mengimplementasikan sistem permit to work untuk pekerjaan berisiko tinggi',
-                'pic' => 'Work Permit Coordinator',
                 'status' => 'in_progress',
                 'days_ahead' => 28
             ]
@@ -101,6 +99,7 @@ class ReportDetailSeeder extends Seeder
             for ($i = 0; $i < $detailCount; $i++) {
                 $actionData = $sampleCorrectiveActions[array_rand($sampleCorrectiveActions)];
                 $hseStaff = $hseStaffs->random();
+                $picEmployee = $employees->random();
 
                 // Calculate due date
                 $dueDate = Carbon::now()->addDays($actionData['days_ahead']);
@@ -109,7 +108,7 @@ class ReportDetailSeeder extends Seeder
                     'report_id' => $report->id,
                     'correction_action' => $actionData['action'],
                     'due_date' => $dueDate,
-                    'pic' => $actionData['pic'],
+                    'users_id' => $picEmployee->id, // Employee as PIC
                     'status_car' => $actionData['status'],
                     'evidences' => $this->generateSampleEvidences($actionData['status']),
                     'approved_by' => $hseStaff->id,

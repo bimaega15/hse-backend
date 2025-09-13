@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(php artisan make:migration:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(php artisan config:clear:*)",
+      "Bash(php artisan:*)"
     ],
     "deny": [],
     "ask": []

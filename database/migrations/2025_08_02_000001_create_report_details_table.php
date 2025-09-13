@@ -14,7 +14,7 @@ return new class extends Migration
             $table->foreignId('report_id')->constrained('reports')->onDelete('cascade');
             $table->text('correction_action')->comment('Koreksi & Tindakan Korektif');
             $table->date('due_date')->comment('Tanggal selesai');
-            $table->string('pic')->comment('Person In Charge - default to user who input');
+            $table->foreignId('users_id')->constrained('users')->comment('Person In Charge (Employee)');
             $table->enum('status_car', ['open', 'in_progress', 'closed'])->default('open')->comment('Status CAR');
             $table->json('evidences')->nullable()->comment('Bukti gambar');
             $table->foreignId('approved_by')->constrained('users')->comment('HSE Staff yang approve');
@@ -26,6 +26,7 @@ return new class extends Migration
             $table->index(['report_id', 'status_car']);
             $table->index(['due_date']);
             $table->index(['approved_by']);
+            $table->index(['users_id']);
         });
     }
 

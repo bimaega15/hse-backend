@@ -49,8 +49,9 @@ class Banner extends Model
             if (filter_var($this->image, FILTER_VALIDATE_URL)) {
                 return $this->image;
             }
-            // Return storage URL
-            return Storage::url($this->image);
+            // Return custom URL for your setup
+            $baseUrl = rtrim(config('app.url'), '/');
+            return $baseUrl . '/public/storage/' . $this->image;
         }
         return null;
     }

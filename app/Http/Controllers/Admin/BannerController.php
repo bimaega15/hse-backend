@@ -131,8 +131,36 @@ class BannerController extends Controller
             // Handle image upload
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
-                $imagePath = $image->store('banners', 'public');
-                $data['image'] = $imagePath;
+                
+                if ($image->isValid()) {
+                    $filename = time() . '_' . $image->getClientOriginalName();
+                    
+                    // Create directory if not exists
+                    $uploadPath = storage_path('app/public/banners');
+                    if (!file_exists($uploadPath)) {
+                        mkdir($uploadPath, 0755, true);
+                    }
+                    
+                    // Manual file move approach
+                    $fullPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
+                    
+                    if ($image->move($uploadPath, $filename)) {
+                        $data['image'] = 'banners/' . $filename;
+                        Log::info('File uploaded successfully:', ['path' => $data['image']]);
+                    } else {
+                        Log::error('File move failed');
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Gagal mengunggah file'
+                        ], 500);
+                    }
+                } else {
+                    Log::error('Invalid file upload');
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'File upload tidak valid'
+                    ], 422);
+                }
             }
 
             // Set defaults
@@ -265,7 +293,8 @@ class BannerController extends Controller
                 }
 
                 $image = $request->file('image');
-                $imagePath = $image->store('banners', 'public');
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $imagePath = $image->storeAs('banners', $filename, 'public');
                 $data['image'] = $imagePath;
             }
 

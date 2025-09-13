@@ -34,11 +34,16 @@ class StoreReportDetailRequest extends FormRequest
                 'after_or_equal:today',
                 'before_or_equal:' . now()->addYear()->format('Y-m-d') // Max 1 year from now
             ],
-            'pic' => [
-                'nullable',
-                'string',
-                'max:255',
-                'min:2'
+            'users_id' => [
+                'required',
+                'integer',
+                'exists:users,id',
+                function ($attribute, $value, $fail) {
+                    $user = \App\Models\User::find($value);
+                    if ($user && $user->role !== 'employee') {
+                        $fail('PIC harus memiliki role employee.');
+                    }
+                }
             ],
             'status_car' => [
                 'nullable',
@@ -73,8 +78,9 @@ class StoreReportDetailRequest extends FormRequest
             'due_date.after_or_equal' => 'Tanggal selesai tidak boleh kurang dari hari ini.',
             'due_date.before_or_equal' => 'Tanggal selesai maksimal 1 tahun dari sekarang.',
 
-            'pic.min' => 'Nama PIC minimal 2 karakter.',
-            'pic.max' => 'Nama PIC maksimal 255 karakter.',
+            'users_id.required' => 'PIC wajib dipilih.',
+            'users_id.integer' => 'PIC harus berupa ID yang valid.',
+            'users_id.exists' => 'PIC yang dipilih tidak ditemukan.',
 
             'status_car.in' => 'Status CAR harus salah satu dari: open, in_progress, closed.',
 
@@ -96,7 +102,7 @@ class StoreReportDetailRequest extends FormRequest
         return [
             'correction_action' => 'koreksi & tindakan korektif',
             'due_date' => 'tanggal selesai',
-            'pic' => 'PIC',
+            'users_id' => 'PIC',
             'status_car' => 'status CAR',
             'evidences' => 'bukti',
             'evidences.*' => 'file bukti',

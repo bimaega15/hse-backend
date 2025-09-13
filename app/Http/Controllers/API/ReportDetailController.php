@@ -32,7 +32,8 @@ class ReportDetailController extends Controller
             'contributingMaster',
             'actionMaster',
             'reportDetails.approvedBy',
-            'reportDetails.createdBy'
+            'reportDetails.createdBy',
+            'reportDetails.assignedUser'
         ])
             ->find($reportId);
 
@@ -51,7 +52,7 @@ class ReportDetailController extends Controller
             ], 403);
         }
 
-        $query = $report->reportDetails()->with(['approvedBy', 'createdBy']);
+        $query = $report->reportDetails()->with(['approvedBy', 'createdBy', 'assignedUser']);
 
         // Filter by status
         if ($request->has('status') && $request->status !== 'all') {
@@ -73,7 +74,9 @@ class ReportDetailController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('correction_action', 'like', "%{$search}%")
-                    ->orWhere('pic', 'like', "%{$search}%");
+                    ->orWhereHas('assignedUser', function($userQuery) use ($search) {
+                        $userQuery->where('name', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -142,7 +145,7 @@ class ReportDetailController extends Controller
                 'report_id' => $reportId,
                 'correction_action' => $request->correction_action,
                 'due_date' => $request->due_date,
-                'pic' => $request->pic ?? $user->name, // Default to current user
+                'users_id' => $request->users_id, // Employee ID as PIC
                 'status_car' => $request->status_car ?? 'open',
                 'approved_by' => $user->id,
                 'created_by' => $user->id,
@@ -156,7 +159,7 @@ class ReportDetailController extends Controller
 
             // Create the report detail
             $reportDetail = ReportDetail::create($reportDetailData);
-            $reportDetail->load(['approvedBy', 'createdBy', 'report']);
+            $reportDetail->load(['approvedBy', 'createdBy', 'assignedUser', 'report']);
 
             Log::info('Report detail created successfully', [
                 'report_detail_id' => $reportDetail->id,
@@ -193,7 +196,7 @@ class ReportDetailController extends Controller
     {
         $user = $request->user();
 
-        $reportDetail = ReportDetail::with(['report', 'approvedBy', 'createdBy'])
+        $reportDetail = ReportDetail::with(['report', 'approvedBy', 'createdBy', 'assignedUser'])
             ->where('report_id', $reportId)
             ->find($detailId);
 
@@ -316,7 +319,7 @@ class ReportDetailController extends Controller
         try {
             $oldStatus = $reportDetail->status_car;
             $reportDetail->update(['status_car' => $request->status_car]);
-            $reportDetail->load(['approvedBy', 'createdBy', 'report']);
+            $reportDetail->load(['approvedBy', 'createdBy', 'assignedUser', 'report']);
 
             Log::info('Report detail status updated', [
                 'report_detail_id' => $detailId,
@@ -604,7 +607,7 @@ class ReportDetailController extends Controller
             $updateData = $request->only([
                 'correction_action',
                 'due_date',
-                'pic',
+                'users_id',
                 'status_car'
             ]);
 
@@ -614,7 +617,7 @@ class ReportDetailController extends Controller
             }
 
             $reportDetail->update($updateData);
-            $reportDetail->load(['approvedBy', 'createdBy', 'report']);
+            $reportDetail->load(['approvedBy', 'createdBy', 'assignedUser', 'report']);
 
             Log::info('Report detail updated successfully', [
                 'report_detail_id' => $reportDetail->id,
@@ -765,7 +768,7 @@ class ReportDetailController extends Controller
         $rules = [
             'correction_action' => $isUpdate ? 'sometimes|required|string|max:2000' : 'required|string|max:2000',
             'due_date' => $isUpdate ? 'sometimes|required|date|after_or_equal:today' : 'required|date|after_or_equal:today',
-            'pic' => 'nullable|string|max:255',
+            'users_id' => $isUpdate ? 'sometimes|required|integer|exists:users,id' : 'required|integer|exists:users,id',
             'status_car' => 'nullable|in:open,in_progress,closed',
             'evidences' => 'nullable|array|max:10', // Maximum 10 evidences
         ];

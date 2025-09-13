@@ -361,7 +361,7 @@
 
             // Fetch action data
             $.ajax({
-                url: `/admin/actions/${id}`,
+                url: `{{ url('/') }}/admin/actions/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -392,7 +392,7 @@
 
             // Fetch action data
             $.ajax({
-                url: `/admin/actions/${id}`,
+                url: `{{ url('/') }}/admin/actions/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -453,7 +453,7 @@
 
         function performDelete(id) {
             $.ajax({
-                url: `/admin/actions/${id}?_method=delete`,
+                url: `{{ url('/') }}/admin/actions/${id}?_method=delete`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -479,7 +479,7 @@
             clearFormErrors();
 
             const formData = new FormData($('#actionForm')[0]);
-            let url = isEditMode ? `/admin/actions/${$('#actionId').val()}` : '/admin/actions';
+            let url = isEditMode ? `{{ url('/') }}/admin/actions/${$('#actionId').val()}` : '{{ url('/') }}/admin/actions';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {

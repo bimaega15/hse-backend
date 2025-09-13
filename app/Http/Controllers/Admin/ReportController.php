@@ -54,6 +54,7 @@ class ReportController extends Controller
             'description' => 'required|string|max:2000',
             'location' => 'required|string|max:255',
             'action_taken' => 'nullable|string|max:1000',
+            'created_at' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
@@ -76,17 +77,55 @@ class ReportController extends Controller
                 'severity_rating',
                 'description',
                 'location',
-                'action_taken'
+                'action_taken',
+                'created_at'
             ]);
 
             // Handle image uploads
             if ($request->hasFile('images')) {
                 $imagePaths = [];
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('reports', 'public');
-                    $imagePaths[] = $path;
+                
+                // Create directory if not exists
+                $uploadPath = storage_path('app/public/reports');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
                 }
-                $reportData['images'] = $imagePaths;
+                
+                foreach ($request->file('images') as $index => $image) {
+                    if ($image && $image->isValid()) {
+                        $filename = time() . '_' . uniqid() . '_' . $image->getClientOriginalName();
+                        $fullPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
+                        
+                        if ($image->move($uploadPath, $filename)) {
+                            $imagePaths[] = 'reports/' . $filename;
+                            Log::info("Report image uploaded successfully at index {$index}:", ['path' => 'reports/' . $filename]);
+                        } else {
+                            Log::error("File move failed at index {$index}");
+                        }
+                    } else {
+                        Log::warning("Invalid or empty image file at index {$index}");
+                    }
+                }
+                
+                if (!empty($imagePaths)) {
+                    $reportData['images'] = $imagePaths;
+                } else {
+                    // Only return error if there were files to upload but all failed
+                    $hasFilesToUpload = false;
+                    foreach ($request->file('images') as $image) {
+                        if ($image) {
+                            $hasFilesToUpload = true;
+                            break;
+                        }
+                    }
+                    
+                    if ($hasFilesToUpload) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Gagal mengunggah gambar'
+                        ], 500);
+                    }
+                }
             }
 
             $report = Report::create($reportData);
@@ -153,6 +192,7 @@ class ReportController extends Controller
             'description' => 'required|string|max:2000',
             'location' => 'required|string|max:255',
             'action_taken' => 'nullable|string|max:1000',
+            'created_at' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
@@ -177,24 +217,97 @@ class ReportController extends Controller
                 'severity_rating',
                 'description',
                 'location',
-                'action_taken'
+                'action_taken',
+                'created_at'
             ]);
+            
+            // Handle individual image removals
+            if ($request->has('removed_images')) {
+                $removedImages = json_decode($request->input('removed_images'), true);
+                if (is_array($removedImages) && !empty($removedImages)) {
+                    $currentImages = $report->images ?: [];
+                    
+                    // Remove specified images from current images array
+                    $updatedImages = array_filter($currentImages, function($image) use ($removedImages) {
+                        return !in_array($image, $removedImages);
+                    });
+                    
+                    // Delete the files from storage
+                    foreach ($removedImages as $imagePath) {
+                        if ($imagePath && is_string($imagePath)) {
+                            $fullPath = storage_path('app/public/' . $imagePath);
+                            if (file_exists($fullPath)) {
+                                unlink($fullPath);
+                                Log::info("Removed individual image:", ['path' => $imagePath]);
+                            }
+                        }
+                    }
+                    
+                    // Update the report with remaining images
+                    $reportData['images'] = array_values($updatedImages);
+                }
+            }
 
             // Handle image uploads
             if ($request->hasFile('images')) {
-                // Delete old images
-                if ($report->images) {
-                    foreach ($report->images as $oldImage) {
-                        Storage::disk('public')->delete($oldImage);
+                $imagePaths = [];
+                $hasValidImages = false;
+                
+                // Create directory if not exists
+                $uploadPath = storage_path('app/public/reports');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+                
+                foreach ($request->file('images') as $index => $image) {
+                    if ($image && $image->isValid()) {
+                        $filename = time() . '_' . uniqid() . '_' . $image->getClientOriginalName();
+                        $fullPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
+                        
+                        if ($image->move($uploadPath, $filename)) {
+                            $imagePaths[] = 'reports/' . $filename;
+                            $hasValidImages = true;
+                            Log::info("Report image updated successfully at index {$index}:", ['path' => 'reports/' . $filename]);
+                        } else {
+                            Log::error("File move failed at index {$index} during update");
+                        }
+                    } else {
+                        Log::warning("Invalid or empty image file at index {$index} during update");
                     }
                 }
-
-                $imagePaths = [];
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('reports', 'public');
-                    $imagePaths[] = $path;
+                
+                // Only delete old images if we have new valid images to replace them
+                if ($hasValidImages) {
+                    // Delete old images
+                    if ($report->images && is_array($report->images)) {
+                        foreach ($report->images as $oldImage) {
+                            if ($oldImage && is_string($oldImage)) {
+                                $oldImagePath = storage_path('app/public/' . $oldImage);
+                                if (file_exists($oldImagePath)) {
+                                    unlink($oldImagePath);
+                                    Log::info("Deleted old report image:", ['path' => $oldImage]);
+                                }
+                            }
+                        }
+                    }
+                    $reportData['images'] = $imagePaths;
+                } else {
+                    // Only return error if there were files to upload but all failed
+                    $hasFilesToUpload = false;
+                    foreach ($request->file('images') as $image) {
+                        if ($image) {
+                            $hasFilesToUpload = true;
+                            break;
+                        }
+                    }
+                    
+                    if ($hasFilesToUpload) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Gagal mengunggah gambar baru'
+                        ], 500);
+                    }
                 }
-                $reportData['images'] = $imagePaths;
             }
 
             $report->update($reportData);
@@ -224,9 +337,15 @@ class ReportController extends Controller
             $report = Report::findOrFail($id);
 
             // Delete associated images
-            if ($report->images) {
+            if ($report->images && is_array($report->images)) {
                 foreach ($report->images as $image) {
-                    Storage::disk('public')->delete($image);
+                    if ($image && is_string($image)) {
+                        $imagePath = storage_path('app/public/' . $image);
+                        if (file_exists($imagePath)) {
+                            unlink($imagePath);
+                            Log::info("Deleted report image on destroy:", ['path' => $image]);
+                        }
+                    }
                 }
             }
 

@@ -266,6 +266,7 @@ class DashboardTestSeeder extends Seeder
     {
         $reports = Report::whereIn('status', ['in-progress', 'done'])->get();
         $hseStaff = User::where('role', 'hse_staff')->get();
+        $employees = User::where('role', 'employee')->get();
 
         $correctionActions = [
             'Install additional safety signage in the affected area',
@@ -304,7 +305,7 @@ class DashboardTestSeeder extends Seeder
                     'report_id' => $report->id,
                     'correction_action' => $correctionActions[array_rand($correctionActions)],
                     'due_date' => $dueDate,
-                    'pic' => 'Safety Team Leader',
+                    'users_id' => $employees->random()->id, // Employee as PIC
                     'status_car' => $statusCar,
                     'approved_by' => $hseStaff->random()->id,
                     'created_by' => $hseStaff->random()->id,

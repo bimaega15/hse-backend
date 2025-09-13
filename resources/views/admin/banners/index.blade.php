@@ -461,7 +461,7 @@
 
             // Fetch banner data
             $.ajax({
-                url: `/admin/banners/${id}`,
+                url: `{{ url('/') }}/admin/banners/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -501,7 +501,7 @@
 
             // Fetch banner data
             $.ajax({
-                url: `/admin/banners/${id}`,
+                url: `{{ url('/') }}/admin/banners/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -590,7 +590,7 @@
 
         function performDelete(id) {
             $.ajax({
-                url: `/admin/banners/${id}?_method=delete`,
+                url: `{{ url('/') }}/admin/banners/${id}?_method=delete`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -629,7 +629,7 @@
 
         function performToggleStatus(id) {
             $.ajax({
-                url: `/admin/banners/${id}/toggle-status?_method=patch`,
+                url: `{{ url('/') }}/admin/banners/${id}/toggle-status?_method=patch`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -654,7 +654,7 @@
             clearFormErrors();
 
             const formData = new FormData($('#bannerForm')[0]);
-            let url = isEditMode ? `/admin/banners/${$('#bannerId').val()}` : '/admin/banners';
+            let url = isEditMode ? `{{ url('/') }}/admin/banners/${$('#bannerId').val()}` : '{{ url('/') }}/admin/banners';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {

@@ -764,7 +764,7 @@
 
             // Fetch user data
             $.ajax({
-                url: `/admin/users/${id}`,
+                url: `{{ url('/') }}/admin/users/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -802,7 +802,7 @@
 
             // Fetch user data
             $.ajax({
-                url: `/admin/users/${id}`,
+                url: `{{ url('/') }}/admin/users/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -897,7 +897,7 @@
 
         function performDelete(id) {
             $.ajax({
-                url: `/admin/users/${id}?_method=delete`,
+                url: `{{ url('/') }}/admin/users/${id}?_method=delete`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -937,7 +937,7 @@
 
         function performToggleStatus(id) {
             $.ajax({
-                url: `/admin/users/${id}/toggle-status?_method=patch`,
+                url: `{{ url('/') }}/admin/users/${id}/toggle-status?_method=patch`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -963,7 +963,7 @@
             clearFormErrors();
 
             const formData = new FormData($('#userForm')[0]);
-            let url = isEditMode ? `/admin/users/${$('#userId').val()}` : '/admin/users';
+            let url = isEditMode ? `{{ url('/') }}/admin/users/${$('#userId').val()}` : '{{ url('/') }}/admin/users';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {

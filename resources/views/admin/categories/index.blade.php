@@ -272,7 +272,7 @@
 
             // Fetch category data
             $.ajax({
-                url: `/admin/categories/${id}`,
+                url: `{{ url('/') }}/admin/categories/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -302,7 +302,7 @@
 
             // Fetch category data
             $.ajax({
-                url: `/admin/categories/${id}`,
+                url: `{{ url('/') }}/admin/categories/${id}`,
                 type: 'GET',
                 success: function(response) {
                     if (response.success) {
@@ -361,7 +361,7 @@
 
         function performDelete(id) {
             $.ajax({
-                url: `/admin/categories/${id}?_method=delete`,
+                url: `{{ url('/') }}/admin/categories/${id}?_method=delete`,
                 type: 'POST',
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -386,7 +386,7 @@
             clearFormErrors();
 
             const formData = new FormData($('#categoryForm')[0]);
-            let url = isEditMode ? `/admin/categories/${$('#categoryId').val()}` : '/admin/categories';
+            let url = isEditMode ? `{{ url('/') }}/admin/categories/${$('#categoryId').val()}` : '{{ url('/') }}/admin/categories';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {
