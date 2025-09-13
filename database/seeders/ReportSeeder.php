@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Category;
 use App\Models\Contributing;
 use App\Models\Action;
+use App\Models\Location;
 use Carbon\Carbon;
 
 class ReportSeeder extends Seeder
@@ -22,6 +23,7 @@ class ReportSeeder extends Seeder
         $categories = Category::all();
         $contributings = Contributing::all();
         $actions = Action::all();
+        $locations = Location::all();
 
         // Create sample reports with new structure
         $reports = [
@@ -32,7 +34,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'Tumpul')->first()?->id,
                 'severity_rating' => 'medium',
                 'description' => 'Pahat yang digunakan sudah tumpul dan berbahaya untuk digunakan',
-                'location' => 'Workshop - Area Fabrikasi',
+                'location_id' => $locations->where('name', 'Pabrik Bekasi')->first()?->id,
                 'status' => 'waiting',
                 'action_taken' => null,
                 'created_at' => Carbon::now()->subHours(2),
@@ -44,7 +46,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'Tidak memakai helm keselamatan')->first()?->id,
                 'severity_rating' => 'high',
                 'description' => 'Pekerja tidak memakai helm saat bekerja di area konstruksi',
-                'location' => 'Site Construction - Building A',
+                'location_id' => $locations->where('name', 'Site Balikpapan')->first()?->id,
                 'status' => 'in-progress',
                 'action_taken' => 'Pekerja sudah diberikan teguran dan helm keselamatan baru',
                 'start_process_at' => Carbon::now()->subHour(),
@@ -58,7 +60,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'Lampu mati atau redup')->first()?->id,
                 'severity_rating' => 'low',
                 'description' => 'Pencahayaan di area gudang sangat redup karena beberapa lampu mati',
-                'location' => 'Warehouse - Section C',
+                'location_id' => $locations->where('name', 'Gudang Tangerang')->first()?->id,
                 'status' => 'done',
                 'action_taken' => 'Semua lampu sudah diganti dengan LED baru dan pencahayaan sudah memadai',
                 'start_process_at' => Carbon::now()->subDays(2),
@@ -73,7 +75,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'Bearing rusak')->first()?->id,
                 'severity_rating' => 'critical',
                 'description' => 'Bearing pada motor conveyor rusak dan menimbulkan suara keras',
-                'location' => 'Production Line 1',
+                'location_id' => $locations->where('name', 'Pabrik Bekasi')->first()?->id,
                 'status' => 'waiting',
                 'action_taken' => null,
                 'created_at' => Carbon::now()->subHours(5),
@@ -85,7 +87,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'APD rusak atau cacat')->first()?->id,
                 'severity_rating' => 'medium',
                 'description' => 'Sarung tangan safety sobek dan tidak melindungi dengan baik',
-                'location' => 'Chemical Storage Area',
+                'location_id' => $locations->where('name', 'Pabrik Bekasi')->first()?->id,
                 'status' => 'in-progress',
                 'action_taken' => 'APD baru sedang dalam proses pengadaan',
                 'start_process_at' => Carbon::now()->subHours(3),
@@ -99,7 +101,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'Skip safety briefing')->first()?->id,
                 'severity_rating' => 'high',
                 'description' => 'Karyawan langsung bekerja tanpa mengikuti safety briefing',
-                'location' => 'Maintenance Workshop',
+                'location_id' => $locations->where('name', 'Kantor Cabang Surabaya')->first()?->id,
                 'status' => 'done',
                 'action_taken' => 'Karyawan sudah diberikan training ulang dan mengikuti safety briefing secara rutin',
                 'start_process_at' => Carbon::now()->subDays(3),
@@ -114,7 +116,7 @@ class ReportSeeder extends Seeder
                 'action_id' => $actions->where('name', 'Mesin berisik tidak di-maintenance')->first()?->id,
                 'severity_rating' => 'medium',
                 'description' => 'Mesin kompressor mengeluarkan suara sangat bising melebihi batas normal',
-                'location' => 'Production Line 2',
+                'location_id' => $locations->where('name', 'Kantor Regional Medan')->first()?->id,
                 'status' => 'waiting',
                 'action_taken' => null,
                 'created_at' => Carbon::now()->subHours(1),

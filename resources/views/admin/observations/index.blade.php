@@ -372,6 +372,15 @@
                     `<option value="${user.id}">${user.name} (${user.role})</option>`);
             });
 
+            // Initialize Select2 for Observer dropdown
+            $('#userId').select2({
+                dropdownParent: $('#observationModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Observer',
+                allowClear: true,
+                width: '100%'
+            });
+
             // Store categories for detail forms
             window.categoriesData = formData.categories;
         }
@@ -857,6 +866,9 @@
             detailCounter = 0;
             clearFormErrors();
             showFormLoading(false);
+
+            // Reset Select2
+            $('#userId').val(null).trigger('change');
         }
 
         function resetStatusForm() {

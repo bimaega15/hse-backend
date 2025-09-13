@@ -15,6 +15,9 @@ class DatabaseSeeder extends Seeder
             // Seed master data first
             MasterDataSeeder::class,
 
+            // Seed locations
+            LocationSeeder::class,
+
             // Seed banners (new)
             BannerSeeder::class,
 

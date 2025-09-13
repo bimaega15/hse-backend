@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Category;
 use App\Models\Contributing;
 use App\Models\Action;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,7 @@ class ReportController extends Controller
             $hseStaff = User::where('role', 'hse_staff')->where('is_active', true)->get();
             $categories = Category::where('is_active', true)->get();
             $contributingFactors = Contributing::where('is_active', true)->get();
+            $locations = Location::where('is_active', true)->get();
 
             return response()->json([
                 'success' => true,
@@ -32,7 +34,8 @@ class ReportController extends Controller
                     'employees' => $employees,
                     'hse_staff' => $hseStaff,
                     'categories' => $categories,
-                    'contributing_factors' => $contributingFactors
+                    'contributing_factors' => $contributingFactors,
+                    'locations' => $locations
                 ]
             ]);
         } catch (\Exception $e) {
@@ -52,7 +55,7 @@ class ReportController extends Controller
             'action_id' => 'required|exists:actions,id',
             'severity_rating' => 'required|in:low,medium,high,critical',
             'description' => 'required|string|max:2000',
-            'location' => 'required|string|max:255',
+            'location_id' => 'required|exists:locations,id',
             'action_taken' => 'nullable|string|max:1000',
             'created_at' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -76,7 +79,7 @@ class ReportController extends Controller
                 'action_id',
                 'severity_rating',
                 'description',
-                'location',
+                'location_id',
                 'action_taken',
                 'created_at'
             ]);
@@ -190,7 +193,7 @@ class ReportController extends Controller
             'action_id' => 'required|exists:actions,id',
             'severity_rating' => 'required|in:low,medium,high,critical',
             'description' => 'required|string|max:2000',
-            'location' => 'required|string|max:255',
+            'location_id' => 'required|exists:locations,id',
             'action_taken' => 'nullable|string|max:1000',
             'created_at' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -216,7 +219,7 @@ class ReportController extends Controller
                 'action_id',
                 'severity_rating',
                 'description',
-                'location',
+                'location_id',
                 'action_taken',
                 'created_at'
             ]);
@@ -499,7 +502,8 @@ class ReportController extends Controller
                 'hseStaff:id,name,email',
                 'categoryMaster:id,name',
                 'contributingMaster:id,name',
-                'actionMaster:id,name'
+                'actionMaster:id,name',
+                'locationMaster:id,name'
             ])->orderBy('created_at', 'desc');
 
             // Apply filters with validation
@@ -552,7 +556,7 @@ class ReportController extends Controller
                 ->addColumn('report_info', function ($report) {
                     try {
                         $category = optional($report->categoryMaster)->name ?? 'N/A';
-                        $location = $report->location ?: 'N/A';
+                        $location = optional($report->locationMaster)->name ?: 'N/A';
                         return "<div class='fw-bold'>{$category}</div><small class='text-muted'><i class='ri-map-pin-line'></i> {$location}</small>";
                     } catch (\Exception $e) {
                         Log::error('Error in report_info column: ' . $e->getMessage());
@@ -841,7 +845,8 @@ class ReportController extends Controller
                 'hseStaff:id,name,email',
                 'categoryMaster:id,name',
                 'contributingMaster:id,name',
-                'actionMaster:id,name'
+                'actionMaster:id,name',
+                'locationMaster:id,name'
             ]);
 
             // Apply same filters as DataTables
@@ -928,7 +933,7 @@ class ReportController extends Controller
                 optional($report->categoryMaster)->name ?? 'N/A',
                 optional($report->contributingMaster)->name ?? 'N/A',
                 optional($report->actionMaster)->name ?? 'N/A',
-                $report->location ?? 'N/A',
+                optional($report->locationMaster)->name ?? 'N/A',
                 $this->cleanTextForCsv($report->description ?? 'N/A'),
                 ucfirst($report->severity_rating ?? 'N/A'),
                 $this->getStatusLabel($report->status ?? 'N/A'),

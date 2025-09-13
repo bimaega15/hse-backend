@@ -4,6 +4,36 @@
 
 @push('cssSection')
     <style>
+        /* Select2 custom styles */
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: calc(1.5em + 0.75rem + 2px) !important;
+            border: 1px solid #ced4da !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single {
+            padding: 0.375rem 0.75rem !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            padding: 0 !important;
+            line-height: 1.5 !important;
+            color: #495057 !important;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+            height: calc(1.5em + 0.75rem) !important;
+            right: 0.75rem !important;
+        }
+
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+            border-color: #86b7fe !important;
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+        }
+
+        .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+        }
         /* Analytics Cards */
         .analytics-card {
             border: none;
@@ -290,6 +320,24 @@
             transform: scale(1.15) translateY(-2px);
         }
 
+        /* Select2 customization */
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: calc(1.5em + 0.75rem + 2px);
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single {
+            padding: 0.375rem 0.75rem;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            padding: 0;
+            line-height: 1.5;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__arrow {
+            height: calc(1.5em + 0.75rem);
+        }
+
         .timeline-header {
             display: flex;
             align-items: center;
@@ -350,6 +398,7 @@
 @endsection
 
 @push('jsSection')
+    <!-- Select2 JS -->
     <script>
         $(document).ready(function() {
             // Initialize
@@ -510,6 +559,77 @@
         }
 
         function initForms() {
+            // Initialize Select2 for all dropdowns
+            console.log('Initializing Select2 for all dropdowns');
+            try {
+                // Employee dropdown
+                $('#employeeId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Employee',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // HSE Staff dropdown
+                $('#hseStaffId, #statusHseStaffId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select BAIK Staff',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Category dropdown
+                $('#categoryId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Category',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Contributing Factor dropdown
+                $('#contributingId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Contributing Factor',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Action dropdown
+                $('#actionId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Action',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Severity Rating dropdown
+                $('#severityRating').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Severity',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Location dropdown
+                $('#locationId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Location',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                console.log('All Select2 dropdowns initialized successfully');
+            } catch (error) {
+                console.error('Error initializing Select2:', error);
+            }
+
             $('#reportForm').on('submit', function(e) {
                 e.preventDefault();
                 submitReport();
@@ -524,8 +644,26 @@
                 resetReportForm();
             });
 
+            $('#reportModal').on('shown.bs.modal', function() {
+                // Reinitialize all Select2 dropdowns when modal is shown
+                reinitializeAllSelect2();
+            });
+
             $('#statusModal').on('hidden.bs.modal', function() {
                 resetStatusForm();
+            });
+
+            $('#statusModal').on('shown.bs.modal', function() {
+                // Initialize Select2 for status modal HSE staff dropdown
+                if (!$('#statusHseStaffId').hasClass('select2-hidden-accessible')) {
+                    $('#statusHseStaffId').select2({
+                        dropdownParent: $('#statusModal'),
+                        theme: 'bootstrap-5',
+                        placeholder: 'Select BAIK Staff',
+                        allowClear: true,
+                        width: '100%'
+                    });
+                }
             });
 
             $('#contributingId').on('change', function() {
@@ -557,32 +695,123 @@
         }
 
         function populateFormSelects() {
+            // Populate Employee dropdown
             $('#employeeId').empty().append('<option value="">Select Employee</option>');
             formData.employees.forEach(function(employee) {
                 $('#employeeId').append(
                     `<option value="${employee.id}">${employee.name}</option>`);
             });
 
+            // Populate HSE Staff dropdown
             $('#hseStaffId, #statusHseStaffId').empty().append('<option value="">Select BAIK Staff</option>');
             formData.hse_staff.forEach(function(staff) {
                 $('#hseStaffId, #statusHseStaffId').append(
                     `<option value="${staff.id}">${staff.name}</option>`);
             });
 
+            // Populate Category dropdown
             $('#categoryId').empty().append('<option value="">Select Category</option>');
             formData.categories.forEach(function(category) {
                 $('#categoryId').append(`<option value="${category.id}">${category.name}</option>`);
             });
 
+            // Populate Contributing Factor dropdown
             $('#contributingId').empty().append('<option value="">Select Contributing Factor</option>');
             formData.contributing_factors.forEach(function(contributing) {
                 $('#contributingId').append(`<option value="${contributing.id}">${contributing.name}</option>`);
+            });
+
+            // Populate Location dropdown
+            $('#locationId').empty().append('<option value="">Select Location</option>');
+            formData.locations.forEach(function(location) {
+                $('#locationId').append(`<option value="${location.id}">${location.name}</option>`);
+            });
+
+            // Reinitialize all Select2 dropdowns after populating data
+            reinitializeAllSelect2();
+        }
+
+        function reinitializeAllSelect2() {
+            const dropdowns = ['#employeeId', '#hseStaffId', '#statusHseStaffId', '#categoryId', '#contributingId', '#actionId', '#severityRating', '#locationId'];
+
+            dropdowns.forEach(function(selector) {
+                if ($(selector).hasClass('select2-hidden-accessible')) {
+                    $(selector).select2('destroy');
+                }
+            });
+
+            // Reinitialize all dropdowns
+            $('#employeeId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Employee',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#hseStaffId, #statusHseStaffId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select BAIK Staff',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#categoryId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Category',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#contributingId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Contributing Factor',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#actionId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Action',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#severityRating').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Severity',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#locationId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Location',
+                allowClear: true,
+                width: '100%'
             });
         }
 
         function loadActionsByContributing(contributingId, selectedActionId = null) {
             if (!contributingId) {
                 $('#actionId').empty().append('<option value="">Select Action</option>');
+                // Reinitialize Select2 for action dropdown
+                if ($('#actionId').hasClass('select2-hidden-accessible')) {
+                    $('#actionId').select2('destroy');
+                }
+                $('#actionId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Action',
+                    allowClear: true,
+                    width: '100%'
+                });
                 return;
             }
 
@@ -597,6 +826,17 @@
                 error: function(xhr) {
                     console.error('Failed to load actions');
                     $('#actionId').empty().append('<option value="">Select Action</option>');
+                    // Reinitialize Select2 on error
+                    if ($('#actionId').hasClass('select2-hidden-accessible')) {
+                        $('#actionId').select2('destroy');
+                    }
+                    $('#actionId').select2({
+                        dropdownParent: $('#reportModal'),
+                        theme: 'bootstrap-5',
+                        placeholder: 'Select Action',
+                        allowClear: true,
+                        width: '100%'
+                    });
                 }
             });
         }
@@ -658,24 +898,27 @@
 
         function populateReportForm(report) {
             $('#reportId').val(report.id);
-            $('#employeeId').val(report.employee_id);
-            $('#hseStaffId').val(report.hse_staff_id);
-            $('#categoryId').val(report.category_id);
-            $('#contributingId').val(report.contributing_id);
+
+            // Set values for all Select2 dropdowns with trigger change
+            $('#employeeId').val(report.employee_id).trigger('change');
+            $('#hseStaffId').val(report.hse_staff_id).trigger('change');
+            $('#categoryId').val(report.category_id).trigger('change');
+            $('#contributingId').val(report.contributing_id).trigger('change');
             // Don't set actionId here since it's already set by populateActions with the selected attribute
             // $('#actionId').val(report.action_id);
-            $('#severityRating').val(report.severity_rating);
-            $('#location').val(report.location);
+            $('#severityRating').val(report.severity_rating).trigger('change');
+            $('#locationId').val(report.location_id).trigger('change');
+
             $('#description').val(report.description);
             $('#actionTaken').val(report.action_taken);
-            
+
             // Format datetime for datetime-local input
             if (report.created_at) {
                 const date = new Date(report.created_at);
                 const localDate = new Date(date.getTime() - (date.getTimezoneOffset() * 60000));
                 $('#createdAt').val(localDate.toISOString().slice(0, 16));
             }
-            
+
             // Display existing images
             displayExistingImages(report.images);
         }
@@ -683,8 +926,22 @@
         function populateActions(actions, selectedActionId = null) {
             $('#actionId').empty().append('<option value="">Select Action</option>');
             actions.forEach(function(action) {
-                const isSelected = selectedActionId && parseInt(selectedActionId) === parseInt(action.id) ? 'selected' : '';
-                $('#actionId').append(`<option value="${action.id}" ${isSelected}>${escapeHtml(action.name)}</option>`);
+                const isSelected = selectedActionId && parseInt(selectedActionId) === parseInt(action.id) ?
+                    'selected' : '';
+                $('#actionId').append(
+                    `<option value="${action.id}" ${isSelected}>${escapeHtml(action.name)}</option>`);
+            });
+
+            // Reinitialize Select2 for action dropdown after populating
+            if ($('#actionId').hasClass('select2-hidden-accessible')) {
+                $('#actionId').select2('destroy');
+            }
+            $('#actionId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Action',
+                allowClear: true,
+                width: '100%'
             });
         }
 
@@ -802,20 +1059,25 @@
             const employeeName = (report.employee && report.employee.name) ? escapeHtml(report.employee.name) : 'N/A';
             const employeeEmail = (report.employee && report.employee.email) ? escapeHtml(report.employee.email) : 'N/A';
             const employeeId = report.employee_id ? escapeHtml(report.employee_id.toString()) : 'N/A';
-            
-            const hseStaffName = (report.hse_staff && report.hse_staff.name) ? escapeHtml(report.hse_staff.name) : 'Not Assigned';
+
+            const hseStaffName = (report.hse_staff && report.hse_staff.name) ? escapeHtml(report.hse_staff.name) :
+                'Not Assigned';
             const hseStaffEmail = (report.hse_staff && report.hse_staff.email) ? escapeHtml(report.hse_staff.email) : 'N/A';
             const hseStaffId = report.hse_staff_id ? escapeHtml(report.hse_staff_id.toString()) : 'N/A';
-            
-            const categoryName = (report.category_master && report.category_master.name) ? escapeHtml(report.category_master.name) : 'N/A';
-            const contributingName = (report.contributing_master && report.contributing_master.name) ? escapeHtml(report.contributing_master.name) : 'N/A';
-            const actionName = (report.action_master && report.action_master.name) ? escapeHtml(report.action_master.name) : 'N/A';
-            
+
+            const categoryName = (report.category_master && report.category_master.name) ? escapeHtml(report.category_master
+                .name) : 'N/A';
+            const contributingName = (report.contributing_master && report.contributing_master.name) ? escapeHtml(report
+                .contributing_master.name) : 'N/A';
+            const actionName = (report.action_master && report.action_master.name) ? escapeHtml(report.action_master.name) :
+                'N/A';
+
             const status = report.status || 'waiting';
             const statusColor = statusColors[status] || 'secondary';
             const severityRating = report.severity_rating || 'low';
             const severityColor = severityColors[severityRating] || 'secondary';
-            const location = report.location ? escapeHtml(report.location) : 'N/A';
+            const location = (report.location_master && report.location_master.name) ? escapeHtml(report.location_master
+                .name) : 'N/A';
 
             const html = `
                 <div class="row">
@@ -920,11 +1182,13 @@
                 // Safely escape and validate fields
                 const correctionAction = detail.correction_action ? escapeHtml(detail.correction_action) : 'N/A';
                 const dueDate = detail.due_date ? formatDate(detail.due_date) : 'N/A';
-                const pic = (detail.assigned_user && detail.assigned_user.name) ? escapeHtml(detail.assigned_user.name) : 'N/A';
+                const pic = (detail.assigned_user && detail.assigned_user.name) ? escapeHtml(detail.assigned_user
+                    .name) : 'N/A';
                 const statusCar = detail.status_car || 'open';
                 const statusColor = statusColors[statusCar] || 'secondary';
                 const statusLabel = statusCar.replace('_', ' ');
-                const approvedByName = (detail.approved_by && detail.approved_by.name) ? escapeHtml(detail.approved_by.name) : 'N/A';
+                const approvedByName = (detail.approved_by && detail.approved_by.name) ? escapeHtml(detail
+                    .approved_by.name) : 'N/A';
 
                 html += `
                     <tr>
@@ -936,15 +1200,15 @@
                         <td>
                         ${(detail.evidences && Array.isArray(detail.evidences) && detail.evidences.length > 0) ? 
                             `<div class="d-flex gap-1">
-                                ${detail.evidences.filter(img => img && typeof img === 'string').map(img => {
-                                    const escapedImg = escapeHtml(img);
-                                    return `
+                                    ${detail.evidences.filter(img => img && typeof img === 'string').map(img => {
+                                        const escapedImg = escapeHtml(img);
+                                        return `
                                         <a href="javascript:void(0);" class="avatar-md" onclick="showImageModal('{{ asset('storage/') }}/${escapedImg}')">
                                             <img src="{{ asset('storage/') }}/${escapedImg}" alt="Report Image" class="img-fluid rounded" style="max-width: 50px; max-height: 50px; object-fit: cover;" onerror="this.style.display='none'">
                                         </a>
                                     `;
-                                }).join('')}
-                            </div>` 
+                                    }).join('')}
+                                </div>` 
                             : '<p class="text-muted mb-0">No images available</p>'}
                         </td>
                     </tr>
@@ -1026,13 +1290,14 @@
             clearFormErrors();
 
             const formData = new FormData($('#reportForm')[0]);
-            let url = isEditMode ? `{{ url('/') }}/admin/reports/${currentReportId}` : '{{ url('/') }}/admin/reports';
+            let url = isEditMode ? `{{ url('/') }}/admin/reports/${currentReportId}` :
+                '{{ url('/') }}/admin/reports';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {
                 formData.append('_method', 'PUT');
                 url += '?_method=PUT';
-                
+
                 // Add removed images information for edit mode
                 if (window.removedImages && window.removedImages.length > 0) {
                     formData.append('removed_images', JSON.stringify(window.removedImages));
@@ -1107,11 +1372,11 @@
 
         function previewImages(files) {
             const preview = $('#imagePreview');
-            
+
             // Don't clear existing images, just add new ones
             // Remove any previous "new-image" previews
             preview.find('.new-image').remove();
-            
+
             // Remove existing images info message if we're adding new files
             if (files.length > 0) {
                 preview.find('.w-100').remove();
@@ -1134,7 +1399,7 @@
                         reader.readAsDataURL(file);
                     }
                 });
-                
+
                 // Add info about new uploads
                 preview.append(`
                     <div class="w-100 mt-2">
@@ -1156,7 +1421,7 @@
                     if (imagePath && typeof imagePath === 'string') {
                         const escapedPath = escapeHtml(imagePath);
                         const imageUrl = `{{ asset('storage/') }}/${escapedPath}`;
-                        
+
                         preview.append(`
                             <div class="d-inline-block me-2 mb-2 position-relative existing-image" data-image-path="${escapedPath}">
                                 <img src="${imageUrl}" class="rounded" style="width: 100px; height: 100px; object-fit: cover;" onclick="showImageModal('${imageUrl}')" style="cursor: pointer;" onerror="this.style.display='none'">
@@ -1167,7 +1432,7 @@
                         `);
                     }
                 });
-                
+
                 // Add a note about existing images
                 preview.append(`
                     <div class="w-100 mt-2">
@@ -1184,7 +1449,7 @@
             // Remove the image container from display
             $(button).closest('.existing-image').fadeOut(300, function() {
                 $(this).remove();
-                
+
                 // Update the count in the info message
                 const remainingImages = $('.existing-image').length;
                 if (remainingImages === 0) {
@@ -1196,13 +1461,13 @@
                     `);
                 }
             });
-            
+
             // Add to removed images array for backend processing
             if (!window.removedImages) {
                 window.removedImages = [];
             }
             window.removedImages.push(imagePath);
-            
+
             console.log('Image marked for removal:', imagePath);
         }
 
@@ -1234,10 +1499,20 @@
             $('#imagePreview').empty();
             clearFormErrors();
             showFormLoading(false);
-            
+
+            // Clear all Select2 dropdowns
+            const select2Fields = ['#employeeId', '#hseStaffId', '#categoryId', '#contributingId', '#actionId', '#severityRating', '#locationId'];
+            select2Fields.forEach(function(selector) {
+                if ($(selector).hasClass('select2-hidden-accessible')) {
+                    $(selector).val('').trigger('change');
+                } else {
+                    $(selector).val('');
+                }
+            });
+
             // Clear removed images array
             window.removedImages = [];
-            
+
             // Set default created_at to current datetime for new reports
             if (!isEditMode) {
                 const now = new Date();

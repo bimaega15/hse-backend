@@ -4,7 +4,10 @@
       "Bash(php artisan make:migration:*)",
       "Bash(dir:*)",
       "Bash(php artisan config:clear:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Read(//c/**)",
+      "Bash(mysql:*)",
+      "Bash(php:*)"
     ],
     "deny": [],
     "ask": []

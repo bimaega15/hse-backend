@@ -140,6 +140,14 @@
             </li>
 
             <li class="side-nav-item">
+                <a href="{{ route('admin.locations.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.locations.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="map-pin"></i></span>
+                    <span class="menu-text"> Locations </span>
+                </a>
+            </li>
+
+            <li class="side-nav-item">
                 <a href="{{ route('admin.banners.index') }}"
                     class="side-nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="image"></i></span>

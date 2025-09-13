@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ObservationController; // Add this import
+use App\Http\Controllers\Admin\LocationController;
 
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -143,6 +144,18 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::delete('/{id}', [ActionController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/toggle-status', [ActionController::class, 'toggleStatus'])->name('toggle-status');
         Route::get('/by-contributing/{contributingId}', [ActionController::class, 'getByContributing'])->name('by-contributing');
+    });
+
+    // Locations Management Routes
+    Route::prefix('admin/locations')->name('admin.locations.')->group(function () {
+        Route::get('/', [LocationController::class, 'index'])->name('index');
+        Route::get('/data', [LocationController::class, 'getData'])->name('data');
+        Route::get('/active', [LocationController::class, 'getActiveLocations'])->name('active');
+        Route::post('/', [LocationController::class, 'store'])->name('store');
+        Route::get('/{id}', [LocationController::class, 'show'])->name('show');
+        Route::put('/{id}', [LocationController::class, 'update'])->name('update');
+        Route::delete('/{id}', [LocationController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [LocationController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Banners Management Routes

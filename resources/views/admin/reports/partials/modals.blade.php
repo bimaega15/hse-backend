@@ -88,11 +88,12 @@
 
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="location" class="form-label">Location <span
+                                <label for="locationId" class="form-label">Location <span
                                         class="text-danger">*</span></label>
-                                <input type="text" class="form-control" id="location" name="location" required
-                                    maxlength="255" placeholder="Enter incident location">
-                                <div class="invalid-feedback" id="locationError"></div>
+                                <select class="form-select" id="locationId" name="location_id" required>
+                                    <option value="">Select Location</option>
+                                </select>
+                                <div class="invalid-feedback" id="locationIdError"></div>
                             </div>
                         </div>
 
