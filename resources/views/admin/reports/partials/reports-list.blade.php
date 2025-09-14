@@ -486,7 +486,7 @@
         function exportExcel() {
             // Get the button element
             const exportButton = $('button[onclick="exportExcel()"]');
-            
+
             const filters = {
                 status: $('#statusFilter').val(),
                 severity: $('#severityFilter').val(),
@@ -516,7 +516,7 @@
 
             // Create temporary link and trigger download
             const exportUrl = `{{ route('admin.reports.export.excel') }}?${params.toString()}`;
-            
+
             // Use fetch to handle the download properly
             fetch(exportUrl)
                 .then(response => {
@@ -526,11 +526,13 @@
                     return response.blob();
                 })
                 .then(blob => {
-                    // Create download link
-                    const url = window.URL.createObjectURL(blob);
+                    // Create download link with proper MIME type for Excel
+                    const url = window.URL.createObjectURL(new Blob([blob], {
+                        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    }));
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `reports_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.csv`;
+                    a.download = `reports_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.xlsx`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);

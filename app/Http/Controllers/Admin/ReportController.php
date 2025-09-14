@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class ReportController extends Controller
 {
@@ -942,17 +947,22 @@ class ReportController extends Controller
 
             $reports = $query->orderBy('created_at', 'desc')->get();
 
-            // Create CSV content with proper Excel formatting
-            $csvContent = $this->generateExcelContent($reports);
+            // Generate Excel file using PhpSpreadsheet
+            $spreadsheet = $this->generateExcelContent($reports);
 
-            $filename = 'reports_export_' . date('Y-m-d_H-i-s') . '.csv';
+            // Create writer and output file
+            $writer = new Xlsx($spreadsheet);
 
-            return response($csvContent)
-                ->header('Content-Type', 'text/csv; charset=UTF-8')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
-                ->header('Pragma', 'no-cache')
-                ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
-                ->header('Expires', '0');
+            $filename = 'reports_export_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $tempFile = tempnam(sys_get_temp_dir(), 'excel');
+
+            $writer->save($tempFile);
+
+            return response()->download($tempFile, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'max-age=0',
+            ])->deleteFileAfterSend(true);
         } catch (\Exception $e) {
             Log::error('Export Error: ' . $e->getMessage());
             return response()->json([
@@ -964,72 +974,98 @@ class ReportController extends Controller
 
     private function generateExcelContent($reports)
     {
-        // Create CSV with BOM for proper Excel UTF-8 support
-        $csvContent = "\xEF\xBB\xBF";
+        // Create new Spreadsheet object
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        // Add title row
-        $csvContent .= '"TABLE NCR & NEARMISS REPORT"' . "\r\n";
-        $csvContent .= "\r\n"; // Empty line
+        // Set worksheet title
+        $sheet->setTitle('Reports');
+
+        $currentRow = 1;
+
+        // Title row
+        $sheet->setCellValue('A' . $currentRow, 'TABLE NCR & NEARMISS REPORT');
+        $sheet->mergeCells('A' . $currentRow . ':J' . $currentRow);
+
+        // Style title
+        $sheet->getStyle('A' . $currentRow)->applyFromArray([
+            'font' => ['bold' => true, 'size' => 16],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D3D3D3']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ]);
+
+        $currentRow += 2; // Empty line
 
         // INITIAL REPORTING SECTION
-        $csvContent .= '"INITIAL REPORTING"' . "\r\n";
+        $sheet->setCellValue('A' . $currentRow, 'INITIAL REPORTING');
+        $sheet->mergeCells('A' . $currentRow . ':J' . $currentRow);
+
+        // Style section header
+        $sheet->getStyle('A' . $currentRow)->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ]);
+
+        $currentRow++;
 
         // Initial reporting headers
         $initialHeaders = [
-            'No',
-            'Date of Reporting',
-            'Photo',
-            'Explanation of Report',
-            'Potential Severity',
-            'Category of Report',
-            'Location',
-            'Type of Report',
-            'Immediate Action',
-            'Reported By'
+            'No', 'Date of Reporting', 'Photo', 'Explanation of Report', 'Potential Severity',
+            'Category of Report', 'Location', 'Type of Report', 'Immediate Action', 'Reported By'
         ];
 
-        $csvContent .= '"' . implode('","', $initialHeaders) . '"' . "\r\n";
+        // Set headers
+        $col = 'A';
+        foreach ($initialHeaders as $header) {
+            $sheet->setCellValue($col . $currentRow, $header);
+            $col++;
+        }
 
-        // Initial reporting data - semua data berurutan tanpa baris kosong
+        // Style headers
+        $sheet->getStyle('A' . $currentRow . ':J' . $currentRow)->applyFromArray([
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0F0F0']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ]);
+
+        $currentRow++;
+
+        // Add data rows
         $no = 1;
         foreach ($reports as $report) {
-            $row = [
+            $rowData = [
                 $no++,
                 $report->created_at ? $report->created_at->format('d/m/Y') : 'N/A',
                 count($report->images ?? []) > 0 ? 'Y' : 'N',
-                $this->cleanTextForCsv($report->description),
+                $this->cleanTextForExcel($report->description),
                 strtoupper($report->severity_rating ?? 'N/A'),
-                $this->cleanTextForCsv(optional($report->categoryMaster)->name),
-                $this->cleanTextForCsv(optional($report->locationMaster)->name),
-                $this->cleanTextForCsv($this->getTypeOfReport($report)),
-                $this->cleanTextForCsv($report->action_taken),
-                $this->cleanTextForCsv(optional($report->employee)->name)
+                $this->cleanTextForExcel(optional($report->categoryMaster)->name),
+                $this->cleanTextForExcel(optional($report->locationMaster)->name),
+                $this->cleanTextForExcel($this->getTypeOfReport($report)),
+                $this->cleanTextForExcel($report->action_taken),
+                $this->cleanTextForExcel(optional($report->employee)->name)
             ];
 
-            // Escape and format each field properly for CSV
-            $escapedRow = array_map(function ($field, $index) {
-                // Convert to string dan pastikan tidak null
-                $field = (string) $field;
-                if (trim($field) === '') $field = 'N/A';
+            $col = 'A';
+            foreach ($rowData as $cellValue) {
+                $sheet->setCellValue($col . $currentRow, $cellValue);
+                $col++;
+            }
 
-                // Double quote escaping
-                $field = str_replace('"', '""', $field);
+            // Style data row
+            $sheet->getStyle('A' . $currentRow . ':J' . $currentRow)->applyFromArray([
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            ]);
 
-                // Force text alignment untuk tanggal (index 1 = Date of Reporting)
-                if ($index === 1) {
-                    // Add tab character di awal untuk force text format di Excel
-                    return '"' . "\t" . $field . '"';
-                }
-
-                // Wrap in quotes
-                return '"' . $field . '"';
-            }, $row, array_keys($row));
-
-            $csvContent .= implode(',', $escapedRow) . "\r\n";
+            $currentRow++;
         }
 
-        // CORRECTION & CORRECTIVE ACTION SECTION
-        // Cek apakah ada report details di semua reports
+        // Check if there are corrective actions
         $hasReportDetails = false;
         foreach ($reports as $report) {
             if ($report->reportDetails && count($report->reportDetails) > 0) {
@@ -1039,62 +1075,84 @@ class ReportController extends Controller
         }
 
         if ($hasReportDetails) {
-            $csvContent .= "\r\n"; // Empty line
-            $csvContent .= '"CORRECTION & CORRECTIVE ACTION"' . "\r\n";
+            $currentRow++; // Empty line
 
+            // CORRECTIVE ACTION SECTION
+            $sheet->setCellValue('A' . $currentRow, 'CORRECTION & CORRECTIVE ACTION');
+            $sheet->mergeCells('A' . $currentRow . ':G' . $currentRow);
+
+            // Style corrective action header
+            $sheet->getStyle('A' . $currentRow)->applyFromArray([
+                'font' => ['bold' => true, 'size' => 14],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            ]);
+
+            $currentRow++;
+
+            // Corrective action headers
             $correctionHeaders = [
-                'No',
-                'Correction & corrective Action',
-                'Due Date',
-                'PIC',
-                'Status CAR',
-                'Evidences',
-                'Approved By'
+                'No', 'Correction & corrective Action', 'Due Date', 'PIC',
+                'Status CAR', 'Evidences', 'Approved By'
             ];
 
-            $csvContent .= '"' . implode('","', $correctionHeaders) . '"' . "\r\n";
+            // Set corrective action headers
+            $col = 'A';
+            foreach ($correctionHeaders as $header) {
+                $sheet->setCellValue($col . $currentRow, $header);
+                $col++;
+            }
 
-            // Add corrective action data untuk semua reports berurutan
+            // Style corrective action headers
+            $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->applyFromArray([
+                'font' => ['bold' => true],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0F0F0']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            ]);
+
+            $currentRow++;
+
+            // Add corrective action data
             $carNo = 1;
             foreach ($reports as $report) {
                 if ($report->reportDetails && count($report->reportDetails) > 0) {
                     foreach ($report->reportDetails as $detail) {
-                        $carRow = [
+                        $carRowData = [
                             $carNo++,
-                            $this->cleanTextForCsv($detail->correction_action),
+                            $this->cleanTextForExcel($detail->correction_action),
                             $detail->due_date ? \Carbon\Carbon::parse($detail->due_date)->format('d/m/Y') : 'N/A',
-                            $this->cleanTextForCsv(optional($detail->createdBy)->name),
+                            $this->cleanTextForExcel(optional($detail->createdBy)->name),
                             strtoupper($detail->status_car ?? 'OPEN'),
                             count($detail->evidences ?? []) > 0 ? 'FOTO' : 'N/A',
-                            $this->cleanTextForCsv(optional($detail->approvedBy)->name)
+                            $this->cleanTextForExcel(optional($detail->approvedBy)->name)
                         ];
 
-                        // Escape and format each field properly for CSV
-                        $escapedCarRow = array_map(function ($field, $index) {
-                            // Convert to string dan pastikan tidak null
-                            $field = (string) $field;
-                            if (trim($field) === '') $field = 'N/A';
+                        $col = 'A';
+                        foreach ($carRowData as $cellValue) {
+                            $sheet->setCellValue($col . $currentRow, $cellValue);
+                            $col++;
+                        }
 
-                            // Double quote escaping
-                            $field = str_replace('"', '""', $field);
+                        // Style corrective action data row
+                        $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->applyFromArray([
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+                        ]);
 
-                            // Force text alignment untuk tanggal (index 2 = Due Date)
-                            if ($index === 2) {
-                                // Add tab character di awal untuk force text format di Excel
-                                return '"' . "\t" . $field . '"';
-                            }
-
-                            // Wrap in quotes
-                            return '"' . $field . '"';
-                        }, $carRow, array_keys($carRow));
-
-                        $csvContent .= implode(',', $escapedCarRow) . "\r\n";
+                        $currentRow++;
                     }
                 }
             }
         }
 
-        return $csvContent;
+        // Auto-size columns
+        foreach (range('A', 'J') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        return $spreadsheet;
     }
 
     private function getTypeOfReport($report)
@@ -1143,6 +1201,30 @@ class ReportController extends Controller
     }
 
     private function cleanTextForHtml($text)
+    {
+        if (!$text || trim($text) === '') return 'N/A';
+
+        // Convert to string if not already
+        $text = (string) $text;
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+
+        // Replace line breaks with space for better display in Excel cells
+        $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+
+        // Replace multiple spaces with single space
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        // Remove any control characters except space
+        $text = preg_replace('/[^\x20-\x7E\x80-\xFF]/', '', $text);
+
+        $text = trim($text);
+
+        return $text === '' ? 'N/A' : $text;
+    }
+
+    private function cleanTextForExcel($text)
     {
         if (!$text || trim($text) === '') return 'N/A';
 
