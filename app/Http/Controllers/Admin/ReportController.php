@@ -89,18 +89,18 @@ class ReportController extends Controller
             // Handle image uploads
             if ($request->hasFile('images')) {
                 $imagePaths = [];
-                
+
                 // Create directory if not exists
                 $uploadPath = storage_path('app/public/reports');
                 if (!file_exists($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
-                
+
                 foreach ($request->file('images') as $index => $image) {
                     if ($image && $image->isValid()) {
                         $filename = time() . '_' . uniqid() . '_' . $image->getClientOriginalName();
                         $fullPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
-                        
+
                         if ($image->move($uploadPath, $filename)) {
                             $imagePaths[] = 'reports/' . $filename;
                             Log::info("Report image uploaded successfully at index {$index}:", ['path' => 'reports/' . $filename]);
@@ -111,7 +111,7 @@ class ReportController extends Controller
                         Log::warning("Invalid or empty image file at index {$index}");
                     }
                 }
-                
+
                 if (!empty($imagePaths)) {
                     $reportData['images'] = $imagePaths;
                 } else {
@@ -123,7 +123,7 @@ class ReportController extends Controller
                             break;
                         }
                     }
-                    
+
                     if ($hasFilesToUpload) {
                         return response()->json([
                             'success' => false,
@@ -228,18 +228,18 @@ class ReportController extends Controller
                 'action_taken',
                 'created_at'
             ]);
-            
+
             // Handle individual image removals
             if ($request->has('removed_images')) {
                 $removedImages = json_decode($request->input('removed_images'), true);
                 if (is_array($removedImages) && !empty($removedImages)) {
                     $currentImages = $report->images ?: [];
-                    
+
                     // Remove specified images from current images array
-                    $updatedImages = array_filter($currentImages, function($image) use ($removedImages) {
+                    $updatedImages = array_filter($currentImages, function ($image) use ($removedImages) {
                         return !in_array($image, $removedImages);
                     });
-                    
+
                     // Delete the files from storage
                     foreach ($removedImages as $imagePath) {
                         if ($imagePath && is_string($imagePath)) {
@@ -250,7 +250,7 @@ class ReportController extends Controller
                             }
                         }
                     }
-                    
+
                     // Update the report with remaining images
                     $reportData['images'] = array_values($updatedImages);
                 }
@@ -260,18 +260,18 @@ class ReportController extends Controller
             if ($request->hasFile('images')) {
                 $imagePaths = [];
                 $hasValidImages = false;
-                
+
                 // Create directory if not exists
                 $uploadPath = storage_path('app/public/reports');
                 if (!file_exists($uploadPath)) {
                     mkdir($uploadPath, 0755, true);
                 }
-                
+
                 foreach ($request->file('images') as $index => $image) {
                     if ($image && $image->isValid()) {
                         $filename = time() . '_' . uniqid() . '_' . $image->getClientOriginalName();
                         $fullPath = $uploadPath . DIRECTORY_SEPARATOR . $filename;
-                        
+
                         if ($image->move($uploadPath, $filename)) {
                             $imagePaths[] = 'reports/' . $filename;
                             $hasValidImages = true;
@@ -283,7 +283,7 @@ class ReportController extends Controller
                         Log::warning("Invalid or empty image file at index {$index} during update");
                     }
                 }
-                
+
                 // Only delete old images if we have new valid images to replace them
                 if ($hasValidImages) {
                     // Delete old images
@@ -308,7 +308,7 @@ class ReportController extends Controller
                             break;
                         }
                     }
-                    
+
                     if ($hasFilesToUpload) {
                         return response()->json([
                             'success' => false,
@@ -703,6 +703,9 @@ class ReportController extends Controller
                     'overdue_cars' => $this->getOverdueCarsCount($filters),
                     'completion_rate' => $completionMetrics['completion_rate'],
                     'avg_resolution_hours' => $completionMetrics['avg_resolution_hours'],
+                    // Add detailed breakdown for Period Analysis
+                    'status_breakdown' => $this->getStatusBreakdown($filters),
+                    'severity_breakdown' => $this->getSeverityBreakdown($filters),
                 ],
                 'trends' => $this->getMonthlyTrends($filters),
                 'categories' => $this->getCategoryBreakdown($filters),
@@ -811,7 +814,7 @@ class ReportController extends Controller
             'completed_reports' => $completedReports,
             'completion_rate' => $totalReports > 0 ? round(($completedReports / $totalReports) * 100, 1) : 0,
             'avg_resolution_hours' => $avgResolutionTime ? round($avgResolutionTime, 1) : 0,
-            'sla_compliance' => $this->calculateSLACompliance(),
+            'sla_compliance' => $this->calculateSLACompliance($filters),
         ];
     }
 
@@ -871,7 +874,7 @@ class ReportController extends Controller
             });
     }
 
-    private function calculateSLACompliance()
+    private function calculateSLACompliance($filters = [])
     {
         // Define SLA targets (in hours) based on severity
         $slaTargets = [
@@ -884,7 +887,8 @@ class ReportController extends Controller
         $compliance = [];
 
         foreach ($slaTargets as $severity => $targetHours) {
-            $reports = Report::where('severity_rating', $severity)
+            $reports = $this->getFilteredQuery($filters)
+                ->where('severity_rating', $severity)
                 ->whereNotNull('start_process_at')
                 ->whereNotNull('completed_at')
                 ->get();
@@ -947,7 +951,6 @@ class ReportController extends Controller
                 ->header('Pragma', 'no-cache')
                 ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
                 ->header('Expires', '0');
-
         } catch (\Exception $e) {
             Log::error('Export Error: ' . $e->getMessage());
             return response()->json([
@@ -961,7 +964,7 @@ class ReportController extends Controller
     {
         // Create CSV with BOM for proper Excel UTF-8 support
         $csvContent = "\xEF\xBB\xBF";
-        
+
         // Headers
         $headers = [
             'No',
@@ -984,9 +987,9 @@ class ReportController extends Controller
             'Tanggal Mulai Proses',
             'Tanggal Selesai'
         ];
-        
+
         $csvContent .= '"' . implode('","', $headers) . '"' . "\r\n";
-        
+
         // Data rows
         $no = 1;
         foreach ($reports as $report) {
@@ -1011,15 +1014,15 @@ class ReportController extends Controller
                 $report->start_process_at ? $report->start_process_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'Belum Dimulai',
                 $report->completed_at ? $report->completed_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'Belum Selesai'
             ];
-            
+
             // Escape and format each field
-            $escapedRow = array_map(function($field) {
+            $escapedRow = array_map(function ($field) {
                 return '"' . str_replace('"', '""', $field) . '"';
             }, $row);
-            
+
             $csvContent .= implode(',', $escapedRow) . "\r\n";
         }
-        
+
         return $csvContent;
     }
 
@@ -1113,7 +1116,7 @@ class ReportController extends Controller
 
         foreach ($periods as $key => $period) {
             // Don't override the main filters, create separate query for each period
-            $basePeriodFilters = array_filter($filters, function($value, $key) {
+            $basePeriodFilters = array_filter($filters, function ($value, $key) {
                 return !in_array($key, ['start_date', 'end_date', 'this_month', 'last_month']);
             }, ARRAY_FILTER_USE_BOTH);
 
@@ -1270,11 +1273,11 @@ class ReportController extends Controller
 
         // Apply date range filters UNLESS we have special month filters
         if (!empty($filters['start_date']) && empty($filters['this_month']) && empty($filters['last_month'])) {
-            $query->whereDate('created_at', '>=', $filters['start_date']);
+            $query->whereDate('reports.created_at', '>=', $filters['start_date']);
         }
 
         if (!empty($filters['end_date']) && empty($filters['this_month']) && empty($filters['last_month'])) {
-            $query->whereDate('created_at', '<=', $filters['end_date']);
+            $query->whereDate('reports.created_at', '<=', $filters['end_date']);
         }
 
         // Apply other filters
@@ -1306,14 +1309,14 @@ class ReportController extends Controller
         if (!empty($filters['this_month'])) {
             $currentYear = now()->year;
             $currentMonth = now()->month;
-            $query->whereYear('created_at', $currentYear)
-                  ->whereMonth('created_at', $currentMonth);
+            $query->whereYear('reports.created_at', $currentYear)
+                ->whereMonth('reports.created_at', $currentMonth);
         }
 
         if (!empty($filters['last_month'])) {
             $lastMonth = now()->subMonth();
-            $query->whereYear('created_at', $lastMonth->year)
-                  ->whereMonth('created_at', $lastMonth->month);
+            $query->whereYear('reports.created_at', $lastMonth->year)
+                ->whereMonth('reports.created_at', $lastMonth->month);
         }
 
         if (!empty($filters['high_critical'])) {
@@ -1393,6 +1396,28 @@ class ReportController extends Controller
         return $query->count();
     }
 
+    // NEW: Get accurate status breakdown
+    private function getStatusBreakdown($filters = [])
+    {
+        return [
+            'closed' => $this->getFilteredQuery($filters)->where('status', 'done')->count(),
+            'open' => $this->getFilteredQuery($filters)->whereIn('status', ['waiting', 'in-progress'])->count(),
+            'waiting' => $this->getFilteredQuery($filters)->where('status', 'waiting')->count(),
+            'in_progress' => $this->getFilteredQuery($filters)->where('status', 'in-progress')->count(),
+        ];
+    }
+
+    // NEW: Get accurate severity breakdown
+    private function getSeverityBreakdown($filters = [])
+    {
+        return [
+            'critical' => $this->getFilteredQuery($filters)->where('severity_rating', 'critical')->count(),
+            'high' => $this->getFilteredQuery($filters)->where('severity_rating', 'high')->count(),
+            'medium' => $this->getFilteredQuery($filters)->where('severity_rating', 'medium')->count(),
+            'low' => $this->getFilteredQuery($filters)->where('severity_rating', 'low')->count(),
+        ];
+    }
+
     // NEW: AJAX endpoint for analytics filters
     public function getAnalyticsFiltered(Request $request)
     {
@@ -1414,7 +1439,6 @@ class ReportController extends Controller
                 'data' => $analyticsData,
                 'message' => 'Analytics data retrieved successfully'
             ]);
-
         } catch (\Exception $e) {
             Log::error('Analytics filter error: ' . $e->getMessage());
             Log::error('Analytics filter stack trace: ' . $e->getTraceAsString());

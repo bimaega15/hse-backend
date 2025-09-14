@@ -540,7 +540,7 @@
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-time-line me-2"></i>Period Analysis <span id="periodAnalysisTitle">(Based on Applied Filters)</span>
+                    <i class="ri-time-line me-2"></i>Period Analysis <span id="periodAnalysisTitle">(All Data Overview)</span>
                 </h5>
             </div>
             <div class="card-body">
@@ -557,13 +557,16 @@
                                                 <i class="ri-calendar-check-line me-2"></i>{{ $filtered['label'] }}
                                             </h6>
                                             <p class="mb-0">
-                                                <strong>{{ $filtered['period']['start'] }}</strong> to <strong>{{ $filtered['period']['end'] }}</strong>
+                                                <strong>{{ $filtered['period']['start'] }}</strong> to
+                                                <strong>{{ $filtered['period']['end'] }}</strong>
                                                 <br>
-                                                <small class="text-muted">{{ $filtered['period']['total_days'] }} days | Average: {{ $filtered['avg_per_day'] }} reports/day</small>
+                                                <small class="text-muted">{{ $filtered['period']['total_days'] }} days
+                                                    | Average: {{ $filtered['avg_per_day'] }} reports/day</small>
                                             </p>
                                         </div>
                                         <div class="col-md-4 text-end">
-                                            <div class="fs-2 fw-bold text-primary">{{ $filtered['data']->total_findings ?? 0 }}</div>
+                                            <div class="fs-2 fw-bold text-primary">
+                                                {{ $filtered['data']->total_findings ?? 0 }}</div>
                                             <small class="text-muted">Total Findings</small>
                                         </div>
                                     </div>
@@ -593,8 +596,10 @@
 
                                             $closedPercent = $total > 0 ? round(($closed / $total) * 100, 1) : 0;
                                             $openPercent = $total > 0 ? round(($open / $total) * 100, 1) : 0;
-                                            $criticalHighPercent = $total > 0 ? round((($critical + $high) / $total) * 100, 1) : 0;
-                                            $mediumLowPercent = $total > 0 ? round((($medium + $low) / $total) * 100, 1) : 0;
+                                            $criticalHighPercent =
+                                                $total > 0 ? round((($critical + $high) / $total) * 100, 1) : 0;
+                                            $mediumLowPercent =
+                                                $total > 0 ? round((($medium + $low) / $total) * 100, 1) : 0;
                                         @endphp
 
                                         <tr class="table-success-light">
@@ -608,7 +613,8 @@
                                             <td><strong class="text-success">{{ $closedPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-success" style="width: {{ $closedPercent }}%"></div>
+                                                    <div class="progress-bar bg-success"
+                                                        style="width: {{ $closedPercent }}%"></div>
                                                 </div>
                                             </td>
                                             <td><small class="text-muted">Completed successfully</small></td>
@@ -625,7 +631,8 @@
                                             <td><strong class="text-warning">{{ $openPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-warning" style="width: {{ $openPercent }}%"></div>
+                                                    <div class="progress-bar bg-warning"
+                                                        style="width: {{ $openPercent }}%"></div>
                                                 </div>
                                             </td>
                                             <td><small class="text-muted">In progress or waiting</small></td>
@@ -642,10 +649,12 @@
                                             <td><strong class="text-danger">{{ $criticalHighPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-danger" style="width: {{ $criticalHighPercent }}%"></div>
+                                                    <div class="progress-bar bg-danger"
+                                                        style="width: {{ $criticalHighPercent }}%"></div>
                                                 </div>
                                             </td>
-                                            <td><small class="text-muted">{{ $critical }} Critical, {{ $high }} High</small></td>
+                                            <td><small class="text-muted">{{ $critical }} Critical,
+                                                    {{ $high }} High</small></td>
                                         </tr>
 
                                         <tr class="table-info-light">
@@ -659,60 +668,138 @@
                                             <td><strong class="text-info">{{ $mediumLowPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-info" style="width: {{ $mediumLowPercent }}%"></div>
+                                                    <div class="progress-bar bg-info"
+                                                        style="width: {{ $mediumLowPercent }}%"></div>
                                                 </div>
                                             </td>
-                                            <td><small class="text-muted">{{ $medium }} Medium, {{ $low }} Low</small></td>
+                                            <td><small class="text-muted">{{ $medium }} Medium,
+                                                    {{ $low }} Low</small></td>
                                         </tr>
                                     </tbody>
                                 </table>
                             </div>
                         @else
-                            <!-- Default Periods Table -->
+                            <!-- Default All Data Table (Same format as filtered) -->
+                            @php
+                                $allTotal = $additionalData['summary']['total_reports'] ?? 0;
+
+                                // Use accurate breakdown from backend
+                                $statusBreakdown = $additionalData['summary']['status_breakdown'] ?? [];
+                                $severityBreakdown = $additionalData['summary']['severity_breakdown'] ?? [];
+
+                                $allClosed = $statusBreakdown['closed'] ?? 0;
+                                $allOpen = $statusBreakdown['open'] ?? 0;
+                                $allCritical = $severityBreakdown['critical'] ?? 0;
+                                $allHigh = $severityBreakdown['high'] ?? 0;
+                                $allMedium = $severityBreakdown['medium'] ?? 0;
+                                $allLow = $severityBreakdown['low'] ?? 0;
+
+                                $allClosedPercent = $allTotal > 0 ? round(($allClosed / $allTotal) * 100, 1) : 0;
+                                $allOpenPercent = $allTotal > 0 ? round(($allOpen / $allTotal) * 100, 1) : 0;
+                                $allCriticalHighPercent = $allTotal > 0 ? round((($allCritical + $allHigh) / $allTotal) * 100, 1) : 0;
+                                $allMediumLowPercent = $allTotal > 0 ? round((($allMedium + $allLow) / $allTotal) * 100, 1) : 0;
+                            @endphp
+
+                            <div class="mb-3">
+                                <div class="alert alert-primary border-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 class="alert-heading mb-2">
+                                                <i class="ri-database-line me-2"></i>All Data Summary
+                                            </h6>
+                                            <p class="mb-0">
+                                                <strong>Complete dataset without any filters applied</strong>
+                                                <br>
+                                                <small class="text-muted">Total records from all periods and categories</small>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <div class="fs-2 fw-bold text-primary">{{ $allTotal }}</div>
+                                            <small class="text-muted">Total Findings</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="table-responsive">
                                 <table class="table table-striped table-hover">
-                                    <thead class="table-dark">
+                                    <thead class="table-primary">
                                         <tr>
-                                            <th>Total</th>
-                                            <th>Closed</th>
-                                            <th>Open</th>
-                                            <th>Critical/High</th>
-                                            <th>Completion Rate</th>
+                                            <th>Status</th>
+                                            <th>Count</th>
+                                            <th>Percentage</th>
+                                            <th>Progress</th>
+                                            <th>Details</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach ($additionalData['period_based_reports'] as $key => $period)
-                                            @php
-                                                $periodTotal = $period['data']->total_findings ?? 0;
-                                                $periodClosed = $period['data']->closed_findings ?? 0;
-                                                $periodOpen = $period['data']->open_findings ?? 0;
-                                                $periodCriticalHigh = ($period['data']->critical_findings ?? 0) + ($period['data']->high_findings ?? 0);
-                                                $completionRate = $periodTotal > 0 ? round(($periodClosed / $periodTotal) * 100, 1) : 0;
-                                            @endphp
-                                            <tr>
-                                                <td>
-                                                    <span class="badge bg-primary fs-6">{{ $periodTotal }}</span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-success">{{ $periodClosed }}</span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-warning">{{ $periodOpen }}</span>
-                                                </td>
-                                                <td>
-                                                    <span class="badge bg-danger">{{ $periodCriticalHigh }}</span>
-                                                </td>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <span class="me-2 fw-bold">{{ $completionRate }}%</span>
-                                                        <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
-                                                            <div class="progress-bar {{ $completionRate >= 80 ? 'bg-success' : ($completionRate >= 60 ? 'bg-warning' : 'bg-danger') }}"
-                                                                 style="width: {{ $completionRate }}%"></div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
+                                        <tr class="table-success-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-checkbox-circle-line text-success fs-5 me-2"></i>
+                                                    <strong class="text-success">Closed Reports</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-success fs-6">{{ $allClosed }}</span></td>
+                                            <td><strong class="text-success">{{ $allClosedPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ $allClosedPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">Completed successfully</small></td>
+                                        </tr>
+
+                                        <tr class="table-warning-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-timer-line text-warning fs-5 me-2"></i>
+                                                    <strong class="text-warning">Open Reports</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-warning fs-6">{{ $allOpen }}</span></td>
+                                            <td><strong class="text-warning">{{ $allOpenPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-warning" style="width: {{ $allOpenPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">In progress or waiting</small></td>
+                                        </tr>
+
+                                        <tr class="table-danger-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-alarm-warning-line text-danger fs-5 me-2"></i>
+                                                    <strong class="text-danger">Critical & High</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-danger fs-6">{{ $allCritical + $allHigh }}</span></td>
+                                            <td><strong class="text-danger">{{ $allCriticalHighPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-danger" style="width: {{ $allCriticalHighPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">{{ $allCritical }} Critical, {{ $allHigh }} High</small></td>
+                                        </tr>
+
+                                        <tr class="table-info-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-information-line text-info fs-5 me-2"></i>
+                                                    <strong class="text-info">Medium & Low</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-info fs-6">{{ $allMedium + $allLow }}</span></td>
+                                            <td><strong class="text-info">{{ $allMediumLowPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-info" style="width: {{ $allMediumLowPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">{{ $allMedium }} Medium, {{ $allLow }} Low</small></td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1463,6 +1550,7 @@
     // Update period-based reports section
     function updatePeriodBasedReports(periodData) {
         const contentDiv = document.getElementById('periodBasedReportsContent');
+        const titleSpan = document.getElementById('periodAnalysisTitle');
         if (!contentDiv) return;
 
         console.log('Updating period-based reports with:', periodData);
@@ -1479,13 +1567,20 @@
 
         // Check if it's filtered period data
         if (periodData.filtered_period) {
+            // Update title for filtered data
+            if (titleSpan) titleSpan.textContent = '(Based on Applied Filters)';
+
             const filtered = periodData.filtered_period;
             const total = filtered.data.total_findings || 0;
 
-            const closedPercent = total > 0 ? Math.round(((filtered.data.closed_findings || 0) / total) * 100 * 10) / 10 : 0;
-            const openPercent = total > 0 ? Math.round(((filtered.data.open_findings || 0) / total) * 100 * 10) / 10 : 0;
-            const criticalPercent = total > 0 ? Math.round((((filtered.data.critical_findings || 0) + (filtered.data.high_findings || 0)) / total) * 100 * 10) / 10 : 0;
-            const mediumLowPercent = total > 0 ? Math.round((((filtered.data.medium_findings || 0) + (filtered.data.low_findings || 0)) / total) * 100 * 10) / 10 : 0;
+            const closedPercent = total > 0 ? Math.round(((filtered.data.closed_findings || 0) / total) * 100 * 10) /
+                10 : 0;
+            const openPercent = total > 0 ? Math.round(((filtered.data.open_findings || 0) / total) * 100 * 10) / 10 :
+                0;
+            const criticalPercent = total > 0 ? Math.round((((filtered.data.critical_findings || 0) + (filtered.data
+                .high_findings || 0)) / total) * 100 * 10) / 10 : 0;
+            const mediumLowPercent = total > 0 ? Math.round((((filtered.data.medium_findings || 0) + (filtered.data
+                .low_findings || 0)) / total) * 100 * 10) / 10 : 0;
 
             contentDiv.innerHTML = `
                 <div class="alert alert-info border-0 mb-4">
@@ -1509,16 +1604,17 @@
 
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
-                        <thead class="table-dark">
+                        <thead class="table-primary">
                             <tr>
                                 <th>Status</th>
                                 <th>Count</th>
                                 <th>Percentage</th>
                                 <th>Progress</th>
+                                <th>Details</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr class="table-success">
+                            <tr class="table-success-light">
                                 <td>
                                     <i class="ri-checkbox-circle-line me-2 text-success"></i>
                                     <strong>Closed Reports</strong>
@@ -1530,8 +1626,9 @@
                                         <div class="progress-bar bg-success" style="width: ${closedPercent}%"></div>
                                     </div>
                                 </td>
+                                <td><small class="text-muted">Completed successfully</small></td>
                             </tr>
-                            <tr class="table-warning">
+                            <tr class="table-warning-light">
                                 <td>
                                     <i class="ri-timer-line me-2 text-warning"></i>
                                     <strong>Open Reports</strong>
@@ -1543,8 +1640,9 @@
                                         <div class="progress-bar bg-warning" style="width: ${openPercent}%"></div>
                                     </div>
                                 </td>
+                                <td><small class="text-muted">In progress or waiting</small></td>
                             </tr>
-                            <tr class="table-danger">
+                            <tr class="table-danger-light">
                                 <td>
                                     <i class="ri-alarm-warning-line me-2 text-danger"></i>
                                     <strong>Critical & High</strong>
@@ -1556,8 +1654,9 @@
                                         <div class="progress-bar bg-danger" style="width: ${criticalPercent}%"></div>
                                     </div>
                                 </td>
+                                <td><small class="text-muted">${filtered.data.critical_findings || 0} Critical, ${filtered.data.high_findings || 0} High</small></td>
                             </tr>
-                            <tr class="table-info">
+                            <tr class="table-info-light">
                                 <td>
                                     <i class="ri-information-line me-2 text-info"></i>
                                     <strong>Medium & Low</strong>
@@ -1569,95 +1668,132 @@
                                         <div class="progress-bar bg-info" style="width: ${mediumLowPercent}%"></div>
                                     </div>
                                 </td>
+                                <td><small class="text-muted">${filtered.data.medium_findings || 0} Medium, ${filtered.data.low_findings || 0} Low</small></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             `;
         } else {
-            // Get current filter values to show in date range
-            const startDateInput = document.getElementById('filter_start_date');
-            const endDateInput = document.getElementById('filter_end_date');
-            const startDate = startDateInput ? startDateInput.value : '';
-            const endDate = endDateInput ? endDateInput.value : '';
+            // Update title for all data view
+            if (titleSpan) titleSpan.textContent = '(All Data Overview)';
 
-            let dateRangeDisplay = 'All';
-            if (startDate && endDate) {
-                dateRangeDisplay = `${startDate} to ${endDate}`;
-            } else if (startDate) {
-                dateRangeDisplay = `From ${startDate}`;
-            } else if (endDate) {
-                dateRangeDisplay = `Until ${endDate}`;
-            }
+            // Use the accurate breakdown data from backend
+            const originalSummaryData = @json($additionalData['summary'] ?? []);
+            const statusBreakdown = originalSummaryData.status_breakdown || {};
+            const severityBreakdown = originalSummaryData.severity_breakdown || {};
 
-            // Default periods table
-            let tableRows = '';
-            Object.values(periodData).forEach(period => {
-                const total = period.data?.total_findings || 0;
-                const closed = period.data?.closed_findings || 0;
-                const open = period.data?.open_findings || 0;
-                const critical = period.data?.critical_findings || 0;
-                const high = period.data?.high_findings || 0;
-                const medium = period.data?.medium_findings || 0;
-                const low = period.data?.low_findings || 0;
+            const allTotal = parseFloat(originalSummaryData.total_reports || 0);
+            const allClosed = parseFloat(statusBreakdown.closed || 0);
+            const allOpen = parseFloat(statusBreakdown.open || 0);
+            const allCritical = parseFloat(severityBreakdown.critical || 0);
+            const allHigh = parseFloat(severityBreakdown.high || 0);
+            const allMedium = parseFloat(severityBreakdown.medium || 0);
+            const allLow = parseFloat(severityBreakdown.low || 0);
 
-                const criticalHigh = critical + high;
-                const mediumLow = medium + low;
+            const allMediumLow = allMedium + allLow;
 
-                const closedPercent = total > 0 ? Math.round((closed / total) * 100 * 10) / 10 : 0;
-                const openPercent = total > 0 ? Math.round((open / total) * 100 * 10) / 10 : 0;
-
-                const rowClass = criticalHigh > 0 ? 'table-danger' : (open > closed ? 'table-warning' : 'table-success');
-
-                tableRows += `
-                    <tr class="${rowClass}">
-                        <td>
-                            <span class="badge bg-primary fs-6">${total}</span>
-                        </td>
-                        <td>
-                            <span class="badge bg-success me-1">${closed}</span>
-                            <small class="text-success">${closedPercent}%</small>
-                        </td>
-                        <td>
-                            <span class="badge bg-warning me-1">${open}</span>
-                            <small class="text-warning">${openPercent}%</small>
-                        </td>
-                        <td>
-                            ${criticalHigh > 0 ? `<span class="badge bg-danger">${criticalHigh}</span>` : '<span class="text-muted">-</span>'}
-                        </td>
-                        <td>
-                            ${mediumLow > 0 ? `<span class="badge bg-info">${mediumLow}</span>` : '<span class="text-muted">-</span>'}
-                        </td>
-                        <td>
-                            <div class="progress" style="height: 6px; min-width: 80px;">
-                                <div class="progress-bar bg-success" style="width: ${closedPercent}%"></div>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
+            const closedPercent = allTotal > 0 ? Math.round((allClosed / allTotal) * 100 * 10) / 10 : 0;
+            const openPercent = allTotal > 0 ? Math.round((allOpen / allTotal) * 100 * 10) / 10 : 0;
+            const criticalHighPercent = allTotal > 0 ? Math.round(((allCritical + allHigh) / allTotal) * 100 * 10) / 10 : 0;
+            const mediumLowPercent = allTotal > 0 ? Math.round((allMediumLow / allTotal) * 100 * 10) / 10 : 0;
 
             contentDiv.innerHTML = `
-                <div class="alert alert-info border-0 mb-3">
-                    <div class="d-flex align-items-center">
-                        <i class="ri-calendar-line me-2"></i>
-                        <strong>Date Range: ${dateRangeDisplay}</strong>
+                <div class="alert alert-primary border-0 mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="alert-heading mb-2">
+                                <i class="ri-database-line me-2"></i>All Data Summary
+                            </h6>
+                            <p class="mb-0">
+                                <strong>Complete dataset without any filters applied</strong>
+                                <br>
+                                <small class="text-muted">Total records from all periods and categories</small>
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="fs-2 fw-bold text-primary">${allTotal}</div>
+                            <small class="text-muted">Total Findings</small>
+                        </div>
                     </div>
                 </div>
+
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
-                        <thead class="table-dark">
+                        <thead class="table-primary">
                             <tr>
-                                <th>Total</th>
-                                <th>Closed</th>
-                                <th>Open</th>
-                                <th>Critical/High</th>
-                                <th>Medium/Low</th>
+                                <th>Status</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
                                 <th>Progress</th>
+                                <th>Details</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${tableRows}
+                            <tr class="table-success-light">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-checkbox-circle-line text-success fs-5 me-2"></i>
+                                        <strong class="text-success">Closed Reports</strong>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-success fs-6">${allClosed}</span></td>
+                                <td><strong class="text-success">${closedPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-success" style="width: ${closedPercent}%"></div>
+                                    </div>
+                                </td>
+                                <td><small class="text-muted">Completed successfully</small></td>
+                            </tr>
+                            <tr class="table-warning-light">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-timer-line text-warning fs-5 me-2"></i>
+                                        <strong class="text-warning">Open Reports</strong>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-warning fs-6">${allOpen}</span></td>
+                                <td><strong class="text-warning">${openPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-warning" style="width: ${openPercent}%"></div>
+                                    </div>
+                                </td>
+                                <td><small class="text-muted">In progress or waiting</small></td>
+                            </tr>
+                            <tr class="table-danger-light">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-alarm-warning-line text-danger fs-5 me-2"></i>
+                                        <strong class="text-danger">Critical & High</strong>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-danger fs-6">${allCritical + allHigh}</span></td>
+                                <td><strong class="text-danger">${criticalHighPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-danger" style="width: ${criticalHighPercent}%"></div>
+                                    </div>
+                                </td>
+                                <td><small class="text-muted">${allCritical} Critical, ${allHigh} High</small></td>
+                            </tr>
+                            <tr class="table-info-light">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-information-line text-info fs-5 me-2"></i>
+                                        <strong class="text-info">Medium & Low</strong>
+                                    </div>
+                                </td>
+                                <td><span class="badge bg-info fs-6">${allMediumLow}</span></td>
+                                <td><strong class="text-info">${mediumLowPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-info" style="width: ${mediumLowPercent}%"></div>
+                                    </div>
+                                </td>
+                                <td><small class="text-muted">${allMedium} Medium, ${allLow} Low</small></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -1670,7 +1806,8 @@
         console.log('Updating summary cards with data:', summary);
 
         // Update Total Reports (first card, no additional class)
-        const totalReportsCard = document.querySelector('.metric-value:not(.text-warning):not(.text-danger):not(.text-success)');
+        const totalReportsCard = document.querySelector(
+            '.metric-value:not(.text-warning):not(.text-danger):not(.text-success)');
         if (totalReportsCard) {
             totalReportsCard.textContent = summary.total_reports || 0;
             console.log('Updated total reports:', summary.total_reports);
