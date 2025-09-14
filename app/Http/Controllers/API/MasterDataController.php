@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Contributing;
 use App\Models\Action;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class MasterDataController extends Controller
@@ -286,6 +287,24 @@ class MasterDataController extends Controller
             'success' => true,
             'data' => $stats,
             'message' => 'Master data statistics retrieved successfully'
+        ]);
+    }
+
+    /**
+     * Get all users with employee role
+     */
+    public function getEmployeeUsers()
+    {
+        $employees = User::employees()
+            ->active()
+            ->select('id', 'name', 'email', 'department', 'phone', 'profile_image', 'created_at')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $employees,
+            'message' => 'Employee users retrieved successfully'
         ]);
     }
 }
