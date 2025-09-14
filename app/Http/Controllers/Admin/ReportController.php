@@ -985,14 +985,13 @@ class ReportController extends Controller
 
         // Title row
         $sheet->setCellValue('A' . $currentRow, 'TABLE NCR & NEARMISS REPORT');
-        $sheet->mergeCells('A' . $currentRow . ':J' . $currentRow);
+        $sheet->mergeCells('A' . $currentRow . ':R' . $currentRow);
 
         // Style title
         $sheet->getStyle('A' . $currentRow)->applyFromArray([
             'font' => ['bold' => true, 'size' => 16],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D3D3D3']],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D3D3D3']]
         ]);
 
         $currentRow += 2; // Empty line
@@ -1005,8 +1004,7 @@ class ReportController extends Controller
         $sheet->getStyle('A' . $currentRow)->applyFromArray([
             'font' => ['bold' => true, 'size' => 14],
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']],
-            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]
         ]);
 
         $currentRow++;
@@ -1075,22 +1073,22 @@ class ReportController extends Controller
             }
         }
 
+        // CORRECTION & CORRECTIVE ACTION section at fixed position (Row 3, Column L)
         if ($hasReportDetails) {
-            $currentRow++; // Empty line
+            $correctionStartRow = 3;
 
             // CORRECTIVE ACTION SECTION
-            $sheet->setCellValue('A' . $currentRow, 'CORRECTION & CORRECTIVE ACTION');
-            $sheet->mergeCells('A' . $currentRow . ':G' . $currentRow);
+            $sheet->setCellValue('L' . $correctionStartRow, 'CORRECTION & CORRECTIVE ACTION');
+            $sheet->mergeCells('L' . $correctionStartRow . ':R' . $correctionStartRow);
 
             // Style corrective action header
-            $sheet->getStyle('A' . $currentRow)->applyFromArray([
+            $sheet->getStyle('L' . $correctionStartRow)->applyFromArray([
                 'font' => ['bold' => true, 'size' => 14],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
-                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']],
-                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]
             ]);
 
-            $currentRow++;
+            $correctionStartRow++;
 
             // Corrective action headers
             $correctionHeaders = [
@@ -1098,22 +1096,22 @@ class ReportController extends Controller
                 'Status CAR', 'Evidences', 'Approved By'
             ];
 
-            // Set corrective action headers
-            $col = 'A';
+            // Set corrective action headers starting from column L
+            $col = 'L';
             foreach ($correctionHeaders as $header) {
-                $sheet->setCellValue($col . $currentRow, $header);
+                $sheet->setCellValue($col . $correctionStartRow, $header);
                 $col++;
             }
 
             // Style corrective action headers
-            $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->applyFromArray([
+            $sheet->getStyle('L' . $correctionStartRow . ':R' . $correctionStartRow)->applyFromArray([
                 'font' => ['bold' => true],
                 'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                 'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0F0F0']],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
             ]);
 
-            $currentRow++;
+            $correctionStartRow++;
 
             // Add corrective action data
             $carNo = 1;
@@ -1130,26 +1128,26 @@ class ReportController extends Controller
                             $this->cleanTextForExcel(optional($detail->approvedBy)->name)
                         ];
 
-                        $col = 'A';
+                        $col = 'L';
                         foreach ($carRowData as $cellValue) {
-                            $sheet->setCellValue($col . $currentRow, $cellValue);
+                            $sheet->setCellValue($col . $correctionStartRow, $cellValue);
                             $col++;
                         }
 
                         // Style corrective action data row
-                        $sheet->getStyle('A' . $currentRow . ':G' . $currentRow)->applyFromArray([
+                        $sheet->getStyle('L' . $correctionStartRow . ':R' . $correctionStartRow)->applyFromArray([
                             'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
                             'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
                         ]);
 
-                        $currentRow++;
+                        $correctionStartRow++;
                     }
                 }
             }
         }
 
-        // Auto-size columns
-        foreach (range('A', 'J') as $col) {
+        // Auto-size columns (including corrective action columns L-R)
+        foreach (range('A', 'R') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
