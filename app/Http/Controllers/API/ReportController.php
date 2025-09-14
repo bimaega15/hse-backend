@@ -6,6 +6,8 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Report;
 use App\Models\User;
+use App\Models\Category;
+use App\Models\Location;
 use App\Traits\ApiResponseTrait;
 use App\Http\Requests\StoreReportRequest;
 use App\Models\Banner;
@@ -14,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
@@ -1109,5 +1112,682 @@ class ReportController extends Controller
         });
 
         return round($totalHours / $reports->count(), 1);
+    }
+
+    /**
+     * Get analytics data with filters - API endpoint
+     */
+    public function getAnalyticsFiltered(Request $request)
+    {
+        try {
+            // Get filters from request
+            $filters = $this->extractFilters($request);
+
+            // Log the filters for debugging
+            Log::info('API Analytics filters applied:', $filters);
+
+            // Get analytics data with filters
+            $analyticsData = $this->getAnalyticsData($filters);
+
+            // Log the summary data for debugging
+            Log::info('API Analytics summary data:', $analyticsData['summary'] ?? []);
+
+            return response()->json([
+                'success' => true,
+                'data' => $analyticsData,
+                'message' => 'Analytics data retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('API Analytics filter error: ' . $e->getMessage());
+            Log::error('API Analytics filter stack trace: ' . $e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve analytics data: ' . $e->getMessage(),
+                'data' => []
+            ], 500);
+        }
+    }
+
+    /**
+     * Extract filters from request
+     */
+    private function extractFilters(Request $request)
+    {
+        return [
+            'start_date' => $request->get('start_date'),
+            'end_date' => $request->get('end_date'),
+            'status' => $request->get('status'),
+            'severity' => $request->get('severity'),
+            'category_id' => $request->get('category_id'),
+            'location_id' => $request->get('location_id'),
+            'project_name' => $request->get('project_name'),
+            'hse_staff_id' => $request->get('hse_staff_id'),
+        ];
+    }
+
+    /**
+     * Get analytics data
+     */
+    private function getAnalyticsData($filters = [])
+    {
+        try {
+            $currentMonth = now()->startOfMonth();
+            $lastMonth = now()->subMonth()->startOfMonth();
+
+            $completionMetrics = $this->getCompletionMetrics($filters);
+
+            return [
+                'summary' => [
+                    'total_reports' => $this->getFilteredQuery($filters)->count(),
+                    'this_month' => $this->getFilteredQuery(array_merge($filters, ['this_month' => true]))->count(),
+                    'last_month' => $this->getFilteredQuery(array_merge($filters, ['last_month' => true]))->count(),
+                    'critical_incidents' => $this->getFilteredQuery(array_merge($filters, ['high_critical' => true]))->count(),
+                    'overdue_cars' => $this->getOverdueCarsCount($filters),
+                    'completion_rate' => $completionMetrics['completion_rate'],
+                    'avg_resolution_hours' => $completionMetrics['avg_resolution_hours'],
+                    // Add detailed breakdown for Period Analysis
+                    'status_breakdown' => $this->getStatusBreakdown($filters),
+                    'severity_breakdown' => $this->getSeverityBreakdown($filters),
+                ],
+                'trends' => $this->getMonthlyTrends($filters),
+                'categories' => $this->getCategoryBreakdown($filters),
+                'severity_analysis' => $this->getSeverityAnalysis($filters),
+                'completion_metrics' => $this->getCompletionMetrics($filters),
+                'hse_performance' => $this->getHSEPerformance($filters),
+                // Additional analytics reports
+                'monthly_findings' => $this->getMonthlyFindingsReport($filters),
+                'location_project_reports' => $this->getLocationProjectReports($filters),
+                'category_detailed_reports' => $this->getCategoryDetailedReports($filters),
+                'period_based_reports' => $this->getPeriodBasedReports($filters),
+                // Filter options for dropdowns
+                'filter_options' => $this->getFilterOptions(),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get analytics data: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get filtered query based on filters
+     */
+    private function getFilteredQuery($filters = [], $table = 'reports')
+    {
+        $query = Report::query();
+
+        // Apply date range filters UNLESS we have special month filters
+        if (!empty($filters['start_date']) && empty($filters['this_month']) && empty($filters['last_month'])) {
+            $query->whereDate('reports.created_at', '>=', $filters['start_date']);
+        }
+
+        if (!empty($filters['end_date']) && empty($filters['this_month']) && empty($filters['last_month'])) {
+            $query->whereDate('reports.created_at', '<=', $filters['end_date']);
+        }
+
+        // Apply other filters
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['severity'])) {
+            $query->where('severity_rating', $filters['severity']);
+        }
+
+        if (!empty($filters['category_id'])) {
+            $query->where('category_id', $filters['category_id']);
+        }
+
+        if (!empty($filters['location_id'])) {
+            $query->where('location_id', $filters['location_id']);
+        }
+
+        if (!empty($filters['project_name'])) {
+            $query->where('project_name', $filters['project_name']);
+        }
+
+        if (!empty($filters['hse_staff_id'])) {
+            $query->where('hse_staff_id', $filters['hse_staff_id']);
+        }
+
+        // Special filters for summary calculations (these take precedence over date range)
+        if (!empty($filters['this_month'])) {
+            $currentYear = now()->year;
+            $currentMonth = now()->month;
+            $query->whereYear('reports.created_at', $currentYear)
+                ->whereMonth('reports.created_at', $currentMonth);
+        }
+
+        if (!empty($filters['last_month'])) {
+            $lastMonth = now()->subMonth();
+            $query->whereYear('reports.created_at', $lastMonth->year)
+                ->whereMonth('reports.created_at', $lastMonth->month);
+        }
+
+        if (!empty($filters['high_critical'])) {
+            $query->whereIn('severity_rating', ['high', 'critical']);
+        }
+
+        return $query;
+    }
+
+    /**
+     * Get monthly trends
+     */
+    private function getMonthlyTrends($filters = [])
+    {
+        $query = $this->getFilteredQuery($filters);
+
+        $monthlyData = $query->selectRaw('
+                YEAR(created_at) as year,
+                MONTH(created_at) as month,
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as completed,
+                SUM(CASE WHEN severity_rating IN ("high", "critical") THEN 1 ELSE 0 END) as critical
+            ')
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $item->month_name = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
+                $item->completion_rate = $item->total > 0 ? round(($item->completed / $item->total) * 100, 1) : 0;
+
+                // Get category breakdown for this month
+                $categoryBreakdown = Report::join('categories', 'reports.category_id', '=', 'categories.id')
+                    ->selectRaw('categories.name as category, COUNT(*) as count')
+                    ->whereYear('reports.created_at', $item->year)
+                    ->whereMonth('reports.created_at', $item->month)
+                    ->groupBy('categories.id', 'categories.name')
+                    ->orderBy('count', 'desc')
+                    ->get();
+
+                $item->categories = $categoryBreakdown;
+                $item->top_category = $categoryBreakdown->first()->category ?? 'N/A';
+                $item->top_category_count = $categoryBreakdown->first()->count ?? 0;
+
+                return $item;
+            });
+
+        return $monthlyData;
+    }
+
+    /**
+     * Get category breakdown
+     */
+    private function getCategoryBreakdown($filters = [])
+    {
+        return $this->getFilteredQuery($filters, 'reports')
+            ->join('categories', 'reports.category_id', '=', 'categories.id')
+            ->selectRaw('
+                categories.name as category,
+                COUNT(*) as total,
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as completed,
+                AVG(CASE
+                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL
+                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at)
+                    ELSE NULL
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('categories.id', 'categories.name')
+            ->orderBy('total', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get severity analysis
+     */
+    private function getSeverityAnalysis($filters = [])
+    {
+        return $this->getFilteredQuery($filters)->selectRaw('
+                severity_rating,
+                COUNT(*) as count,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as completed,
+                AVG(CASE
+                    WHEN start_process_at IS NOT NULL AND completed_at IS NOT NULL
+                    THEN TIMESTAMPDIFF(HOUR, start_process_at, completed_at)
+                    ELSE NULL
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('severity_rating')
+            ->get();
+    }
+
+    /**
+     * Get completion metrics
+     */
+    private function getCompletionMetrics($filters = [])
+    {
+        $totalReports = $this->getFilteredQuery($filters)->count();
+        $completedReports = $this->getFilteredQuery($filters)->where('status', 'done')->count();
+        $avgResolutionTime = $this->getFilteredQuery($filters)->whereNotNull('start_process_at')
+            ->whereNotNull('completed_at')
+            ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, start_process_at, completed_at)) as avg_hours')
+            ->value('avg_hours');
+
+        return [
+            'total_reports' => $totalReports,
+            'completed_reports' => $completedReports,
+            'completion_rate' => $totalReports > 0 ? round(($completedReports / $totalReports) * 100, 1) : 0,
+            'avg_resolution_hours' => $avgResolutionTime ? round($avgResolutionTime, 1) : 0,
+            'sla_compliance' => $this->calculateSLACompliance($filters),
+        ];
+    }
+
+    /**
+     * Get HSE performance
+     */
+    private function getHSEPerformance($filters = [])
+    {
+        // Build constraints for assigned reports based on filters
+        $constraints = [];
+        if (!empty($filters['start_date'])) {
+            $constraints[] = ['created_at', '>=', $filters['start_date']];
+        }
+        if (!empty($filters['end_date'])) {
+            $constraints[] = ['created_at', '<=', $filters['end_date']];
+        }
+        if (!empty($filters['status'])) {
+            $constraints[] = ['status', '=', $filters['status']];
+        }
+        if (!empty($filters['severity'])) {
+            $constraints[] = ['severity_rating', '=', $filters['severity']];
+        }
+        if (!empty($filters['category_id'])) {
+            $constraints[] = ['category_id', '=', $filters['category_id']];
+        }
+        if (!empty($filters['location_id'])) {
+            $constraints[] = ['location_id', '=', $filters['location_id']];
+        }
+        if (!empty($filters['project_name'])) {
+            $constraints[] = ['project_name', '=', $filters['project_name']];
+        }
+
+        return User::where('role', 'hse_staff')
+            ->where('is_active', true)
+            ->withCount([
+                'assignedReports' => function ($query) use ($constraints) {
+                    foreach ($constraints as $constraint) {
+                        $query->where($constraint[0], $constraint[1], $constraint[2]);
+                    }
+                },
+                'assignedReports as completed_reports_count' => function ($query) use ($constraints) {
+                    $query->where('status', 'done');
+                    foreach ($constraints as $constraint) {
+                        $query->where($constraint[0], $constraint[1], $constraint[2]);
+                    }
+                },
+                'assignedReports as this_month_reports_count' => function ($query) use ($constraints) {
+                    $query->whereMonth('created_at', now()->month);
+                    foreach ($constraints as $constraint) {
+                        $query->where($constraint[0], $constraint[1], $constraint[2]);
+                    }
+                }
+            ])
+            ->get()
+            ->map(function ($staff) {
+                $staff->completion_rate = $staff->assigned_reports_count > 0
+                    ? round(($staff->completed_reports_count / $staff->assigned_reports_count) * 100, 1)
+                    : 0;
+                return $staff;
+            });
+    }
+
+    /**
+     * Calculate SLA compliance
+     */
+    private function calculateSLACompliance($filters = [])
+    {
+        // Define SLA targets (in hours) based on severity
+        $slaTargets = [
+            'critical' => 4,   // 4 hours
+            'high' => 24,      // 24 hours
+            'medium' => 72,    // 72 hours
+            'low' => 168       // 168 hours (1 week)
+        ];
+
+        $compliance = [];
+
+        foreach ($slaTargets as $severity => $targetHours) {
+            $reports = $this->getFilteredQuery($filters)
+                ->where('severity_rating', $severity)
+                ->whereNotNull('start_process_at')
+                ->whereNotNull('completed_at')
+                ->get();
+
+            $withinSLA = $reports->filter(function ($report) use ($targetHours) {
+                $resolutionHours = $report->start_process_at->diffInHours($report->completed_at);
+                return $resolutionHours <= $targetHours;
+            })->count();
+
+            $compliance[$severity] = [
+                'total' => $reports->count(),
+                'within_sla' => $withinSLA,
+                'compliance_rate' => $reports->count() > 0 ? round(($withinSLA / $reports->count()) * 100, 1) : 0,
+                'target_hours' => $targetHours
+            ];
+        }
+
+        return $compliance;
+    }
+
+    /**
+     * Get monthly findings report
+     */
+    private function getMonthlyFindingsReport($filters = [])
+    {
+        $query = $this->getFilteredQuery($filters);
+
+        return $query->selectRaw('
+                YEAR(created_at) as year,
+                MONTH(created_at) as month,
+                COUNT(*) as total_findings,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as closed_findings,
+                SUM(CASE WHEN status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_findings,
+                COUNT(CASE WHEN severity_rating = "low" THEN 1 END) as low_severity,
+                COUNT(CASE WHEN severity_rating = "medium" THEN 1 END) as medium_severity,
+                COUNT(CASE WHEN severity_rating = "high" THEN 1 END) as high_severity,
+                COUNT(CASE WHEN severity_rating = "critical" THEN 1 END) as critical_severity
+            ')
+            ->where('created_at', '>=', now()->subMonths(12))
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get()
+            ->map(function ($item) {
+                $item->month_name = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
+                $item->completion_rate = $item->total_findings > 0
+                    ? round(($item->closed_findings / $item->total_findings) * 100, 1)
+                    : 0;
+                return $item;
+            });
+    }
+
+    /**
+     * Get location and project reports
+     */
+    private function getLocationProjectReports($filters = [])
+    {
+        $locationReports = $this->getFilteredQuery($filters, 'reports')
+            ->join('locations', 'reports.location_id', '=', 'locations.id')
+            ->selectRaw('
+                locations.name as location_name,
+                COUNT(*) as total_reports,
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as closed_reports,
+                SUM(CASE WHEN reports.status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_reports,
+                COUNT(CASE WHEN reports.severity_rating IN ("high", "critical") THEN 1 END) as critical_reports
+            ')
+            ->groupBy('locations.id', 'locations.name')
+            ->orderBy('total_reports', 'desc')
+            ->get();
+
+        $projectReports = $this->getFilteredQuery($filters)
+            ->whereNotNull('project_name')
+            ->where('project_name', '!=', '')
+            ->selectRaw('
+                project_name,
+                COUNT(*) as total_reports,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as closed_reports,
+                SUM(CASE WHEN status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_reports,
+                COUNT(CASE WHEN severity_rating IN ("high", "critical") THEN 1 END) as critical_reports
+            ')
+            ->groupBy('project_name')
+            ->orderBy('total_reports', 'desc')
+            ->get();
+
+        return [
+            'by_location' => $locationReports,
+            'by_project' => $projectReports
+        ];
+    }
+
+    /**
+     * Get detailed category reports
+     */
+    private function getCategoryDetailedReports($filters = [])
+    {
+        $query = $this->getFilteredQuery($filters, 'reports')
+            ->join('categories', 'reports.category_id', '=', 'categories.id')
+            ->selectRaw('
+                categories.name as category_name,
+                categories.description as category_description,
+                COUNT(*) as total_reports,
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as closed_reports,
+                SUM(CASE WHEN reports.status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_reports,
+                COUNT(CASE WHEN reports.severity_rating = "low" THEN 1 END) as low_severity,
+                COUNT(CASE WHEN reports.severity_rating = "medium" THEN 1 END) as medium_severity,
+                COUNT(CASE WHEN reports.severity_rating = "high" THEN 1 END) as high_severity,
+                COUNT(CASE WHEN reports.severity_rating = "critical" THEN 1 END) as critical_severity,
+                AVG(CASE
+                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL
+                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at)
+                    ELSE NULL
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('categories.id', 'categories.name', 'categories.description')
+            ->orderBy('total_reports', 'desc');
+
+        return $query->get()->map(function ($item) {
+            $item->completion_rate = $item->total_reports > 0
+                ? round(($item->closed_reports / $item->total_reports) * 100, 1)
+                : 0;
+            $item->avg_resolution_hours = $item->avg_resolution_hours
+                ? round($item->avg_resolution_hours, 1)
+                : 0;
+            return $item;
+        });
+    }
+
+    /**
+     * Get period-based reports
+     */
+    private function getPeriodBasedReports($filters = [])
+    {
+        // If date filters are applied, show breakdown based on those dates
+        if (!empty($filters['start_date']) || !empty($filters['end_date'])) {
+            return $this->getFilteredPeriodBreakdown($filters);
+        }
+
+        // Otherwise show default periods
+        $periods = [
+            'today' => [
+                'start' => now()->startOfDay(),
+                'end' => now()->endOfDay(),
+                'label' => 'Today'
+            ],
+            'this_week' => [
+                'start' => now()->startOfWeek(),
+                'end' => now()->endOfWeek(),
+                'label' => 'This Week'
+            ],
+            'this_month' => [
+                'start' => now()->startOfMonth(),
+                'end' => now()->endOfMonth(),
+                'label' => 'This Month'
+            ],
+            'this_quarter' => [
+                'start' => now()->startOfQuarter(),
+                'end' => now()->endOfQuarter(),
+                'label' => 'This Quarter'
+            ],
+            'this_year' => [
+                'start' => now()->startOfYear(),
+                'end' => now()->endOfYear(),
+                'label' => 'This Year'
+            ]
+        ];
+
+        $results = [];
+
+        foreach ($periods as $key => $period) {
+            // Don't override the main filters, create separate query for each period
+            $basePeriodFilters = array_filter($filters, function ($value, $key) {
+                return !in_array($key, ['start_date', 'end_date', 'this_month', 'last_month']);
+            }, ARRAY_FILTER_USE_BOTH);
+
+            $periodFilters = array_merge($basePeriodFilters, [
+                'start_date' => $period['start']->format('Y-m-d'),
+                'end_date' => $period['end']->format('Y-m-d')
+            ]);
+
+            $data = $this->getFilteredQuery($periodFilters)->selectRaw('
+                    COUNT(*) as total_findings,
+                    SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as closed_findings,
+                    SUM(CASE WHEN status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_findings,
+                    COUNT(CASE WHEN severity_rating = "critical" THEN 1 END) as critical_findings,
+                    COUNT(CASE WHEN severity_rating = "high" THEN 1 END) as high_findings
+                ')
+                ->first();
+
+            $results[$key] = [
+                'label' => $period['label'],
+                'period' => [
+                    'start' => $period['start']->format('d M Y'),
+                    'end' => $period['end']->format('d M Y')
+                ],
+                'data' => $data
+            ];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get breakdown for filtered period
+     */
+    private function getFilteredPeriodBreakdown($filters = [])
+    {
+        $startDate = !empty($filters['start_date']) ? \Carbon\Carbon::parse($filters['start_date']) : now()->subMonth();
+        $endDate = !empty($filters['end_date']) ? \Carbon\Carbon::parse($filters['end_date']) : now();
+
+        $totalDays = $startDate->diffInDays($endDate) + 1;
+
+        // Get basic stats for the filtered period
+        $data = $this->getFilteredQuery($filters)->selectRaw('
+                COUNT(*) as total_findings,
+                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as closed_findings,
+                SUM(CASE WHEN status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_findings,
+                COUNT(CASE WHEN severity_rating = "critical" THEN 1 END) as critical_findings,
+                COUNT(CASE WHEN severity_rating = "high" THEN 1 END) as high_findings,
+                COUNT(CASE WHEN severity_rating = "medium" THEN 1 END) as medium_findings,
+                COUNT(CASE WHEN severity_rating = "low" THEN 1 END) as low_findings
+            ')
+            ->first();
+
+        return [
+            'filtered_period' => [
+                'label' => 'Filtered Period',
+                'period' => [
+                    'start' => $startDate->format('d M Y'),
+                    'end' => $endDate->format('d M Y'),
+                    'total_days' => $totalDays
+                ],
+                'data' => $data,
+                'avg_per_day' => $totalDays > 0 ? round(($data->total_findings ?? 0) / $totalDays, 1) : 0
+            ]
+        ];
+    }
+
+    /**
+     * Get filter options
+     */
+    private function getFilterOptions()
+    {
+        try {
+            return [
+                'categories' => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'locations' => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'projects' => Report::whereNotNull('project_name')
+                    ->where('project_name', '!=', '')
+                    ->distinct()
+                    ->orderBy('project_name')
+                    ->pluck('project_name'),
+                'hse_staff' => User::where('role', 'hse_staff')
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name'])
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get filter options: ' . $e->getMessage());
+            return [
+                'categories' => collect(),
+                'locations' => collect(),
+                'projects' => collect(),
+                'hse_staff' => collect()
+            ];
+        }
+    }
+
+    /**
+     * Get overdue CARs count
+     */
+    private function getOverdueCarsCount($filters = [])
+    {
+        $query = DB::table('report_details')
+            ->join('reports', 'report_details.report_id', '=', 'reports.id')
+            ->where('report_details.due_date', '<', now())
+            ->where('report_details.status_car', '!=', 'closed');
+
+        // Apply report-based filters
+        if (!empty($filters['start_date'])) {
+            $query->whereDate('reports.created_at', '>=', $filters['start_date']);
+        }
+
+        if (!empty($filters['end_date'])) {
+            $query->whereDate('reports.created_at', '<=', $filters['end_date']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('reports.status', $filters['status']);
+        }
+
+        if (!empty($filters['severity'])) {
+            $query->where('reports.severity_rating', $filters['severity']);
+        }
+
+        if (!empty($filters['category_id'])) {
+            $query->where('reports.category_id', $filters['category_id']);
+        }
+
+        if (!empty($filters['location_id'])) {
+            $query->where('reports.location_id', $filters['location_id']);
+        }
+
+        if (!empty($filters['project_name'])) {
+            $query->where('reports.project_name', $filters['project_name']);
+        }
+
+        if (!empty($filters['hse_staff_id'])) {
+            $query->where('reports.hse_staff_id', $filters['hse_staff_id']);
+        }
+
+        return $query->count();
+    }
+
+    /**
+     * Get accurate status breakdown
+     */
+    private function getStatusBreakdown($filters = [])
+    {
+        return [
+            'closed' => $this->getFilteredQuery($filters)->where('status', 'done')->count(),
+            'open' => $this->getFilteredQuery($filters)->whereIn('status', ['waiting', 'in-progress'])->count(),
+            'waiting' => $this->getFilteredQuery($filters)->where('status', 'waiting')->count(),
+            'in_progress' => $this->getFilteredQuery($filters)->where('status', 'in-progress')->count(),
+        ];
+    }
+
+    /**
+     * Get accurate severity breakdown
+     */
+    private function getSeverityBreakdown($filters = [])
+    {
+        return [
+            'critical' => $this->getFilteredQuery($filters)->where('severity_rating', 'critical')->count(),
+            'high' => $this->getFilteredQuery($filters)->where('severity_rating', 'high')->count(),
+            'medium' => $this->getFilteredQuery($filters)->where('severity_rating', 'medium')->count(),
+            'low' => $this->getFilteredQuery($filters)->where('severity_rating', 'low')->count(),
+        ];
     }
 }

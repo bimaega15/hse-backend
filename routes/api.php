@@ -92,6 +92,9 @@ Route::middleware('auth:sanctum')->group(function () {
         // Reports statistics
         Route::get('/statistics/dashboard', [ReportController::class, 'statistics']);
 
+        // Analytics API endpoint
+        Route::get('/analytics/get-report', [ReportController::class, 'getAnalyticsFiltered']);
+
         // NEW: Report Details routes (nested under reports)
         Route::prefix('{reportId}/details')->group(function () {
             // List all details for a specific report

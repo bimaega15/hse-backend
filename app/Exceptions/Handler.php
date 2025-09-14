@@ -152,6 +152,6 @@ class Handler extends ExceptionHandler
         }
 
         // Web request - redirect to login
-        return redirect()->guest(route('login'));
+        return redirect()->guest(route('admin.login'));
     }
 }
