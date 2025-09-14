@@ -1067,10 +1067,11 @@ class ReportController extends Controller
 
         // Check if there are corrective actions
         $hasReportDetails = false;
+        $totalCars = 0;
         foreach ($reports as $report) {
             if ($report->reportDetails && count($report->reportDetails) > 0) {
                 $hasReportDetails = true;
-                break;
+                $totalCars += count($report->reportDetails);
             }
         }
 

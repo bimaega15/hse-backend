@@ -37,96 +37,222 @@ class ReportDetailSeeder extends Seeder
             return;
         }
 
+        // Corrective actions specific to each report scenario
         $sampleCorrectiveActions = [
+            // For UNSAFE CONDITION - Pahat tumpul
             [
-                'action' => 'Melakukan penggantian alat safety yang rusak dengan yang baru sesuai standar K3',
+                'action' => 'Mengganti semua pahat yang tumpul dengan yang baru sesuai standar K3',
+                'status' => 'open',
+                'days_ahead' => 3
+            ],
+            [
+                'action' => 'Melakukan inspeksi rutin mingguan terhadap kondisi hand tools',
                 'status' => 'open',
                 'days_ahead' => 7
             ],
+
+            // For UNSAFE BEHAVIOR - Tidak memakai helm
             [
-                'action' => 'Memberikan training ulang kepada pekerja mengenai penggunaan APD yang benar',
+                'action' => 'Memberikan pelatihan ulang safety awareness kepada seluruh pekerja',
                 'status' => 'in_progress',
                 'days_ahead' => 14
             ],
             [
-                'action' => 'Memperbaiki sistem ventilasi di area kerja untuk mengurangi paparan debu',
-                'status' => 'open',
-                'days_ahead' => 21
-            ],
-            [
-                'action' => 'Melakukan audit mendalam terhadap prosedur kerja di ketinggian',
+                'action' => 'Menyediakan helm keselamatan baru untuk semua pekerja',
                 'status' => 'closed',
-                'days_ahead' => -5 // Already passed (completed)
+                'days_ahead' => -2
             ],
             [
-                'action' => 'Menambah rambu-rambu peringatan di area berbahaya',
+                'action' => 'Melakukan monitoring penggunaan APD harian oleh supervisor',
                 'status' => 'in_progress',
-                'days_ahead' => 10
-            ],
-            [
-                'action' => 'Melakukan kalibrasi ulang pada alat deteksi gas berbahaya',
-                'status' => 'open',
                 'days_ahead' => 30
             ],
+
+            // For ENVIRONMENTAL HAZARD - Pencahayaan
             [
-                'action' => 'Mengadakan sosialisasi prosedur emergency di seluruh departemen',
+                'action' => 'Mengganti semua lampu yang mati dengan LED berkualitas tinggi',
                 'status' => 'closed',
-                'days_ahead' => -10 // Already completed
+                'days_ahead' => -1
             ],
             [
-                'action' => 'Melakukan pengecekan rutin terhadap kondisi scaffolding setiap minggu',
-                'status' => 'in_progress',
-                'days_ahead' => 7
+                'action' => 'Melakukan audit pencahayaan di seluruh area gudang',
+                'status' => 'closed',
+                'days_ahead' => -3
             ],
+
+            // For EQUIPMENT FAILURE - Bearing conveyor
             [
-                'action' => 'Menyediakan eye wash station di area kimia dan melakukan testing bulanan',
+                'action' => 'Mengganti bearing motor conveyor yang rusak segera',
                 'status' => 'open',
-                'days_ahead' => 14
+                'days_ahead' => 2
             ],
             [
-                'action' => 'Mengimplementasikan sistem permit to work untuk pekerjaan berisiko tinggi',
+                'action' => 'Melakukan preventive maintenance rutin pada sistem conveyor',
+                'status' => 'open',
+                'days_ahead' => 15
+            ],
+
+            // For APD rusak
+            [
+                'action' => 'Pengadaan sarung tangan safety baru dengan spesifikasi terbaru',
                 'status' => 'in_progress',
-                'days_ahead' => 28
+                'days_ahead' => 5
+            ],
+            [
+                'action' => 'Membuat checklist harian kondisi APD untuk setiap pekerja',
+                'status' => 'open',
+                'days_ahead' => 10
+            ],
+
+            // For EMERGENCY - Skip safety briefing
+            [
+                'action' => 'Implementasi sistem wajib hadir safety briefing dengan barcode scanner',
+                'status' => 'closed',
+                'days_ahead' => -5
+            ],
+            [
+                'action' => 'Menambah durasi dan materi safety briefing harian',
+                'status' => 'closed',
+                'days_ahead' => -7
+            ],
+
+            // For Kebisingan
+            [
+                'action' => 'Melakukan maintenance komprehensif pada mesin kompressor',
+                'status' => 'open',
+                'days_ahead' => 4
+            ],
+            [
+                'action' => 'Menyediakan ear plug dan ear muff untuk area berisik',
+                'status' => 'open',
+                'days_ahead' => 7
             ]
         ];
 
         $createdCount = 0;
 
-        foreach ($reports->take(8) as $report) { // Create details for first 8 reports
-            // Random number of details per report (1-3)
-            $detailCount = rand(1, 3);
+        foreach ($reports as $report) {
+            // Create 2-3 corrective actions per report based on report status
+            $detailCount = $report->status === 'done' ? rand(2, 3) : rand(1, 2);
 
-            for ($i = 0; $i < $detailCount; $i++) {
-                $actionData = $sampleCorrectiveActions[array_rand($sampleCorrectiveActions)];
+            // Get relevant actions based on report description/category
+            $relevantActions = $this->getRelevantActions($report, $sampleCorrectiveActions);
+
+            for ($i = 0; $i < $detailCount && $i < count($relevantActions); $i++) {
+                $actionData = $relevantActions[$i];
                 $hseStaff = $hseStaffs->random();
                 $picEmployee = $employees->random();
 
-                // Calculate due date
-                $dueDate = Carbon::now()->addDays($actionData['days_ahead']);
+                // Calculate due date based on report creation and action timeline
+                $baseDate = $report->created_at ?? Carbon::now();
+                $dueDate = $baseDate->copy()->addDays($actionData['days_ahead']);
+
+                // Adjust status based on report status and due date
+                $status = $this->determineDetailStatus($report, $actionData, $dueDate);
 
                 $reportDetail = ReportDetail::create([
                     'report_id' => $report->id,
                     'correction_action' => $actionData['action'],
                     'due_date' => $dueDate,
                     'users_id' => $picEmployee->id, // Employee as PIC
-                    'status_car' => $actionData['status'],
-                    'evidences' => $this->generateSampleEvidences($actionData['status']),
+                    'status_car' => $status,
+                    'evidences' => $this->generateSampleEvidences($status),
                     'approved_by' => $hseStaff->id,
                     'created_by' => $hseStaff->id,
-                    'created_at' => Carbon::now()->subDays(rand(1, 30)),
-                    'updated_at' => Carbon::now()->subDays(rand(0, 5)),
+                    'created_at' => $baseDate->copy()->addHours(rand(1, 24)),
+                    'updated_at' => Carbon::now()->subDays(rand(0, 3)),
                 ]);
 
                 $createdCount++;
 
-                $this->command->info("Created report detail {$createdCount}: {$actionData['action']} (Status: {$actionData['status']})");
+                $this->command->info("Created report detail {$createdCount} for Report #{$report->id}: {$actionData['action']} (Status: {$status})");
             }
         }
 
-        $this->command->info("Successfully created {$createdCount} report details for " . $reports->take(8)->count() . " reports.");
+        $this->command->info("Successfully created {$createdCount} report details for " . $reports->count() . " reports.");
 
         // Show statistics
         $this->showStatistics();
+    }
+
+    /**
+     * Get relevant corrective actions based on report content
+     */
+    private function getRelevantActions($report, $allActions)
+    {
+        $description = strtolower($report->description);
+        $category = strtolower($report->category_id ?? '');
+
+        // Create action groups based on report content
+        $relevantIndices = [];
+
+        if (strpos($description, 'pahat') !== false || strpos($description, 'tumpul') !== false) {
+            $relevantIndices = [0, 1]; // Pahat actions
+        } elseif (strpos($description, 'helm') !== false || strpos($description, 'apd') !== false) {
+            $relevantIndices = [2, 3, 4]; // APD/Helm actions
+        } elseif (strpos($description, 'pencahayaan') !== false || strpos($description, 'lampu') !== false) {
+            $relevantIndices = [5, 6]; // Lighting actions
+        } elseif (strpos($description, 'bearing') !== false || strpos($description, 'conveyor') !== false) {
+            $relevantIndices = [7, 8]; // Equipment actions
+        } elseif (strpos($description, 'sarung tangan') !== false) {
+            $relevantIndices = [9, 10]; // Glove actions
+        } elseif (strpos($description, 'briefing') !== false || strpos($description, 'safety') !== false) {
+            $relevantIndices = [11, 12]; // Safety briefing actions
+        } elseif (strpos($description, 'kebisingan') !== false || strpos($description, 'bising') !== false) {
+            $relevantIndices = [13, 14]; // Noise actions
+        } else {
+            // Default random selection
+            $relevantIndices = array_rand($allActions, min(3, count($allActions)));
+            if (!is_array($relevantIndices)) {
+                $relevantIndices = [$relevantIndices];
+            }
+        }
+
+        $relevantActions = [];
+        foreach ($relevantIndices as $index) {
+            if (isset($allActions[$index])) {
+                $relevantActions[] = $allActions[$index];
+            }
+        }
+
+        // If no relevant actions found, return random ones
+        if (empty($relevantActions)) {
+            $randomIndices = array_rand($allActions, min(2, count($allActions)));
+            if (!is_array($randomIndices)) {
+                $randomIndices = [$randomIndices];
+            }
+            foreach ($randomIndices as $index) {
+                $relevantActions[] = $allActions[$index];
+            }
+        }
+
+        return $relevantActions;
+    }
+
+    /**
+     * Determine detail status based on report status and due date
+     */
+    private function determineDetailStatus($report, $actionData, $dueDate)
+    {
+        $now = Carbon::now();
+
+        if ($report->status === 'done') {
+            // For completed reports, most details should be closed
+            return rand(0, 100) < 80 ? 'closed' : 'in_progress';
+        } elseif ($report->status === 'in-progress') {
+            // For in-progress reports, mix of statuses
+            if ($dueDate->isPast()) {
+                return rand(0, 100) < 60 ? 'in_progress' : 'closed';
+            } else {
+                $rand = rand(0, 100);
+                if ($rand < 40) return 'open';
+                elseif ($rand < 80) return 'in_progress';
+                else return 'closed';
+            }
+        } else {
+            // For waiting reports, mostly open
+            return rand(0, 100) < 90 ? 'open' : 'in_progress';
+        }
     }
 
     /**

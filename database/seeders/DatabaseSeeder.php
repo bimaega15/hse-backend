@@ -27,6 +27,9 @@ class DatabaseSeeder extends Seeder
             // Finally seed reports (depends on users and master data)
             ReportSeeder::class,
 
+            // Seed report details (depends on reports)
+            ReportDetailSeeder::class,
+
             ObservationSeeder::class,
         ]);
     }
