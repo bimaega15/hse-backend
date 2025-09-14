@@ -30,6 +30,7 @@ class ReportController extends Controller
         $query = Report::with([
             'employee',
             'hseStaff',
+            'location',
             'categoryMaster',
             'contributingMaster',
             'actionMaster'
@@ -70,9 +71,11 @@ class ReportController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
-                    ->orWhere('location', 'like', "%{$search}%")
                     ->orWhere('action_taken', 'like', "%{$search}%")
                     ->orWhereHas('employee', function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('location', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('categoryMaster', function ($q) use ($search) {
@@ -125,7 +128,7 @@ class ReportController extends Controller
                 'severity_rating' => $request->severity_rating,
                 'action_taken' => $request->action_taken,
                 'description' => $request->description,
-                'location' => $request->location,
+                'location_id' => $request->location_id,
                 'project_name' => $request->project_name,
                 'status' => 'waiting'
             ];
@@ -140,6 +143,7 @@ class ReportController extends Controller
             $report = Report::create($reportData);
             $report->load([
                 'employee',
+                'location',
                 'categoryMaster',
                 'contributingMaster',
                 'actionMaster'
@@ -182,6 +186,7 @@ class ReportController extends Controller
         $report = Report::with([
             'employee',
             'hseStaff',
+            'location',
             'categoryMaster',
             'contributingMaster',
             'actionMaster',
@@ -285,7 +290,7 @@ class ReportController extends Controller
                 'severity_rating',
                 'action_taken',
                 'description',
-                'location',
+                'location_id',
                 'project_name'
             ]);
 
@@ -299,6 +304,7 @@ class ReportController extends Controller
             $report->load([
                 'employee',
                 'hseStaff',
+                'location',
                 'categoryMaster',
                 'contributingMaster',
                 'actionMaster'
@@ -374,7 +380,7 @@ class ReportController extends Controller
                 'report_id' => $report->id,
                 'deleted_by' => $user->id,
                 'category_id' => $report->category_id,
-                'location' => $report->location
+                'location_id' => $report->location_id
             ]);
 
             return response()->json([
@@ -452,6 +458,7 @@ class ReportController extends Controller
         $report->load([
             'employee',
             'hseStaff',
+            'location',
             'categoryMaster',
             'contributingMaster',
             'actionMaster'
@@ -520,6 +527,7 @@ class ReportController extends Controller
         $report->load([
             'employee',
             'hseStaff',
+            'location',
             'categoryMaster',
             'contributingMaster',
             'actionMaster'
@@ -860,7 +868,7 @@ class ReportController extends Controller
             'severity_rating' => $isUpdate ? 'sometimes|required|in:low,medium,high,critical' : 'required|in:low,medium,high,critical',
             'action_taken' => 'nullable|string|max:1000',
             'description' => $isUpdate ? 'sometimes|required|string|max:1000' : 'required|string|max:1000',
-            'location' => $isUpdate ? 'sometimes|required|string|max:255' : 'required|string|max:255',
+            'location_id' => $isUpdate ? 'sometimes|required|exists:locations,id' : 'required|exists:locations,id',
             'project_name' => 'nullable|string|max:255',
             'images' => 'nullable|array|max:10', // Maximum 10 images
         ];
@@ -996,7 +1004,7 @@ class ReportController extends Controller
                         'severity_rating' => $report->severity_rating,
                         'severity_label' => $report->severity_label,
                         'severity_color' => $report->severity_color,
-                        'location' => $report->location,
+                        'location' => $report->location?->name,
                         'category' => $report->categoryMaster?->name,
                         'employee' => [
                             'id' => $report->employee?->id,
