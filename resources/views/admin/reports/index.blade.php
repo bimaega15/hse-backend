@@ -909,6 +909,7 @@
             $('#severityRating').val(report.severity_rating).trigger('change');
             $('#locationId').val(report.location_id).trigger('change');
 
+            $('#projectName').val(report.project_name);
             $('#description').val(report.description);
             $('#actionTaken').val(report.action_taken);
 
@@ -1116,6 +1117,7 @@
                             <tr><td class="fw-bold">Status:</td><td><span class="badge bg-${statusColor}">${status}</span></td></tr>
                             <tr><td class="fw-bold">Severity:</td><td><span class="badge bg-${severityColor}">${severityRating}</span></td></tr>
                             <tr><td class="fw-bold">Location:</td><td>${location}</td></tr>
+                            <tr><td class="fw-bold">Project Name:</td><td>${report.project_name ? escapeHtml(report.project_name) : 'N/A'}</td></tr>
                         </table>
                     </div>
                 </div>

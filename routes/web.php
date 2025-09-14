@@ -76,6 +76,8 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::get('/export/excel', [ReportController::class, 'exportExcel'])->name('export.excel');
         Route::get('/statistics/data', [ReportController::class, 'getStatistics'])->name('statistics.data');
         Route::get('/actions/by-contributing/{contributingId}', [ReportController::class, 'getActionsByContributing'])->name('actions.by-contributing');
+        // NEW: AJAX Analytics Filter Endpoint
+        Route::post('/analytics/filter', [ReportController::class, 'getAnalyticsFiltered'])->name('analytics.filter');
         Route::post('/', [ReportController::class, 'store'])->name('store');
         Route::get('/{id}', [ReportController::class, 'show'])->name('show');
         Route::put('/{id}', [ReportController::class, 'update'])->name('update');

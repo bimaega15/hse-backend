@@ -123,6 +123,7 @@ class ReportController extends Controller
                 'action_taken' => $request->action_taken,
                 'description' => $request->description,
                 'location' => $request->location,
+                'project_name' => $request->project_name,
                 'status' => 'waiting'
             ];
 
@@ -281,7 +282,8 @@ class ReportController extends Controller
                 'severity_rating',
                 'action_taken',
                 'description',
-                'location'
+                'location',
+                'project_name'
             ]);
 
             // Handle image updates dengan logic baru
@@ -856,6 +858,7 @@ class ReportController extends Controller
             'action_taken' => 'nullable|string|max:1000',
             'description' => $isUpdate ? 'sometimes|required|string|max:1000' : 'required|string|max:1000',
             'location' => $isUpdate ? 'sometimes|required|string|max:255' : 'required|string|max:255',
+            'project_name' => 'nullable|string|max:255',
             'images' => 'nullable|array|max:10', // Maximum 10 images
         ];
 

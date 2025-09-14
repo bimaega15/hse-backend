@@ -107,6 +107,18 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="projectName" class="form-label">Project Name</label>
+                                <input type="text" class="form-control" id="projectName" name="project_name" maxlength="255"
+                                    placeholder="Enter project name (optional)">
+                                <div class="form-text">Maximum 255 characters</div>
+                                <div class="invalid-feedback" id="projectNameError"></div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <label for="description" class="form-label">Description <span
                                 class="text-danger">*</span></label>

@@ -18,6 +18,7 @@ class Report extends Model
         'contributing_id',       // Foreign key to contributings
         'action_id',            // Foreign key to actions
         'location_id',          // Foreign key to locations
+        'project_name',         // Project name field
         'severity_rating',      // enum low, medium, high, critical
         'action_taken',         // text field for action taken
         'description',

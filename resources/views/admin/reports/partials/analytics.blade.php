@@ -1,4 +1,287 @@
+<!-- Analytics Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="ri-filter-3-line me-2"></i>Analytics Filters
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-light" onclick="toggleFilterCollapse()">
+                        <i class="ri-eye-line me-1" id="filterToggleIcon"></i>
+                        <span id="filterToggleText">Show Filters</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body collapse" id="analyticsFilters">
+                <form id="analyticsFilterForm" onsubmit="applyAnalyticsFilters(event)">
+                    <div class="row g-3">
+                        <!-- Date Range Filter -->
+                        <div class="col-xl-3 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-calendar-line text-primary me-1"></i>Date Range
+                            </label>
+                            <div class="input-group">
+                                <input type="date" class="form-control" id="filter_start_date" name="start_date"
+                                    placeholder="Start Date">
+                                <span class="input-group-text"><i class="ri-arrow-right-line"></i></span>
+                                <input type="date" class="form-control" id="filter_end_date" name="end_date"
+                                    placeholder="End Date">
+                            </div>
+                            <small class="text-muted">Filter by report creation date</small>
+                        </div>
+
+                        <!-- Quick Date Presets -->
+                        <div class="col-xl-3 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-time-line text-success me-1"></i>Quick Presets
+                            </label>
+                            <select class="form-select" id="filter_date_preset" onchange="applyDatePreset(this.value)">
+                                <option value="">Select Period</option>
+                                <option value="today">Today</option>
+                                <option value="yesterday">Yesterday</option>
+                                <option value="last_7_days">Last 7 Days</option>
+                                <option value="last_30_days">Last 30 Days</option>
+                                <option value="last_90_days">Last 90 Days</option>
+                                <option value="this_month">This Month</option>
+                                <option value="last_month">Last Month</option>
+                                <option value="this_quarter">This Quarter</option>
+                                <option value="this_year">This Year</option>
+                            </select>
+                            <small class="text-muted">Quick date range selection</small>
+                        </div>
+
+                        <!-- Status Filter -->
+                        <div class="col-xl-2 col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="ri-flag-line text-warning me-1"></i>Status
+                            </label>
+                            <select class="form-select" id="filter_status" name="status">
+                                <option value="">All Status</option>
+                                <option value="waiting">Waiting</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="done">Completed</option>
+                            </select>
+                            <small class="text-muted">Filter by report status</small>
+                        </div>
+
+                        <!-- Severity Filter -->
+                        <div class="col-xl-2 col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="ri-alarm-warning-line text-danger me-1"></i>Severity
+                            </label>
+                            <select class="form-select" id="filter_severity" name="severity">
+                                <option value="">All Severity</option>
+                                <option value="low">Low</option>
+                                <option value="medium">Medium</option>
+                                <option value="high">High</option>
+                                <option value="critical">Critical</option>
+                            </select>
+                            <small class="text-muted">Filter by severity level</small>
+                        </div>
+
+                        <!-- Category Filter -->
+                        <div class="col-xl-2 col-md-4">
+                            <label class="form-label fw-bold">
+                                <i class="ri-list-check-line text-info me-1"></i>Category
+                            </label>
+                            <select class="form-select" id="filter_category" name="category_id">
+                                <option value="">All Categories</option>
+                                @if (isset($additionalData['filter_options']['categories']))
+                                    @foreach ($additionalData['filter_options']['categories'] as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <small class="text-muted">Filter by category type</small>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-2">
+                        <!-- Location Filter -->
+                        <div class="col-xl-3 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-map-pin-line text-secondary me-1"></i>Location
+                            </label>
+                            <select class="form-select" id="filter_location" name="location_id">
+                                <option value="">All Locations</option>
+                                @if (isset($additionalData['filter_options']['locations']))
+                                    @foreach ($additionalData['filter_options']['locations'] as $location)
+                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <small class="text-muted">Filter by location</small>
+                        </div>
+
+                        <!-- Project Filter -->
+                        <div class="col-xl-3 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-building-line text-dark me-1"></i>Project
+                            </label>
+                            <select class="form-select" id="filter_project" name="project_name">
+                                <option value="">All Projects</option>
+                                @if (isset($additionalData['filter_options']['projects']))
+                                    @foreach ($additionalData['filter_options']['projects'] as $project)
+                                        <option value="{{ $project }}">{{ $project }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <small class="text-muted">Filter by project name</small>
+                        </div>
+
+                        <!-- HSE Staff Filter -->
+                        <div class="col-xl-3 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-user-settings-line text-primary me-1"></i>BAIK Staff
+                            </label>
+                            <select class="form-select" id="filter_hse_staff" name="hse_staff_id">
+                                <option value="">All BAIK Staff</option>
+                                @if (isset($additionalData['filter_options']['hse_staff']))
+                                    @foreach ($additionalData['filter_options']['hse_staff'] as $staff)
+                                        <option value="{{ $staff->id }}">{{ $staff->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <small class="text-muted">Filter by assigned staff</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="col-xl-3 col-md-6">
+                            <label class="form-label fw-bold text-transparent">Actions</label>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary flex-grow-1">
+                                    <i class="ri-search-line me-1"></i>Filters
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearAllFilters()">
+                                    <i class="ri-refresh-line me-1"></i>Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Filters Display -->
+                    <div id="activeFiltersDisplay" class="mt-3" style="display: none;">
+                        <div class="d-flex align-items-center flex-wrap gap-2">
+                            <span class="fw-bold text-muted">Active Filters:</span>
+                            <div id="activeFilterTags"></div>
+                            <button type="button" class="btn btn-sm btn-outline-danger ms-2"
+                                onclick="clearAllFilters()">
+                                <i class="ri-close-line"></i> Clear All
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Analytics Dashboard -->
+<style>
+    .analytics-loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.9);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .filter-message {
+        margin-top: 1rem;
+    }
+
+    .btn:disabled {
+        opacity: 0.7;
+    }
+
+    .analytics-content-wrapper {
+        position: relative;
+    }
+
+    /* Smooth transitions for updated content */
+    .analytics-card {
+        transition: all 0.3s ease;
+    }
+
+    .metric-value {
+        transition: color 0.3s ease;
+    }
+
+    .badge {
+        transition: all 0.3s ease;
+    }
+
+    /* Period Analysis Cards */
+    .bg-light-success {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
+
+    .bg-light-warning {
+        background-color: rgba(255, 193, 7, 0.1) !important;
+    }
+
+    .bg-light-danger {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+
+    .bg-light-info {
+        background-color: rgba(13, 202, 240, 0.1) !important;
+    }
+
+    .border-success {
+        border-color: rgba(40, 167, 69, 0.3) !important;
+    }
+
+    .border-warning {
+        border-color: rgba(255, 193, 7, 0.3) !important;
+    }
+
+    .border-danger {
+        border-color: rgba(220, 53, 69, 0.3) !important;
+    }
+
+    .border-info {
+        border-color: rgba(13, 202, 240, 0.3) !important;
+    }
+
+    /* Table row styling for period analysis */
+    .table-success-light {
+        background-color: rgba(40, 167, 69, 0.05) !important;
+    }
+
+    .table-warning-light {
+        background-color: rgba(255, 193, 7, 0.05) !important;
+    }
+
+    .table-danger-light {
+        background-color: rgba(220, 53, 69, 0.05) !important;
+    }
+
+    .table-info-light {
+        background-color: rgba(13, 202, 240, 0.05) !important;
+    }
+
+    .table-primary {
+        background-color: rgba(13, 110, 253, 0.1) !important;
+    }
+
+    /* Progress bars in tables */
+    .table .progress {
+        margin: 0;
+    }
+
+    .table .badge.fs-6 {
+        font-size: 0.9rem !important;
+        padding: 0.375rem 0.75rem;
+    }
+</style>
+
 <div class="row mb-4">
     <!-- Summary Cards -->
     <div class="col-xl-3 col-md-6">
@@ -31,7 +314,8 @@
     <div class="col-xl-3 col-md-6">
         <div class="card analytics-card">
             <div class="card-body analytics-metric">
-                <div class="metric-value text-warning">{{ $additionalData['summary']['critical_incidents'] ?? 0 }}</div>
+                <div class="metric-value text-warning">{{ $additionalData['summary']['critical_incidents'] ?? 0 }}
+                </div>
                 <div class="metric-label">Critical Incidents</div>
                 <div class="metric-change">
                     <span class="text-muted">High & Critical Severity</span>
@@ -187,6 +471,424 @@
     </div>
 </div>
 
+<!-- NEW: Monthly Findings Report -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card analytics-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="ri-calendar-line me-2"></i>Monthly Findings Report (Open & Closed)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Month</th>
+                                <th>Total Findings</th>
+                                <th>Closed</th>
+                                <th>Open</th>
+                                <th>Completion Rate</th>
+                                <th>Low</th>
+                                <th>Medium</th>
+                                <th>High</th>
+                                <th>Critical</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (isset($additionalData['monthly_findings']) && count($additionalData['monthly_findings']) > 0)
+                                @foreach ($additionalData['monthly_findings'] as $month)
+                                    <tr>
+                                        <td><strong>{{ $month->month_name }}</strong></td>
+                                        <td>{{ $month->total_findings }}</td>
+                                        <td><span class="badge bg-success">{{ $month->closed_findings }}</span></td>
+                                        <td><span class="badge bg-warning">{{ $month->open_findings }}</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">{{ $month->completion_rate }}%</span>
+                                                <div class="progress flex-grow-1"
+                                                    style="height: 6px; max-width: 80px;">
+                                                    <div class="progress-bar {{ $month->completion_rate >= 80 ? 'bg-success' : ($month->completion_rate >= 60 ? 'bg-warning' : 'bg-danger') }}"
+                                                        style="width: {{ $month->completion_rate }}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ $month->low_severity }}</td>
+                                        <td>{{ $month->medium_severity }}</td>
+                                        <td>{{ $month->high_severity }}</td>
+                                        <td>{{ $month->critical_severity }}</td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="9" class="text-center text-muted py-4">No monthly findings data
+                                        available</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEW: Period-Based Reports -->
+<div class="row mb-4" id="periodBasedReportsSection">
+    <div class="col-12">
+        <div class="card analytics-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="ri-time-line me-2"></i>Period Analysis <span id="periodAnalysisTitle">(Based on Applied Filters)</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div id="periodBasedReportsContent">
+                    @if (isset($additionalData['period_based_reports']) && count($additionalData['period_based_reports']) > 0)
+                        @if (isset($additionalData['period_based_reports']['filtered_period']))
+                            <!-- Filtered Period Table -->
+                            @php $filtered = $additionalData['period_based_reports']['filtered_period']; @endphp
+                            <div class="mb-3">
+                                <div class="alert alert-info border-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h6 class="alert-heading mb-2">
+                                                <i class="ri-calendar-check-line me-2"></i>{{ $filtered['label'] }}
+                                            </h6>
+                                            <p class="mb-0">
+                                                <strong>{{ $filtered['period']['start'] }}</strong> to <strong>{{ $filtered['period']['end'] }}</strong>
+                                                <br>
+                                                <small class="text-muted">{{ $filtered['period']['total_days'] }} days | Average: {{ $filtered['avg_per_day'] }} reports/day</small>
+                                            </p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <div class="fs-2 fw-bold text-primary">{{ $filtered['data']->total_findings ?? 0 }}</div>
+                                            <small class="text-muted">Total Findings</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-primary">
+                                        <tr>
+                                            <th>Status</th>
+                                            <th>Count</th>
+                                            <th>Percentage</th>
+                                            <th>Progress</th>
+                                            <th>Details</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php
+                                            $total = $filtered['data']->total_findings ?? 0;
+                                            $closed = $filtered['data']->closed_findings ?? 0;
+                                            $open = $filtered['data']->open_findings ?? 0;
+                                            $critical = $filtered['data']->critical_findings ?? 0;
+                                            $high = $filtered['data']->high_findings ?? 0;
+                                            $medium = $filtered['data']->medium_findings ?? 0;
+                                            $low = $filtered['data']->low_findings ?? 0;
+
+                                            $closedPercent = $total > 0 ? round(($closed / $total) * 100, 1) : 0;
+                                            $openPercent = $total > 0 ? round(($open / $total) * 100, 1) : 0;
+                                            $criticalHighPercent = $total > 0 ? round((($critical + $high) / $total) * 100, 1) : 0;
+                                            $mediumLowPercent = $total > 0 ? round((($medium + $low) / $total) * 100, 1) : 0;
+                                        @endphp
+
+                                        <tr class="table-success-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-checkbox-circle-line text-success fs-5 me-2"></i>
+                                                    <strong class="text-success">Closed Reports</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-success fs-6">{{ $closed }}</span></td>
+                                            <td><strong class="text-success">{{ $closedPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-success" style="width: {{ $closedPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">Completed successfully</small></td>
+                                        </tr>
+
+                                        <tr class="table-warning-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-timer-line text-warning fs-5 me-2"></i>
+                                                    <strong class="text-warning">Open Reports</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-warning fs-6">{{ $open }}</span></td>
+                                            <td><strong class="text-warning">{{ $openPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-warning" style="width: {{ $openPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">In progress or waiting</small></td>
+                                        </tr>
+
+                                        <tr class="table-danger-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-alarm-warning-line text-danger fs-5 me-2"></i>
+                                                    <strong class="text-danger">Critical & High</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-danger fs-6">{{ $critical + $high }}</span></td>
+                                            <td><strong class="text-danger">{{ $criticalHighPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-danger" style="width: {{ $criticalHighPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">{{ $critical }} Critical, {{ $high }} High</small></td>
+                                        </tr>
+
+                                        <tr class="table-info-light">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="ri-information-line text-info fs-5 me-2"></i>
+                                                    <strong class="text-info">Medium & Low</strong>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge bg-info fs-6">{{ $medium + $low }}</span></td>
+                                            <td><strong class="text-info">{{ $mediumLowPercent }}%</strong></td>
+                                            <td>
+                                                <div class="progress" style="height: 8px; width: 100px;">
+                                                    <div class="progress-bar bg-info" style="width: {{ $mediumLowPercent }}%"></div>
+                                                </div>
+                                            </td>
+                                            <td><small class="text-muted">{{ $medium }} Medium, {{ $low }} Low</small></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        @else
+                            <!-- Default Periods Table -->
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Total</th>
+                                            <th>Closed</th>
+                                            <th>Open</th>
+                                            <th>Critical/High</th>
+                                            <th>Completion Rate</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($additionalData['period_based_reports'] as $key => $period)
+                                            @php
+                                                $periodTotal = $period['data']->total_findings ?? 0;
+                                                $periodClosed = $period['data']->closed_findings ?? 0;
+                                                $periodOpen = $period['data']->open_findings ?? 0;
+                                                $periodCriticalHigh = ($period['data']->critical_findings ?? 0) + ($period['data']->high_findings ?? 0);
+                                                $completionRate = $periodTotal > 0 ? round(($periodClosed / $periodTotal) * 100, 1) : 0;
+                                            @endphp
+                                            <tr>
+                                                <td>
+                                                    <span class="badge bg-primary fs-6">{{ $periodTotal }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-success">{{ $periodClosed }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-warning">{{ $periodOpen }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-danger">{{ $periodCriticalHigh }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="me-2 fw-bold">{{ $completionRate }}%</span>
+                                                        <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
+                                                            <div class="progress-bar {{ $completionRate >= 80 ? 'bg-success' : ($completionRate >= 60 ? 'bg-warning' : 'bg-danger') }}"
+                                                                 style="width: {{ $completionRate }}%"></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        @endif
+                    @else
+                        <div class="text-center text-muted py-4">
+                            <i class="ri-calendar-line fs-48 mb-3"></i>
+                            <p>No period-based data available</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEW: Location & Project Reports -->
+<div class="row mb-4">
+    <div class="col-xl-6">
+        <div class="card analytics-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="ri-map-pin-line me-2"></i>Findings by Location (Open & Closed)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Location</th>
+                                <th>Total</th>
+                                <th>Closed</th>
+                                <th>Open</th>
+                                <th>Critical</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (isset($additionalData['location_project_reports']['by_location']) &&
+                                    count($additionalData['location_project_reports']['by_location']) > 0)
+                                @foreach ($additionalData['location_project_reports']['by_location'] as $location)
+                                    <tr>
+                                        <td><strong>{{ $location->location_name }}</strong></td>
+                                        <td>{{ $location->total_reports }}</td>
+                                        <td><span class="badge bg-success">{{ $location->closed_reports }}</span></td>
+                                        <td><span class="badge bg-warning">{{ $location->open_reports }}</span></td>
+                                        <td><span class="badge bg-danger">{{ $location->critical_reports }}</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No location data available</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6">
+        <div class="card analytics-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="ri-building-line me-2"></i>Findings by Project (Open & Closed)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Total</th>
+                                <th>Closed</th>
+                                <th>Open</th>
+                                <th>Critical</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (isset($additionalData['location_project_reports']['by_project']) &&
+                                    count($additionalData['location_project_reports']['by_project']) > 0)
+                                @foreach ($additionalData['location_project_reports']['by_project'] as $project)
+                                    <tr>
+                                        <td><strong>{{ $project->project_name }}</strong></td>
+                                        <td>{{ $project->total_reports }}</td>
+                                        <td><span class="badge bg-success">{{ $project->closed_reports }}</span></td>
+                                        <td><span class="badge bg-warning">{{ $project->open_reports }}</span></td>
+                                        <td><span class="badge bg-danger">{{ $project->critical_reports }}</span></td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">No project data available</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEW: Category Detailed Reports -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card analytics-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="ri-list-check-line me-2"></i>Findings by Category (Unsafe Condition, etc) - Open & Closed
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Total</th>
+                                <th>Closed</th>
+                                <th>Open</th>
+                                <th>Completion Rate</th>
+                                <th>Low</th>
+                                <th>Medium</th>
+                                <th>High</th>
+                                <th>Critical</th>
+                                <th>Avg Resolution (h)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (isset($additionalData['category_detailed_reports']) && count($additionalData['category_detailed_reports']) > 0)
+                                @foreach ($additionalData['category_detailed_reports'] as $category)
+                                    <tr>
+                                        <td><strong>{{ $category->category_name }}</strong></td>
+                                        <td>
+                                            <small
+                                                class="text-muted">{{ Str::limit($category->category_description ?? 'No description', 50) }}</small>
+                                        </td>
+                                        <td>{{ $category->total_reports }}</td>
+                                        <td><span class="badge bg-success">{{ $category->closed_reports }}</span></td>
+                                        <td><span class="badge bg-warning">{{ $category->open_reports }}</span></td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">{{ $category->completion_rate }}%</span>
+                                                <div class="progress flex-grow-1"
+                                                    style="height: 6px; max-width: 80px;">
+                                                    <div class="progress-bar {{ $category->completion_rate >= 80 ? 'bg-success' : ($category->completion_rate >= 60 ? 'bg-warning' : 'bg-danger') }}"
+                                                        style="width: {{ $category->completion_rate }}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ $category->low_severity }}</td>
+                                        <td>{{ $category->medium_severity }}</td>
+                                        <td>{{ $category->high_severity }}</td>
+                                        <td>{{ $category->critical_severity }}</td>
+                                        <td>{{ $category->avg_resolution_hours }}</td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted py-4">No category data available
+                                    </td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- BAIK Performance -->
 <div class="row">
     <div class="col-12">
@@ -215,13 +917,15 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded me-2">
+                                                <div
+                                                    class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded me-2">
                                                     <span
                                                         class="avatar-title fs-14">{{ strtoupper(substr($staff->name ?? 'U', 0, 2)) }}</span>
                                                 </div>
                                                 <div>
                                                     <div class="fw-bold">{{ $staff->name ?? 'Unknown' }}</div>
-                                                    <small class="text-muted">{{ $staff->email ?? 'No email' }}</small>
+                                                    <small
+                                                        class="text-muted">{{ $staff->email ?? 'No email' }}</small>
                                                 </div>
                                             </div>
                                         </td>
@@ -293,7 +997,8 @@
     </div>
 </div>
 
-<!-- Include Chart.js -->
+<!-- Include Chart.js and jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
@@ -353,7 +1058,26 @@
                             titleColor: '#fff',
                             bodyColor: '#fff',
                             borderColor: '#667eea',
-                            borderWidth: 1
+                            borderWidth: 1,
+                            callbacks: {
+                                afterBody: function(tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const monthData = trendsData[dataIndex];
+
+                                    if (monthData && monthData.categories && monthData.categories.length >
+                                        0) {
+                                        let categoryInfo = '\n\nTop Categories:';
+                                        const topCategories = monthData.categories.slice(0,
+                                            3); // Show top 3 categories
+                                        topCategories.forEach(function(cat, index) {
+                                            categoryInfo +=
+                                                `\n${index + 1}. ${cat.category}: ${cat.count}`;
+                                        });
+                                        return categoryInfo;
+                                    }
+                                    return '';
+                                }
+                            }
                         }
                     },
                     scales: {
@@ -454,4 +1178,585 @@
             window.location.reload();
         }
     }, 300000); // 5 minutes
+
+    // Analytics Filter Functions
+    function toggleFilterCollapse() {
+        const filtersDiv = document.getElementById('analyticsFilters');
+        const toggleIcon = document.getElementById('filterToggleIcon');
+        const toggleText = document.getElementById('filterToggleText');
+
+        if (filtersDiv.classList.contains('show')) {
+            filtersDiv.classList.remove('show');
+            toggleIcon.className = 'ri-eye-line me-2';
+            toggleText.textContent = 'Show Filters';
+        } else {
+            filtersDiv.classList.add('show');
+            toggleIcon.className = 'ri-eye-off-line me-2';
+            toggleText.textContent = 'Hide Filters';
+        }
+    }
+
+    function applyDatePreset(preset) {
+        const startDateInput = document.getElementById('filter_start_date');
+        const endDateInput = document.getElementById('filter_end_date');
+        const today = new Date();
+        let startDate, endDate;
+
+        switch (preset) {
+            case 'today':
+                startDate = endDate = today;
+                break;
+            case 'yesterday':
+                startDate = endDate = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+                break;
+            case 'last_7_days':
+                startDate = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+                endDate = today;
+                break;
+            case 'last_30_days':
+                startDate = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+                endDate = today;
+                break;
+            case 'last_90_days':
+                startDate = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000);
+                endDate = today;
+                break;
+            case 'this_month':
+                startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                endDate = today;
+                break;
+            case 'last_month':
+                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                startDate = lastMonth;
+                endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+                break;
+            case 'this_quarter':
+                const quarter = Math.floor(today.getMonth() / 3);
+                startDate = new Date(today.getFullYear(), quarter * 3, 1);
+                endDate = today;
+                break;
+            case 'this_year':
+                startDate = new Date(today.getFullYear(), 0, 1);
+                endDate = today;
+                break;
+            default:
+                return;
+        }
+
+        startDateInput.value = startDate.toISOString().split('T')[0];
+        endDateInput.value = endDate.toISOString().split('T')[0];
+    }
+
+    function applyAnalyticsFilters(event) {
+        event.preventDefault();
+
+        const form = document.getElementById('analyticsFilterForm');
+        const formData = new FormData(form);
+
+        // Show loading state
+        showFilterLoading(true);
+
+        // Update active filters display
+        updateActiveFiltersDisplay(formData);
+
+        // Prepare AJAX data
+        const filterData = {};
+        for (const [key, value] of formData.entries()) {
+            if (value && value.trim() !== '') {
+                filterData[key] = value.trim();
+            }
+        }
+
+        // Make AJAX request
+        $.ajax({
+            url: '{{ route('admin.reports.analytics.filter') }}',
+            method: 'POST',
+            data: filterData,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update analytics content with new data
+                    updateAnalyticsContent(response.data);
+
+                    // Update URL without reload
+                    updateUrlParams(filterData);
+
+                    // Show success message
+                    showFilterMessage('Filters applied successfully!', 'success');
+                } else {
+                    showFilterMessage('Failed to apply filters: ' + response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Filter AJAX Error:', error);
+                let message = 'Failed to apply filters. Please try again.';
+
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    message = xhr.responseJSON.message;
+                }
+
+                showFilterMessage(message, 'error');
+            },
+            complete: function() {
+                showFilterLoading(false);
+            }
+        });
+    }
+
+    function updateActiveFiltersDisplay(formData) {
+        const activeFiltersDiv = document.getElementById('activeFiltersDisplay');
+        const activeFilterTags = document.getElementById('activeFilterTags');
+        const filterLabels = {
+            'start_date': 'Start Date',
+            'end_date': 'End Date',
+            'status': 'Status',
+            'severity': 'Severity',
+            'category_id': 'Category',
+            'location_id': 'Location',
+            'project_name': 'Project',
+            'hse_staff_id': 'BAIK Staff'
+        };
+
+        let hasActiveFilters = false;
+        let tagsHTML = '';
+
+        for (const [key, value] of formData.entries()) {
+            if (value && value.trim() !== '' && filterLabels[key]) {
+                hasActiveFilters = true;
+                let displayValue = value;
+
+                // Get display text for select options
+                const selectElement = document.getElementById('filter_' + key.replace('_id', ''));
+                if (selectElement && selectElement.tagName === 'SELECT') {
+                    const option = selectElement.querySelector(`option[value="${value}"]`);
+                    if (option) {
+                        displayValue = option.textContent;
+                    }
+                }
+
+                tagsHTML += `<span class="badge bg-primary me-1 mb-1">
+                    ${filterLabels[key]}: ${displayValue}
+                    <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6em;"
+                            onclick="removeFilter('${key}')" aria-label="Remove filter"></button>
+                </span>`;
+            }
+        }
+
+        if (hasActiveFilters) {
+            activeFilterTags.innerHTML = tagsHTML;
+            activeFiltersDiv.style.display = 'block';
+        } else {
+            activeFiltersDiv.style.display = 'none';
+        }
+    }
+
+    function removeFilter(filterKey) {
+        const element = document.getElementById('filter_' + filterKey.replace('_id', ''));
+        if (element) {
+            element.value = '';
+        }
+
+        // Special handling for date preset
+        if (filterKey === 'start_date' || filterKey === 'end_date') {
+            document.getElementById('filter_date_preset').value = '';
+        }
+
+        // Reapply filters
+        document.getElementById('analyticsFilterForm').dispatchEvent(new Event('submit'));
+    }
+
+    function clearAllFilters() {
+        const form = document.getElementById('analyticsFilterForm');
+        const inputs = form.querySelectorAll('input, select');
+
+        inputs.forEach(input => {
+            if (input.type === 'date' || input.tagName === 'SELECT') {
+                input.value = '';
+            }
+        });
+
+        document.getElementById('activeFiltersDisplay').style.display = 'none';
+
+        // Show loading and make AJAX request to clear filters
+        showFilterLoading(true);
+
+        $.ajax({
+            url: '{{ route('admin.reports.analytics.filter') }}',
+            method: 'POST',
+            data: {},
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'
+            },
+            success: function(response) {
+                if (response.success) {
+                    updateAnalyticsContent(response.data);
+                    updateUrlParams({});
+                    showFilterMessage('Filters cleared successfully!', 'success');
+                } else {
+                    showFilterMessage('Failed to clear filters: ' + response.message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Clear Filter AJAX Error:', error);
+                showFilterMessage('Failed to clear filters. Please try again.', 'error');
+            },
+            complete: function() {
+                showFilterLoading(false);
+            }
+        });
+    }
+
+    // Loading state management
+    function showFilterLoading(show) {
+        const submitBtn = document.querySelector('#analyticsFilterForm button[type="submit"]');
+        const resetBtn = document.querySelector('#analyticsFilterForm button[onclick="clearAllFilters()"]');
+
+        if (show) {
+            // Disable buttons and show loading
+            submitBtn.disabled = true;
+            resetBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Applying...';
+
+            // Show loading overlay
+            if (!document.getElementById('analyticsLoadingOverlay')) {
+                const overlay = document.createElement('div');
+                overlay.id = 'analyticsLoadingOverlay';
+                overlay.style.cssText = `
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(255, 255, 255, 0.8); z-index: 9999;
+                    display: flex; align-items: center; justify-content: center;
+                `;
+                overlay.innerHTML = `
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="spinner-border text-primary mb-3"></div>
+                        <p class="text-muted">Updating analytics data...</p>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+            }
+        } else {
+            submitBtn.disabled = false;
+            resetBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="ri-search-line me-1"></i>Filters';
+
+            const overlay = document.getElementById('analyticsLoadingOverlay');
+            if (overlay) overlay.remove();
+        }
+    }
+
+    // Update analytics content with new data
+    function updateAnalyticsContent(data) {
+        try {
+            updateSummaryCards(data.summary || {});
+            updatePeriodBasedReports(data.period_based_reports || {});
+            console.log('Analytics content updated successfully');
+        } catch (error) {
+            console.error('Error updating analytics content:', error);
+            showFilterMessage('Error updating analytics display. Please refresh the page.', 'error');
+        }
+    }
+
+    // Update period-based reports section
+    function updatePeriodBasedReports(periodData) {
+        const contentDiv = document.getElementById('periodBasedReportsContent');
+        if (!contentDiv) return;
+
+        console.log('Updating period-based reports with:', periodData);
+
+        if (!periodData || Object.keys(periodData).length === 0) {
+            contentDiv.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="ri-calendar-line fs-48 mb-3"></i>
+                    <p>No period-based data available</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Check if it's filtered period data
+        if (periodData.filtered_period) {
+            const filtered = periodData.filtered_period;
+            const total = filtered.data.total_findings || 0;
+
+            const closedPercent = total > 0 ? Math.round(((filtered.data.closed_findings || 0) / total) * 100 * 10) / 10 : 0;
+            const openPercent = total > 0 ? Math.round(((filtered.data.open_findings || 0) / total) * 100 * 10) / 10 : 0;
+            const criticalPercent = total > 0 ? Math.round((((filtered.data.critical_findings || 0) + (filtered.data.high_findings || 0)) / total) * 100 * 10) / 10 : 0;
+            const mediumLowPercent = total > 0 ? Math.round((((filtered.data.medium_findings || 0) + (filtered.data.low_findings || 0)) / total) * 100 * 10) / 10 : 0;
+
+            contentDiv.innerHTML = `
+                <div class="alert alert-info border-0 mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="alert-heading mb-2">
+                                <i class="ri-calendar-check-line me-2"></i>${filtered.label}
+                            </h6>
+                            <p class="mb-0">
+                                <strong>${filtered.period.start}</strong> to <strong>${filtered.period.end}</strong>
+                                <br>
+                                <small class="text-muted">${filtered.period.total_days} days | Average: ${filtered.avg_per_day} reports/day</small>
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="fs-2 fw-bold text-primary">${total}</div>
+                            <small class="text-muted">Total Findings</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Status</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="table-success">
+                                <td>
+                                    <i class="ri-checkbox-circle-line me-2 text-success"></i>
+                                    <strong>Closed Reports</strong>
+                                </td>
+                                <td><span class="badge bg-success fs-6">${filtered.data.closed_findings || 0}</span></td>
+                                <td><strong>${closedPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-success" style="width: ${closedPercent}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td>
+                                    <i class="ri-timer-line me-2 text-warning"></i>
+                                    <strong>Open Reports</strong>
+                                </td>
+                                <td><span class="badge bg-warning fs-6">${filtered.data.open_findings || 0}</span></td>
+                                <td><strong>${openPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-warning" style="width: ${openPercent}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="table-danger">
+                                <td>
+                                    <i class="ri-alarm-warning-line me-2 text-danger"></i>
+                                    <strong>Critical & High</strong>
+                                </td>
+                                <td><span class="badge bg-danger fs-6">${(filtered.data.critical_findings || 0) + (filtered.data.high_findings || 0)}</span></td>
+                                <td><strong>${criticalPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-danger" style="width: ${criticalPercent}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr class="table-info">
+                                <td>
+                                    <i class="ri-information-line me-2 text-info"></i>
+                                    <strong>Medium & Low</strong>
+                                </td>
+                                <td><span class="badge bg-info fs-6">${(filtered.data.medium_findings || 0) + (filtered.data.low_findings || 0)}</span></td>
+                                <td><strong>${mediumLowPercent}%</strong></td>
+                                <td>
+                                    <div class="progress" style="height: 8px; min-width: 120px;">
+                                        <div class="progress-bar bg-info" style="width: ${mediumLowPercent}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            // Get current filter values to show in date range
+            const startDateInput = document.getElementById('filter_start_date');
+            const endDateInput = document.getElementById('filter_end_date');
+            const startDate = startDateInput ? startDateInput.value : '';
+            const endDate = endDateInput ? endDateInput.value : '';
+
+            let dateRangeDisplay = 'All';
+            if (startDate && endDate) {
+                dateRangeDisplay = `${startDate} to ${endDate}`;
+            } else if (startDate) {
+                dateRangeDisplay = `From ${startDate}`;
+            } else if (endDate) {
+                dateRangeDisplay = `Until ${endDate}`;
+            }
+
+            // Default periods table
+            let tableRows = '';
+            Object.values(periodData).forEach(period => {
+                const total = period.data?.total_findings || 0;
+                const closed = period.data?.closed_findings || 0;
+                const open = period.data?.open_findings || 0;
+                const critical = period.data?.critical_findings || 0;
+                const high = period.data?.high_findings || 0;
+                const medium = period.data?.medium_findings || 0;
+                const low = period.data?.low_findings || 0;
+
+                const criticalHigh = critical + high;
+                const mediumLow = medium + low;
+
+                const closedPercent = total > 0 ? Math.round((closed / total) * 100 * 10) / 10 : 0;
+                const openPercent = total > 0 ? Math.round((open / total) * 100 * 10) / 10 : 0;
+
+                const rowClass = criticalHigh > 0 ? 'table-danger' : (open > closed ? 'table-warning' : 'table-success');
+
+                tableRows += `
+                    <tr class="${rowClass}">
+                        <td>
+                            <span class="badge bg-primary fs-6">${total}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success me-1">${closed}</span>
+                            <small class="text-success">${closedPercent}%</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-warning me-1">${open}</span>
+                            <small class="text-warning">${openPercent}%</small>
+                        </td>
+                        <td>
+                            ${criticalHigh > 0 ? `<span class="badge bg-danger">${criticalHigh}</span>` : '<span class="text-muted">-</span>'}
+                        </td>
+                        <td>
+                            ${mediumLow > 0 ? `<span class="badge bg-info">${mediumLow}</span>` : '<span class="text-muted">-</span>'}
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 6px; min-width: 80px;">
+                                <div class="progress-bar bg-success" style="width: ${closedPercent}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            contentDiv.innerHTML = `
+                <div class="alert alert-info border-0 mb-3">
+                    <div class="d-flex align-items-center">
+                        <i class="ri-calendar-line me-2"></i>
+                        <strong>Date Range: ${dateRangeDisplay}</strong>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Total</th>
+                                <th>Closed</th>
+                                <th>Open</th>
+                                <th>Critical/High</th>
+                                <th>Medium/Low</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${tableRows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    }
+
+    // Update summary cards
+    function updateSummaryCards(summary) {
+        console.log('Updating summary cards with data:', summary);
+
+        // Update Total Reports (first card, no additional class)
+        const totalReportsCard = document.querySelector('.metric-value:not(.text-warning):not(.text-danger):not(.text-success)');
+        if (totalReportsCard) {
+            totalReportsCard.textContent = summary.total_reports || 0;
+            console.log('Updated total reports:', summary.total_reports);
+        }
+
+        // Update Critical Incidents (second card, text-warning)
+        const criticalCard = document.querySelector('.metric-value.text-warning');
+        if (criticalCard) {
+            criticalCard.textContent = summary.critical_incidents || 0;
+            console.log('Updated critical incidents:', summary.critical_incidents);
+        }
+
+        // Update Overdue CARs (third card, text-danger)
+        const overdueCard = document.querySelector('.metric-value.text-danger');
+        if (overdueCard) {
+            overdueCard.textContent = summary.overdue_cars || 0;
+            console.log('Updated overdue cars:', summary.overdue_cars);
+        }
+
+        // Update Completion Rate (fourth card, text-success)
+        const completionCard = document.querySelector('.metric-value.text-success');
+        if (completionCard && summary.completion_rate !== undefined) {
+            completionCard.textContent = summary.completion_rate + '%';
+            console.log('Updated completion rate:', summary.completion_rate);
+        }
+    }
+
+    // Update URL without reload
+    function updateUrlParams(filterData) {
+        const params = new URLSearchParams();
+        params.set('view', 'analytics');
+
+        for (const [key, value] of Object.entries(filterData)) {
+            if (value) params.set(key, value);
+        }
+
+        window.history.pushState({}, '', window.location.pathname + '?' + params.toString());
+    }
+
+    // Show filter messages
+    function showFilterMessage(message, type = 'info') {
+        document.querySelectorAll('.filter-message').forEach(msg => msg.remove());
+
+        const alertClass = type === 'error' ? 'alert-danger' :
+            type === 'success' ? 'alert-success' : 'alert-info';
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `alert ${alertClass} alert-dismissible fade show filter-message mt-3`;
+        messageDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+        const filtersCard = document.querySelector('#analyticsFilters').parentElement;
+        filtersCard.insertAdjacentElement('afterend', messageDiv);
+
+        setTimeout(() => messageDiv.remove(), 5000);
+    }
+
+    // Initialize filters on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const form = document.getElementById('analyticsFilterForm');
+        let hasFilters = false;
+
+        // Populate form with URL parameters
+        for (const [key, value] of urlParams.entries()) {
+            if (key !== 'view') {
+                const element = document.getElementById('filter_' + key.replace('_id', ''));
+                if (element) {
+                    element.value = value;
+                    hasFilters = true;
+                }
+            }
+        }
+
+        // Show active filters if any
+        if (hasFilters) {
+            const formData = new FormData(form);
+            updateActiveFiltersDisplay(formData);
+
+            // Auto-expand filters if there are active ones
+            const filtersDiv = document.getElementById('analyticsFilters');
+            filtersDiv.classList.add('show');
+            document.getElementById('filterToggleIcon').className = 'ri-eye-off-line';
+            document.getElementById('filterToggleText').textContent = 'Hide Filters';
+        }
+    });
 </script>
