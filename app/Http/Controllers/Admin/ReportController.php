@@ -918,7 +918,9 @@ class ReportController extends Controller
                 'categoryMaster:id,name',
                 'contributingMaster:id,name',
                 'actionMaster:id,name',
-                'locationMaster:id,name'
+                'locationMaster:id,name',
+                'reportDetails.createdBy:id,name',
+                'reportDetails.approvedBy:id,name'
             ]);
 
             // Apply same filters as DataTables
@@ -946,7 +948,7 @@ class ReportController extends Controller
             $filename = 'reports_export_' . date('Y-m-d_H-i-s') . '.csv';
 
             return response($csvContent)
-                ->header('Content-Type', 'application/vnd.ms-excel')
+                ->header('Content-Type', 'text/csv; charset=UTF-8')
                 ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
                 ->header('Pragma', 'no-cache')
                 ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
@@ -965,74 +967,203 @@ class ReportController extends Controller
         // Create CSV with BOM for proper Excel UTF-8 support
         $csvContent = "\xEF\xBB\xBF";
 
-        // Headers
-        $headers = [
+        // Add title row
+        $csvContent .= '"TABLE NCR & NEARMISS REPORT"' . "\r\n";
+        $csvContent .= "\r\n"; // Empty line
+
+        // INITIAL REPORTING SECTION
+        $csvContent .= '"INITIAL REPORTING"' . "\r\n";
+
+        // Initial reporting headers
+        $initialHeaders = [
             'No',
-            'Tanggal Dibuat',
-            'ID Employee',
-            'Nama Employee',
-            'Email Employee',
-            'ID BAIK Staff',
-            'Nama BAIK Staff',
-            'Email BAIK Staff',
-            'Kategori',
-            'Contributing Factor',
-            'Action',
-            'Lokasi',
-            'Nama Project',
-            'Deskripsi',
-            'Severity Rating',
-            'Status',
-            'Action Taken',
-            'Tanggal Mulai Proses',
-            'Tanggal Selesai'
+            'Date of Reporting',
+            'Photo',
+            'Explanation of Report',
+            'Potential Severity',
+            'Category of Report',
+            'Location',
+            'Type of Report',
+            'Immediate Action',
+            'Reported By'
         ];
 
-        $csvContent .= '"' . implode('","', $headers) . '"' . "\r\n";
+        $csvContent .= '"' . implode('","', $initialHeaders) . '"' . "\r\n";
 
-        // Data rows
+        // Initial reporting data - semua data berurutan tanpa baris kosong
         $no = 1;
         foreach ($reports as $report) {
             $row = [
                 $no++,
-                $report->created_at ? $report->created_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'N/A',
-                $report->employee_id ?? 'N/A',
-                optional($report->employee)->name ?? 'N/A',
-                optional($report->employee)->email ?? 'N/A',
-                $report->hse_staff_id ?? 'N/A',
-                optional($report->hseStaff)->name ?? 'Belum Ditugaskan',
-                optional($report->hseStaff)->email ?? 'N/A',
-                optional($report->categoryMaster)->name ?? 'N/A',
-                optional($report->contributingMaster)->name ?? 'N/A',
-                optional($report->actionMaster)->name ?? 'N/A',
-                optional($report->locationMaster)->name ?? 'N/A',
-                $this->cleanTextForCsv($report->project_name ?? 'N/A'),
-                $this->cleanTextForCsv($report->description ?? 'N/A'),
-                ucfirst($report->severity_rating ?? 'N/A'),
-                $this->getStatusLabel($report->status ?? 'N/A'),
-                $this->cleanTextForCsv($report->action_taken ?? 'Belum Ada Tindakan'),
-                $report->start_process_at ? $report->start_process_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'Belum Dimulai',
-                $report->completed_at ? $report->completed_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'Belum Selesai'
+                $report->created_at ? $report->created_at->format('d/m/Y') : 'N/A',
+                count($report->images ?? []) > 0 ? 'Y' : 'N',
+                $this->cleanTextForCsv($report->description),
+                strtoupper($report->severity_rating ?? 'N/A'),
+                $this->cleanTextForCsv(optional($report->categoryMaster)->name),
+                $this->cleanTextForCsv(optional($report->locationMaster)->name),
+                $this->cleanTextForCsv($this->getTypeOfReport($report)),
+                $this->cleanTextForCsv($report->action_taken),
+                $this->cleanTextForCsv(optional($report->employee)->name)
             ];
 
-            // Escape and format each field
-            $escapedRow = array_map(function ($field) {
-                return '"' . str_replace('"', '""', $field) . '"';
-            }, $row);
+            // Escape and format each field properly for CSV
+            $escapedRow = array_map(function ($field, $index) {
+                // Convert to string dan pastikan tidak null
+                $field = (string) $field;
+                if (trim($field) === '') $field = 'N/A';
+
+                // Double quote escaping
+                $field = str_replace('"', '""', $field);
+
+                // Force text alignment untuk tanggal (index 1 = Date of Reporting)
+                if ($index === 1) {
+                    // Add tab character di awal untuk force text format di Excel
+                    return '"' . "\t" . $field . '"';
+                }
+
+                // Wrap in quotes
+                return '"' . $field . '"';
+            }, $row, array_keys($row));
 
             $csvContent .= implode(',', $escapedRow) . "\r\n";
+        }
+
+        // CORRECTION & CORRECTIVE ACTION SECTION
+        // Cek apakah ada report details di semua reports
+        $hasReportDetails = false;
+        foreach ($reports as $report) {
+            if ($report->reportDetails && count($report->reportDetails) > 0) {
+                $hasReportDetails = true;
+                break;
+            }
+        }
+
+        if ($hasReportDetails) {
+            $csvContent .= "\r\n"; // Empty line
+            $csvContent .= '"CORRECTION & CORRECTIVE ACTION"' . "\r\n";
+
+            $correctionHeaders = [
+                'No',
+                'Correction & corrective Action',
+                'Due Date',
+                'PIC',
+                'Status CAR',
+                'Evidences',
+                'Approved By'
+            ];
+
+            $csvContent .= '"' . implode('","', $correctionHeaders) . '"' . "\r\n";
+
+            // Add corrective action data untuk semua reports berurutan
+            $carNo = 1;
+            foreach ($reports as $report) {
+                if ($report->reportDetails && count($report->reportDetails) > 0) {
+                    foreach ($report->reportDetails as $detail) {
+                        $carRow = [
+                            $carNo++,
+                            $this->cleanTextForCsv($detail->correction_action),
+                            $detail->due_date ? \Carbon\Carbon::parse($detail->due_date)->format('d/m/Y') : 'N/A',
+                            $this->cleanTextForCsv(optional($detail->createdBy)->name),
+                            strtoupper($detail->status_car ?? 'OPEN'),
+                            count($detail->evidences ?? []) > 0 ? 'FOTO' : 'N/A',
+                            $this->cleanTextForCsv(optional($detail->approvedBy)->name)
+                        ];
+
+                        // Escape and format each field properly for CSV
+                        $escapedCarRow = array_map(function ($field, $index) {
+                            // Convert to string dan pastikan tidak null
+                            $field = (string) $field;
+                            if (trim($field) === '') $field = 'N/A';
+
+                            // Double quote escaping
+                            $field = str_replace('"', '""', $field);
+
+                            // Force text alignment untuk tanggal (index 2 = Due Date)
+                            if ($index === 2) {
+                                // Add tab character di awal untuk force text format di Excel
+                                return '"' . "\t" . $field . '"';
+                            }
+
+                            // Wrap in quotes
+                            return '"' . $field . '"';
+                        }, $carRow, array_keys($carRow));
+
+                        $csvContent .= implode(',', $escapedCarRow) . "\r\n";
+                    }
+                }
+            }
         }
 
         return $csvContent;
     }
 
+    private function getTypeOfReport($report)
+    {
+        // Determine type based on category or other criteria
+        $category = optional($report->categoryMaster)->name;
+
+        // You can customize this logic based on your categories
+        if (stripos($category, 'unsafe') !== false) {
+            return 'UNSAFE CONDITION';
+        } elseif (stripos($category, 'near') !== false || stripos($category, 'miss') !== false) {
+            return 'NEAR MISS';
+        } elseif (stripos($category, 'accident') !== false || stripos($category, 'incident') !== false) {
+            return 'INCIDENT';
+        }
+
+        return strtoupper($category ?? 'GENERAL');
+    }
+
     private function cleanTextForCsv($text)
     {
-        // Remove HTML tags and clean up text for CSV
+        if (!$text || trim($text) === '') return 'N/A';
+
+        // Convert to string if not already
+        $text = (string) $text;
+
+        // Remove HTML tags
         $text = strip_tags($text);
+
+        // Replace line breaks with space
         $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+
+        // Replace multiple spaces with single space
         $text = preg_replace('/\s+/', ' ', $text);
-        return trim($text);
+
+        // Remove problematic characters that might break CSV structure
+        // Remove commas, quotes, semicolons, and tabs
+        $text = str_replace(['"', "'", ',', ';', "\t"], ['', '', ' ', ' ', ' '], $text);
+
+        // Remove any control characters except space
+        $text = preg_replace('/[^\x20-\x7E\x80-\xFF]/', '', $text);
+
+        $text = trim($text);
+
+        return $text === '' ? 'N/A' : $text;
+    }
+
+    private function cleanTextForHtml($text)
+    {
+        if (!$text || trim($text) === '') return 'N/A';
+
+        // Convert to string if not already
+        $text = (string) $text;
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+
+        // Replace line breaks with space for better display in Excel cells
+        $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+
+        // Replace multiple spaces with single space
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        // Remove any control characters except space
+        $text = preg_replace('/[^\x20-\x7E\x80-\xFF]/', '', $text);
+
+        $text = trim($text);
+
+        return $text === '' ? 'N/A' : $text;
     }
 
     private function getStatusLabel($status)
