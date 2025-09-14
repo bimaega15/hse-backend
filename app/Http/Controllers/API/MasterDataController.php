@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Contributing;
 use App\Models\Action;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -287,6 +288,40 @@ class MasterDataController extends Controller
             'success' => true,
             'data' => $stats,
             'message' => 'Master data statistics retrieved successfully'
+        ]);
+    }
+
+    /**
+     * Get all locations
+     */
+    public function getLocations()
+    {
+        $locations = Location::active()
+            ->select('id', 'name', 'description', 'address', 'city', 'province', 'postal_code', 'latitude', 'longitude', 'created_at')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($location) {
+                return [
+                    'id' => $location->id,
+                    'name' => $location->name,
+                    'description' => $location->description,
+                    'address' => $location->address,
+                    'city' => $location->city,
+                    'province' => $location->province,
+                    'postal_code' => $location->postal_code,
+                    'latitude' => $location->latitude,
+                    'longitude' => $location->longitude,
+                    'full_address' => $location->full_address,
+                    'coordinates' => $location->coordinates,
+                    'has_coordinates' => $location->hasCoordinates(),
+                    'created_at' => $location->created_at
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $locations,
+            'message' => 'Locations retrieved successfully'
         ]);
     }
 

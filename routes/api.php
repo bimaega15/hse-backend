@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/contributings/{contributingId}', [MasterDataController::class, 'getContributingDetail']);
         Route::get('/contributings/{contributingId}/actions', [MasterDataController::class, 'getActionsByContributing']);
         Route::get('/actions', [MasterDataController::class, 'getActions']);
+        Route::get('/locations', [MasterDataController::class, 'getLocations']);
         Route::get('/search', [MasterDataController::class, 'search']);
         Route::get('/actions/{actionId}/path', [MasterDataController::class, 'getActionPath']);
         Route::get('/statistics', [MasterDataController::class, 'getStatistics']);
