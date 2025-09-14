@@ -15,9 +15,9 @@
             </div>
             <div class="card-body collapse" id="analyticsFilters">
                 <form id="analyticsFilterForm" onsubmit="applyAnalyticsFilters(event)">
-                    <div class="row g-3">
+                    <div class="row">
                         <!-- Date Range Filter -->
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-4">
                             <label class="form-label fw-bold">
                                 <i class="ri-calendar-line text-primary me-1"></i>Date Range
                             </label>
@@ -32,7 +32,7 @@
                         </div>
 
                         <!-- Quick Date Presets -->
-                        <div class="col-xl-3 col-md-6">
+                        <div class="col-xl-4 col-md-4">
                             <label class="form-label fw-bold">
                                 <i class="ri-time-line text-success me-1"></i>Quick Presets
                             </label>
@@ -50,8 +50,18 @@
                             </select>
                             <small class="text-muted">Quick date range selection</small>
                         </div>
+                        <div class="col-xl-4 col-md-4">
+                            <div class="d-flex gap-2 justify-content-center" style="margin-top: 1.7rem;">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-search-line me-1"></i>Apply Filters
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="clearAllFilters()">
+                                    <i class="ri-refresh-line me-1"></i>Reset
+                                </button>
+                            </div>
+                        </div>
 
-                        <!-- Status Filter -->
+                        {{-- <!-- Status Filter -->
                         <div class="col-xl-2 col-md-4">
                             <label class="form-label fw-bold">
                                 <i class="ri-flag-line text-warning me-1"></i>Status
@@ -94,11 +104,11 @@
                                 @endif
                             </select>
                             <small class="text-muted">Filter by category type</small>
-                        </div>
+                        </div> --}}
                     </div>
 
                     <div class="row g-3 mt-2">
-                        <!-- Location Filter -->
+                        {{-- <!-- Location Filter -->
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="ri-map-pin-line text-secondary me-1"></i>Location
@@ -144,20 +154,20 @@
                                 @endif
                             </select>
                             <small class="text-muted">Filter by assigned staff</small>
-                        </div>
+                        </div> --}}
 
                         <!-- Action Buttons -->
-                        <div class="col-xl-3 col-md-6">
+                        {{-- <div class="col-xl-12 col-md-12">
                             <label class="form-label fw-bold text-transparent">Actions</label>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary flex-grow-1">
-                                    <i class="ri-search-line me-1"></i>Filters
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="ri-search-line me-1"></i>Apply Filters
                                 </button>
                                 <button type="button" class="btn btn-outline-secondary" onclick="clearAllFilters()">
                                     <i class="ri-refresh-line me-1"></i>Reset
                                 </button>
                             </div>
-                        </div>
+                        </div> --}}
                     </div>
 
                     <!-- Active Filters Display -->
@@ -540,7 +550,8 @@
         <div class="card analytics-card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="ri-time-line me-2"></i>Period Analysis <span id="periodAnalysisTitle">(All Data Overview)</span>
+                    <i class="ri-time-line me-2"></i>Period Analysis <span id="periodAnalysisTitle">(All Data
+                        Overview)</span>
                 </h5>
             </div>
             <div class="card-body">
@@ -696,8 +707,10 @@
 
                                 $allClosedPercent = $allTotal > 0 ? round(($allClosed / $allTotal) * 100, 1) : 0;
                                 $allOpenPercent = $allTotal > 0 ? round(($allOpen / $allTotal) * 100, 1) : 0;
-                                $allCriticalHighPercent = $allTotal > 0 ? round((($allCritical + $allHigh) / $allTotal) * 100, 1) : 0;
-                                $allMediumLowPercent = $allTotal > 0 ? round((($allMedium + $allLow) / $allTotal) * 100, 1) : 0;
+                                $allCriticalHighPercent =
+                                    $allTotal > 0 ? round((($allCritical + $allHigh) / $allTotal) * 100, 1) : 0;
+                                $allMediumLowPercent =
+                                    $allTotal > 0 ? round((($allMedium + $allLow) / $allTotal) * 100, 1) : 0;
                             @endphp
 
                             <div class="mb-3">
@@ -710,7 +723,8 @@
                                             <p class="mb-0">
                                                 <strong>Complete dataset without any filters applied</strong>
                                                 <br>
-                                                <small class="text-muted">Total records from all periods and categories</small>
+                                                <small class="text-muted">Total records from all periods and
+                                                    categories</small>
                                             </p>
                                         </div>
                                         <div class="col-md-4 text-end">
@@ -744,7 +758,8 @@
                                             <td><strong class="text-success">{{ $allClosedPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-success" style="width: {{ $allClosedPercent }}%"></div>
+                                                    <div class="progress-bar bg-success"
+                                                        style="width: {{ $allClosedPercent }}%"></div>
                                                 </div>
                                             </td>
                                             <td><small class="text-muted">Completed successfully</small></td>
@@ -761,7 +776,8 @@
                                             <td><strong class="text-warning">{{ $allOpenPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-warning" style="width: {{ $allOpenPercent }}%"></div>
+                                                    <div class="progress-bar bg-warning"
+                                                        style="width: {{ $allOpenPercent }}%"></div>
                                                 </div>
                                             </td>
                                             <td><small class="text-muted">In progress or waiting</small></td>
@@ -774,14 +790,19 @@
                                                     <strong class="text-danger">Critical & High</strong>
                                                 </div>
                                             </td>
-                                            <td><span class="badge bg-danger fs-6">{{ $allCritical + $allHigh }}</span></td>
-                                            <td><strong class="text-danger">{{ $allCriticalHighPercent }}%</strong></td>
+                                            <td><span
+                                                    class="badge bg-danger fs-6">{{ $allCritical + $allHigh }}</span>
+                                            </td>
+                                            <td><strong class="text-danger">{{ $allCriticalHighPercent }}%</strong>
+                                            </td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-danger" style="width: {{ $allCriticalHighPercent }}%"></div>
+                                                    <div class="progress-bar bg-danger"
+                                                        style="width: {{ $allCriticalHighPercent }}%"></div>
                                                 </div>
                                             </td>
-                                            <td><small class="text-muted">{{ $allCritical }} Critical, {{ $allHigh }} High</small></td>
+                                            <td><small class="text-muted">{{ $allCritical }} Critical,
+                                                    {{ $allHigh }} High</small></td>
                                         </tr>
 
                                         <tr class="table-info-light">
@@ -791,14 +812,17 @@
                                                     <strong class="text-info">Medium & Low</strong>
                                                 </div>
                                             </td>
-                                            <td><span class="badge bg-info fs-6">{{ $allMedium + $allLow }}</span></td>
+                                            <td><span class="badge bg-info fs-6">{{ $allMedium + $allLow }}</span>
+                                            </td>
                                             <td><strong class="text-info">{{ $allMediumLowPercent }}%</strong></td>
                                             <td>
                                                 <div class="progress" style="height: 8px; width: 100px;">
-                                                    <div class="progress-bar bg-info" style="width: {{ $allMediumLowPercent }}%"></div>
+                                                    <div class="progress-bar bg-info"
+                                                        style="width: {{ $allMediumLowPercent }}%"></div>
                                                 </div>
                                             </td>
-                                            <td><small class="text-muted">{{ $allMedium }} Medium, {{ $allLow }} Low</small></td>
+                                            <td><small class="text-muted">{{ $allMedium }} Medium,
+                                                    {{ $allLow }} Low</small></td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -1695,7 +1719,8 @@
 
             const closedPercent = allTotal > 0 ? Math.round((allClosed / allTotal) * 100 * 10) / 10 : 0;
             const openPercent = allTotal > 0 ? Math.round((allOpen / allTotal) * 100 * 10) / 10 : 0;
-            const criticalHighPercent = allTotal > 0 ? Math.round(((allCritical + allHigh) / allTotal) * 100 * 10) / 10 : 0;
+            const criticalHighPercent = allTotal > 0 ? Math.round(((allCritical + allHigh) / allTotal) * 100 * 10) /
+                10 : 0;
             const mediumLowPercent = allTotal > 0 ? Math.round((allMediumLow / allTotal) * 100 * 10) / 10 : 0;
 
             contentDiv.innerHTML = `
