@@ -940,6 +940,16 @@
                 </h5>
             </div>
             <div class="card-body">
+                <!-- Category Chart -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Category Table -->
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead class="table-dark">
@@ -1122,11 +1132,12 @@
         // Get data safely
         const trendsData = @json($additionalData['trends'] ?? []);
         const severityData = @json($additionalData['severity_analysis'] ?? []);
+        const categoryData = @json($additionalData['category_detailed_reports'] ?? []);
 
         // Trends Chart
         const trendsCtx = document.getElementById('trendsChart');
         if (trendsCtx && trendsData.length > 0) {
-            new Chart(trendsCtx, {
+            window.trendsChartInstance = new Chart(trendsCtx, {
                 type: 'line',
                 data: {
                     labels: trendsData.map(item => item.month_name || 'Unknown'),
@@ -1214,7 +1225,7 @@
         // Severity Chart
         const severityCtx = document.getElementById('severityChart');
         if (severityCtx && severityData.length > 0) {
-            new Chart(severityCtx, {
+            window.severityChartInstance = new Chart(severityCtx, {
                 type: 'doughnut',
                 data: {
                     labels: severityData.map(item => {
@@ -1268,6 +1279,92 @@
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('No severity data available', severityCtx.width / 2, severityCtx.height / 2);
+        }
+
+        // Category Chart
+        const categoryCtx = document.getElementById('categoryChart');
+        if (categoryCtx && categoryData.length > 0) {
+            window.categoryChartInstance = new Chart(categoryCtx, {
+                type: 'bar',
+                data: {
+                    labels: categoryData.map(item => item.category_name || 'Unknown'),
+                    datasets: [{
+                        label: 'Total Reports',
+                        data: categoryData.map(item => item.total_reports || 0),
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Closed Reports',
+                        data: categoryData.map(item => parseInt(item.closed_reports) || 0),
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Open Reports',
+                        data: categoryData.map(item => parseInt(item.open_reports) || 0),
+                        backgroundColor: 'rgba(255, 206, 86, 0.8)',
+                        borderColor: 'rgba(255, 206, 86, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#fff',
+                            bodyColor: '#fff',
+                            callbacks: {
+                                afterBody: function(tooltipItems) {
+                                    const dataIndex = tooltipItems[0].dataIndex;
+                                    const category = categoryData[dataIndex];
+                                    if (category) {
+                                        return `\nCompletion Rate: ${category.completion_rate}%\nAvg Resolution: ${category.avg_resolution_hours}h`;
+                                    }
+                                    return '';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Categories'
+                            },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            title: {
+                                display: true,
+                                text: 'Number of Reports'
+                            }
+                        }
+                    }
+                }
+            });
+        } else if (categoryCtx) {
+            // Show empty state for category chart
+            const ctx = categoryCtx.getContext('2d');
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No category data available', categoryCtx.width / 2, categoryCtx.height / 2);
         }
     }
 
@@ -1564,6 +1661,13 @@
         try {
             updateSummaryCards(data.summary || {});
             updatePeriodBasedReports(data.period_based_reports || {});
+            updateCharts(data);
+            updateMonthlyFindingsTable(data.monthly_findings || []);
+            updateLocationProjectTables(data.location_project_reports || {});
+            updateCategoryDetailedTable(data.category_detailed_reports || []);
+            updateHSEPerformanceTable(data.hse_performance || []);
+            updateSLACompliance(data.completion_metrics || {});
+            updateCategoryAnalysisTable(data.categories || []);
             console.log('Analytics content updated successfully');
         } catch (error) {
             console.error('Error updating analytics content:', error);
@@ -1858,6 +1962,583 @@
             completionCard.textContent = summary.completion_rate + '%';
             console.log('Updated completion rate:', summary.completion_rate);
         }
+    }
+
+    // Update charts with new data
+    function updateCharts(data) {
+        console.log('Updating charts with data:', data);
+
+        // Update Trends Chart
+        const trendsCtx = document.getElementById('trendsChart');
+        if (trendsCtx) {
+            // Destroy existing chart if it exists
+            if (window.trendsChartInstance && typeof window.trendsChartInstance.destroy === 'function') {
+                try {
+                    window.trendsChartInstance.destroy();
+                    window.trendsChartInstance = null;
+                } catch (e) {
+                    console.warn('Error destroying trends chart:', e);
+                    window.trendsChartInstance = null;
+                }
+            }
+
+            // Clear canvas
+            const ctx = trendsCtx.getContext('2d');
+            ctx.clearRect(0, 0, trendsCtx.width, trendsCtx.height);
+
+            if (data.trends && data.trends.length > 0) {
+                try {
+                    window.trendsChartInstance = new Chart(trendsCtx, {
+                        type: 'line',
+                        data: {
+                            labels: data.trends.map(item => item.month_name || 'Unknown'),
+                            datasets: [{
+                                label: 'Total Reports',
+                                data: data.trends.map(item => item.total || 0),
+                                borderColor: '#667eea',
+                                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Completed',
+                                data: data.trends.map(item => parseInt(item.completed) || 0),
+                                borderColor: '#28a745',
+                                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }, {
+                                label: 'Critical',
+                                data: data.trends.map(item => parseInt(item.critical) || 0),
+                                borderColor: '#dc3545',
+                                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            interaction: {
+                                intersect: false,
+                                mode: 'index'
+                            },
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true
+                                }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error creating trends chart:', e);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Chart update failed', trendsCtx.width / 2, trendsCtx.height / 2);
+                }
+            } else {
+                // Show empty state
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No trends data available', trendsCtx.width / 2, trendsCtx.height / 2);
+            }
+        }
+
+        // Update Severity Chart
+        const severityCtx = document.getElementById('severityChart');
+        if (severityCtx) {
+            // Destroy existing chart if it exists
+            if (window.severityChartInstance && typeof window.severityChartInstance.destroy === 'function') {
+                try {
+                    window.severityChartInstance.destroy();
+                    window.severityChartInstance = null;
+                } catch (e) {
+                    console.warn('Error destroying severity chart:', e);
+                    window.severityChartInstance = null;
+                }
+            }
+
+            // Clear canvas
+            const ctx = severityCtx.getContext('2d');
+            ctx.clearRect(0, 0, severityCtx.width, severityCtx.height);
+
+            if (data.severity_analysis && data.severity_analysis.length > 0) {
+                try {
+                    window.severityChartInstance = new Chart(severityCtx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: data.severity_analysis.map(item => {
+                                const severity = item.severity_rating || 'unknown';
+                                return severity.charAt(0).toUpperCase() + severity.slice(1);
+                            }),
+                            datasets: [{
+                                data: data.severity_analysis.map(item => item.count || 0),
+                                backgroundColor: [
+                                    '#28a745', // low - green
+                                    '#ffc107', // medium - yellow
+                                    '#fd7e14', // high - orange
+                                    '#dc3545' // critical - red
+                                ],
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        usePointStyle: true,
+                                        padding: 20
+                                    }
+                                }
+                            },
+                            cutout: '60%'
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error creating severity chart:', e);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Chart update failed', severityCtx.width / 2, severityCtx.height / 2);
+                }
+            } else {
+                // Show empty state
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No severity data available', severityCtx.width / 2, severityCtx.height / 2);
+            }
+        }
+
+        // Update Category Chart
+        const categoryCtx = document.getElementById('categoryChart');
+        if (categoryCtx) {
+            // Destroy existing chart if it exists
+            if (window.categoryChartInstance && typeof window.categoryChartInstance.destroy === 'function') {
+                try {
+                    window.categoryChartInstance.destroy();
+                    window.categoryChartInstance = null;
+                } catch (e) {
+                    console.warn('Error destroying category chart:', e);
+                    window.categoryChartInstance = null;
+                }
+            }
+
+            // Clear canvas
+            const ctx = categoryCtx.getContext('2d');
+            ctx.clearRect(0, 0, categoryCtx.width, categoryCtx.height);
+
+            if (data.category_detailed_reports && data.category_detailed_reports.length > 0) {
+                try {
+                    window.categoryChartInstance = new Chart(categoryCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.category_detailed_reports.map(item => item.category_name || 'Unknown'),
+                            datasets: [{
+                                label: 'Total Reports',
+                                data: data.category_detailed_reports.map(item => item.total_reports || 0),
+                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Closed Reports',
+                                data: data.category_detailed_reports.map(item => parseInt(item.closed_reports) || 0),
+                                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Open Reports',
+                                data: data.category_detailed_reports.map(item => parseInt(item.open_reports) || 0),
+                                backgroundColor: 'rgba(255, 206, 86, 0.8)',
+                                borderColor: 'rgba(255, 206, 86, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#fff',
+                                    bodyColor: '#fff',
+                                    callbacks: {
+                                        afterBody: function(tooltipItems) {
+                                            const dataIndex = tooltipItems[0].dataIndex;
+                                            const category = data.category_detailed_reports[dataIndex];
+                                            if (category) {
+                                                return `\nCompletion Rate: ${category.completion_rate}%\nAvg Resolution: ${category.avg_resolution_hours}h`;
+                                            }
+                                            return '';
+                                        }
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Categories'
+                                    },
+                                    ticks: {
+                                        maxRotation: 45,
+                                        minRotation: 0
+                                    }
+                                },
+                                y: {
+                                    beginAtZero: true,
+                                    grid: {
+                                        color: 'rgba(0, 0, 0, 0.1)'
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Number of Reports'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error creating category chart:', e);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Chart update failed', categoryCtx.width / 2, categoryCtx.height / 2);
+                }
+            } else {
+                // Show empty state
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No category data available', categoryCtx.width / 2, categoryCtx.height / 2);
+            }
+        }
+    }
+
+    // Update monthly findings table
+    function updateMonthlyFindingsTable(monthlyFindings) {
+        console.log('Updating monthly findings table:', monthlyFindings);
+
+        // Find table by looking for header containing "Monthly Findings Report"
+        const headers = document.querySelectorAll('.card-header h5');
+        let tableBody = null;
+
+        for (let header of headers) {
+            if (header.textContent.includes('Monthly Findings Report')) {
+                tableBody = header.closest('.card').querySelector('tbody');
+                break;
+            }
+        }
+
+        if (!tableBody) return;
+
+        if (monthlyFindings.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No monthly findings data available</td></tr>';
+            return;
+        }
+
+        let html = '';
+        monthlyFindings.forEach(month => {
+            html += `
+                <tr>
+                    <td><strong>${month.month_name}</strong></td>
+                    <td>${month.total_findings}</td>
+                    <td><span class="badge bg-success">${month.closed_findings}</span></td>
+                    <td><span class="badge bg-warning">${month.open_findings}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">${month.completion_rate}%</span>
+                            <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
+                                <div class="progress-bar ${month.completion_rate >= 80 ? 'bg-success' : (month.completion_rate >= 60 ? 'bg-warning' : 'bg-danger')}"
+                                    style="width: ${month.completion_rate}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${month.low_severity}</td>
+                    <td>${month.medium_severity}</td>
+                    <td>${month.high_severity}</td>
+                    <td>${month.critical_severity}</td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
+    }
+
+    // Update location and project tables
+    function updateLocationProjectTables(locationProjectData) {
+        console.log('Updating location/project tables:', locationProjectData);
+
+        // Update location table
+        if (locationProjectData.by_location) {
+            const headers = document.querySelectorAll('.card-header h5');
+            let locationTableBody = null;
+
+            for (let header of headers) {
+                if (header.textContent.includes('Findings by Location')) {
+                    locationTableBody = header.closest('.card').querySelector('tbody');
+                    break;
+                }
+            }
+
+            if (locationTableBody) {
+                if (locationProjectData.by_location.length === 0) {
+                    locationTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No location data available</td></tr>';
+                } else {
+                    let html = '';
+                    locationProjectData.by_location.forEach(location => {
+                        html += `
+                            <tr>
+                                <td><strong>${location.location_name}</strong></td>
+                                <td>${location.total_reports}</td>
+                                <td><span class="badge bg-success">${location.closed_reports}</span></td>
+                                <td><span class="badge bg-warning">${location.open_reports}</span></td>
+                                <td><span class="badge bg-danger">${location.critical_reports}</span></td>
+                            </tr>
+                        `;
+                    });
+                    locationTableBody.innerHTML = html;
+                }
+            }
+        }
+
+        // Update project table
+        if (locationProjectData.by_project) {
+            const headers = document.querySelectorAll('.card-header h5');
+            let projectTableBody = null;
+
+            for (let header of headers) {
+                if (header.textContent.includes('Findings by Project')) {
+                    projectTableBody = header.closest('.card').querySelector('tbody');
+                    break;
+                }
+            }
+
+            if (projectTableBody) {
+                if (locationProjectData.by_project.length === 0) {
+                    projectTableBody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">No project data available</td></tr>';
+                } else {
+                    let html = '';
+                    locationProjectData.by_project.forEach(project => {
+                        html += `
+                            <tr>
+                                <td><strong>${project.project_name}</strong></td>
+                                <td>${project.total_reports}</td>
+                                <td><span class="badge bg-success">${project.closed_reports}</span></td>
+                                <td><span class="badge bg-warning">${project.open_reports}</span></td>
+                                <td><span class="badge bg-danger">${project.critical_reports}</span></td>
+                            </tr>
+                        `;
+                    });
+                    projectTableBody.innerHTML = html;
+                }
+            }
+        }
+    }
+
+    // Update category detailed table
+    function updateCategoryDetailedTable(categoryReports) {
+        console.log('Updating category detailed table:', categoryReports);
+
+        const headers = document.querySelectorAll('.card-header h5');
+        let tableBody = null;
+
+        for (let header of headers) {
+            if (header.textContent.includes('Findings by Category')) {
+                tableBody = header.closest('.card').querySelector('tbody');
+                break;
+            }
+        }
+
+        if (!tableBody) return;
+
+        if (categoryReports.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="11" class="text-center text-muted py-4">No category data available</td></tr>';
+            return;
+        }
+
+        let html = '';
+        categoryReports.forEach(category => {
+            html += `
+                <tr>
+                    <td><strong>${category.category_name}</strong></td>
+                    <td><small class="text-muted">${category.category_description ? category.category_description.substring(0, 50) + '...' : 'No description'}</small></td>
+                    <td>${category.total_reports}</td>
+                    <td><span class="badge bg-success">${category.closed_reports}</span></td>
+                    <td><span class="badge bg-warning">${category.open_reports}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">${category.completion_rate}%</span>
+                            <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
+                                <div class="progress-bar ${category.completion_rate >= 80 ? 'bg-success' : (category.completion_rate >= 60 ? 'bg-warning' : 'bg-danger')}"
+                                    style="width: ${category.completion_rate}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${category.low_severity}</td>
+                    <td>${category.medium_severity}</td>
+                    <td>${category.high_severity}</td>
+                    <td>${category.critical_severity}</td>
+                    <td>${category.avg_resolution_hours}</td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
+    }
+
+    // Update HSE performance table
+    function updateHSEPerformanceTable(hsePerformance) {
+        console.log('Updating HSE performance table:', hsePerformance);
+
+        const headers = document.querySelectorAll('.card-header h5');
+        let tableBody = null;
+
+        for (let header of headers) {
+            if (header.textContent.includes('BAIK Staff Performance')) {
+                tableBody = header.closest('.card').querySelector('tbody');
+                break;
+            }
+        }
+
+        if (!tableBody) return;
+
+        if (hsePerformance.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="ri-team-line fs-48 mb-3"></i><p>No BAIK staff performance data available</p></td></tr>';
+            return;
+        }
+
+        let html = '';
+        hsePerformance.forEach(staff => {
+            const initials = staff.name ? staff.name.substring(0, 2).toUpperCase() : 'U';
+            html += `
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded me-2">
+                                <span class="avatar-title fs-14">${initials}</span>
+                            </div>
+                            <div>
+                                <div class="fw-bold">${staff.name || 'Unknown'}</div>
+                                <small class="text-muted">${staff.email || 'No email'}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${staff.assigned_reports_count || 0}</td>
+                    <td><span class="badge bg-success">${staff.completed_reports_count || 0}</span></td>
+                    <td>${staff.this_month_reports_count || 0}</td>
+                    <td>${staff.completion_rate || 0}%</td>
+                    <td>
+                        <div class="progress" style="width: 100px; height: 8px;">
+                            <div class="progress-bar ${(staff.completion_rate || 0) >= 80 ? 'bg-success' : ((staff.completion_rate || 0) >= 60 ? 'bg-warning' : 'bg-danger')}"
+                                style="width: ${staff.completion_rate || 0}%"></div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
+    }
+
+    // Update SLA compliance
+    function updateSLACompliance(completionMetrics) {
+        console.log('Updating SLA compliance:', completionMetrics);
+
+        const headers = document.querySelectorAll('.card-header h5');
+        let slaContainer = null;
+
+        for (let header of headers) {
+            if (header.textContent.includes('SLA Compliance')) {
+                slaContainer = header.closest('.card').querySelector('.card-body');
+                break;
+            }
+        }
+
+        if (!slaContainer) return;
+
+        if (!completionMetrics.sla_compliance || Object.keys(completionMetrics.sla_compliance).length === 0) {
+            slaContainer.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="ri-shield-line fs-48 mb-3"></i>
+                    <p>No SLA compliance data available</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        Object.entries(completionMetrics.sla_compliance).forEach(([severity, sla]) => {
+            const complianceRate = sla.compliance_rate || 0;
+            const statusClass = complianceRate >= 80 ? 'sla-good' : (complianceRate >= 60 ? 'sla-warning' : 'sla-critical');
+            const progressClass = complianceRate >= 80 ? 'bg-success' : (complianceRate >= 60 ? 'bg-warning' : 'bg-danger');
+
+            html += `
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="sla-indicator ${statusClass}"></span>
+                        <strong>${severity.charAt(0).toUpperCase() + severity.slice(1)}</strong>
+                        <small class="text-muted">(${sla.target_hours || 0}h target)</small>
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">${complianceRate}%</div>
+                        <small class="text-muted">${sla.within_sla || 0}/${sla.total || 0}</small>
+                    </div>
+                </div>
+                <div class="progress mb-3" style="height: 6px;">
+                    <div class="progress-bar ${progressClass}" style="width: ${complianceRate}%"></div>
+                </div>
+            `;
+        });
+        slaContainer.innerHTML = html;
+    }
+
+    // Update category analysis table (in the left side of SLA compliance)
+    function updateCategoryAnalysisTable(categories) {
+        console.log('Updating category analysis table:', categories);
+
+        const headers = document.querySelectorAll('.card-header h5');
+        let tableBody = null;
+
+        for (let header of headers) {
+            if (header.textContent.includes('Category Breakdown')) {
+                tableBody = header.closest('.card').querySelector('tbody');
+                break;
+            }
+        }
+
+        if (!tableBody) return;
+
+        if (categories.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No category data available</td></tr>';
+            return;
+        }
+
+        let html = '';
+        categories.forEach(category => {
+            html += `
+                <tr>
+                    <td>${category.category || 'Unknown'}</td>
+                    <td>${category.total || 0}</td>
+                    <td><span class="badge bg-success">${category.completed || 0}</span></td>
+                    <td>${Math.round((category.avg_resolution_hours || 0) * 10) / 10}h</td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
     }
 
     // Update URL without reload
