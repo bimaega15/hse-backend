@@ -569,6 +569,9 @@ class ReportController extends Controller
             ->selectRaw('severity_rating, COUNT(*) as count')
             ->groupBy('severity_rating')
             ->pluck('count', 'severity_rating')
+            ->map(function ($count) {
+                return intval($count);
+            })
             ->toArray();
 
         // Category statistics with master data
@@ -577,6 +580,9 @@ class ReportController extends Controller
             ->selectRaw('categories.name as category_name, COUNT(*) as count')
             ->groupBy('categories.id', 'categories.name')
             ->pluck('count', 'category_name')
+            ->map(function ($count) {
+                return intval($count);
+            })
             ->toArray();
 
         // Monthly reports data
@@ -1317,7 +1323,11 @@ class ReportController extends Controller
                     ->whereMonth('reports.created_at', $item->month)
                     ->groupBy('categories.id', 'categories.name')
                     ->orderBy('count', 'desc')
-                    ->get();
+                    ->get()
+                    ->map(function ($cat) {
+                        $cat->count = intval($cat->count);
+                        return $cat;
+                    });
 
                 $item->categories = $categoryBreakdown;
                 $item->top_category = $categoryBreakdown->first()->category ?? 'N/A';
@@ -1348,7 +1358,13 @@ class ReportController extends Controller
             ')
             ->groupBy('categories.id', 'categories.name')
             ->orderBy('total', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->total = intval($item->total);
+                $item->completed = intval($item->completed);
+                $item->avg_resolution_hours = $item->avg_resolution_hours ? floatval($item->avg_resolution_hours) : 0.0;
+                return $item;
+            });
     }
 
     /**
@@ -1367,7 +1383,13 @@ class ReportController extends Controller
                 END) as avg_resolution_hours
             ')
             ->groupBy('severity_rating')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->count = intval($item->count);
+                $item->completed = intval($item->completed);
+                $item->avg_resolution_hours = $item->avg_resolution_hours ? floatval($item->avg_resolution_hours) : 0.0;
+                return $item;
+            });
     }
 
     /**
@@ -1548,7 +1570,14 @@ class ReportController extends Controller
             ')
             ->groupBy('locations.id', 'locations.name')
             ->orderBy('total_reports', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->total_reports = intval($item->total_reports);
+                $item->closed_reports = intval($item->closed_reports);
+                $item->open_reports = intval($item->open_reports);
+                $item->critical_reports = intval($item->critical_reports);
+                return $item;
+            });
 
         $projectReports = $this->getFilteredQuery($filters)
             ->whereNotNull('project_name')
@@ -1562,7 +1591,14 @@ class ReportController extends Controller
             ')
             ->groupBy('project_name')
             ->orderBy('total_reports', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->total_reports = intval($item->total_reports);
+                $item->closed_reports = intval($item->closed_reports);
+                $item->open_reports = intval($item->open_reports);
+                $item->critical_reports = intval($item->critical_reports);
+                return $item;
+            });
 
         return [
             'by_location' => $locationReports,
@@ -1675,6 +1711,15 @@ class ReportController extends Controller
                 ')
                 ->first();
 
+            // Type cast the data
+            if ($data) {
+                $data->total_findings = intval($data->total_findings);
+                $data->closed_findings = intval($data->closed_findings);
+                $data->open_findings = intval($data->open_findings);
+                $data->critical_findings = intval($data->critical_findings);
+                $data->high_findings = intval($data->high_findings);
+            }
+
             $results[$key] = [
                 'label' => $period['label'],
                 'period' => [
@@ -1709,6 +1754,17 @@ class ReportController extends Controller
                 COUNT(CASE WHEN severity_rating = "low" THEN 1 END) as low_findings
             ')
             ->first();
+
+        // Type cast the data
+        if ($data) {
+            $data->total_findings = intval($data->total_findings);
+            $data->closed_findings = intval($data->closed_findings);
+            $data->open_findings = intval($data->open_findings);
+            $data->critical_findings = intval($data->critical_findings);
+            $data->high_findings = intval($data->high_findings);
+            $data->medium_findings = intval($data->medium_findings);
+            $data->low_findings = intval($data->low_findings);
+        }
 
         return [
             'filtered_period' => [
