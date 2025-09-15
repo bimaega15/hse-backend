@@ -213,18 +213,18 @@ class ReportController extends Controller
         }
 
         // Add computed attributes for report details
-        $report->report_details_count = $report->reportDetails->count();
-        $report->open_details_count = $report->reportDetails->where('status_car', 'open')->count();
-        $report->in_progress_details_count = $report->reportDetails->where('status_car', 'in_progress')->count();
-        $report->closed_details_count = $report->reportDetails->where('status_car', 'closed')->count();
-        $report->overdue_details_count = $report->reportDetails->where('due_date', '<', now())
+        $report->report_details_count = intval($report->reportDetails->count());
+        $report->open_details_count = intval($report->reportDetails->where('status_car', 'open')->count());
+        $report->in_progress_details_count = intval($report->reportDetails->where('status_car', 'in_progress')->count());
+        $report->closed_details_count = intval($report->reportDetails->where('status_car', 'closed')->count());
+        $report->overdue_details_count = intval($report->reportDetails->where('due_date', '<', now())
             ->where('status_car', '!=', 'closed')
-            ->count();
+            ->count());
 
         // Calculate completion percentage
         $totalDetails = $report->reportDetails->count();
         $closedDetails = $report->reportDetails->where('status_car', 'closed')->count();
-        $report->completion_percentage = $totalDetails > 0 ? round(($closedDetails / $totalDetails) * 100, 2) : 0;
+        $report->completion_percentage = $totalDetails > 0 ? floatval(round(($closedDetails / $totalDetails) * 100, 2)) : 0.0;
 
         // Add status badges/labels for frontend
         $report->can_have_details = $report->canHaveReportDetails();
@@ -559,10 +559,10 @@ class ReportController extends Controller
             $query->where('employee_id', $user->id);
         }
 
-        $totalReports = $query->count();
-        $waitingReports = (clone $query)->where('status', 'waiting')->count();
-        $inProgressReports = (clone $query)->where('status', 'in-progress')->count();
-        $completedReports = (clone $query)->where('status', 'done')->count();
+        $totalReports = intval($query->count());
+        $waitingReports = intval((clone $query)->where('status', 'waiting')->count());
+        $inProgressReports = intval((clone $query)->where('status', 'in-progress')->count());
+        $completedReports = intval((clone $query)->where('status', 'done')->count());
 
         // Severity statistics
         $severityStats = (clone $query)
@@ -589,11 +589,11 @@ class ReportController extends Controller
                 'waiting_reports' => $waitingReports,
                 'in_progress_reports' => $inProgressReports,
                 'completed_reports' => $completedReports,
-                'completion_rate' => $totalReports > 0 ? round(($completedReports / $totalReports) * 100, 1) : 0,
+                'completion_rate' => $totalReports > 0 ? floatval(round(($completedReports / $totalReports) * 100, 1)) : 0.0,
                 'severity_statistics' => $severityStats,
                 'category_statistics' => $categoryStats,
                 'monthly_data' => $monthlyData,
-                'average_completion_time' => $this->getAverageCompletionTime($user),
+                'average_completion_time' => floatval($this->getAverageCompletionTime($user) ?? 0),
             ],
         ]);
     }
@@ -953,6 +953,9 @@ class ReportController extends Controller
             ->get()
             ->map(function ($item) {
                 $item->month_name = date('F Y', mktime(0, 0, 0, $item->month, 1, $item->year));
+                $item->year = intval($item->year);
+                $item->month = intval($item->month);
+                $item->count = intval($item->count);
                 return $item;
             });
     }
@@ -970,16 +973,16 @@ class ReportController extends Controller
 
             // Get status counts
             $statusCounts = [
-                'pending' => (clone $query)->where('status', 'waiting')->count(),
-                'progress' => (clone $query)->where('status', 'in-progress')->count(),
-                'completed' => (clone $query)->where('status', 'done')->count(),
+                'pending' => intval((clone $query)->where('status', 'waiting')->count()),
+                'progress' => intval((clone $query)->where('status', 'in-progress')->count()),
+                'completed' => intval((clone $query)->where('status', 'done')->count()),
             ];
 
             // Calculate total and completion rate
-            $totalReports = array_sum($statusCounts);
+            $totalReports = intval(array_sum($statusCounts));
             $completionRate = $totalReports > 0
-                ? round(($statusCounts['completed'] / $totalReports) * 100, 1)
-                : 0;
+                ? floatval(round(($statusCounts['completed'] / $totalReports) * 100, 1))
+                : 0.0;
 
             // Get recent 5 reports with relationships
             $recentReports = (clone $query)
@@ -995,7 +998,7 @@ class ReportController extends Controller
                 ->get()
                 ->map(function ($report) {
                     return [
-                        'id' => $report->id,
+                        'id' => intval($report->id),
                         'title' => $report->title,
                         'description' => $report->description,
                         'status' => $report->status,
@@ -1007,36 +1010,36 @@ class ReportController extends Controller
                         'location' => $report->locationMaster?->name,
                         'category' => $report->categoryMaster?->name,
                         'employee' => [
-                            'id' => $report->employee?->id,
+                            'id' => $report->employee?->id ? intval($report->employee->id) : null,
                             'name' => $report->employee?->name,
                         ],
                         'hse_staff' => [
-                            'id' => $report->hseStaff?->id,
+                            'id' => $report->hseStaff?->id ? intval($report->hseStaff->id) : null,
                             'name' => $report->hseStaff?->name,
                         ],
                         'created_at' => $report->created_at,
                         'created_at_human' => $report->created_at->diffForHumans(),
                         'completed_at' => $report->completed_at,
-                        'processing_time_hours' => $report->processing_time_hours,
+                        'processing_time_hours' => $report->processing_time_hours ? floatval($report->processing_time_hours) : null,
                     ];
                 });
 
             // Additional dashboard metrics
             $additionalMetrics = [
-                'this_week' => (clone $query)
+                'this_week' => intval((clone $query)
                     ->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])
-                    ->count(),
-                'this_month' => (clone $query)
+                    ->count()),
+                'this_month' => intval((clone $query)
                     ->whereMonth('created_at', now()->month)
                     ->whereYear('created_at', now()->year)
-                    ->count(),
-                'average_completion_time' => $this->getAverageCompletionTime($user),
+                    ->count()),
+                'average_completion_time' => floatval($this->getAverageCompletionTime($user) ?? 0),
             ];
 
             // Get active banners for homepage
             $activeBanners = Banner::active()->ordered()->get()->map(function ($banner) {
                 return [
-                    'id' => $banner->id,
+                    'id' => intval($banner->id),
                     'title' => $banner->title,
                     'description' => $banner->description,
                     'icon' => $banner->icon,
@@ -1044,7 +1047,7 @@ class ReportController extends Controller
                     'image_url' => $banner->image_url,
                     'background_color' => $banner->background_color,
                     'text_color' => $banner->text_color,
-                    'sort_order' => $banner->sort_order,
+                    'sort_order' => intval($banner->sort_order),
                 ];
             });
 
@@ -1119,7 +1122,7 @@ class ReportController extends Controller
             return $report->start_process_at->diffInHours($report->completed_at);
         });
 
-        return round($totalHours / $reports->count(), 1);
+        return floatval(round($totalHours / $reports->count(), 1));
     }
 
     /**
@@ -1187,13 +1190,13 @@ class ReportController extends Controller
 
             return [
                 'summary' => [
-                    'total_reports' => $this->getFilteredQuery($filters)->count(),
-                    'this_month' => $this->getFilteredQuery(array_merge($filters, ['this_month' => true]))->count(),
-                    'last_month' => $this->getFilteredQuery(array_merge($filters, ['last_month' => true]))->count(),
-                    'critical_incidents' => $this->getFilteredQuery(array_merge($filters, ['high_critical' => true]))->count(),
-                    'overdue_cars' => $this->getOverdueCarsCount($filters),
-                    'completion_rate' => $completionMetrics['completion_rate'],
-                    'avg_resolution_hours' => $completionMetrics['avg_resolution_hours'],
+                    'total_reports' => intval($this->getFilteredQuery($filters)->count()),
+                    'this_month' => intval($this->getFilteredQuery(array_merge($filters, ['this_month' => true]))->count()),
+                    'last_month' => intval($this->getFilteredQuery(array_merge($filters, ['last_month' => true]))->count()),
+                    'critical_incidents' => intval($this->getFilteredQuery(array_merge($filters, ['high_critical' => true]))->count()),
+                    'overdue_cars' => intval($this->getOverdueCarsCount($filters)),
+                    'completion_rate' => floatval($completionMetrics['completion_rate']),
+                    'avg_resolution_hours' => floatval($completionMetrics['avg_resolution_hours']),
                     // Add detailed breakdown for Period Analysis
                     'status_breakdown' => $this->getStatusBreakdown($filters),
                     'severity_breakdown' => $this->getSeverityBreakdown($filters),
@@ -1300,7 +1303,12 @@ class ReportController extends Controller
             ->get()
             ->map(function ($item) {
                 $item->month_name = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
-                $item->completion_rate = $item->total > 0 ? round(($item->completed / $item->total) * 100, 1) : 0;
+                $item->completion_rate = $item->total > 0 ? floatval(round(($item->completed / $item->total) * 100, 1)) : 0.0;
+                $item->year = intval($item->year);
+                $item->month = intval($item->month);
+                $item->total = intval($item->total);
+                $item->completed = intval($item->completed);
+                $item->critical = intval($item->critical);
 
                 // Get category breakdown for this month
                 $categoryBreakdown = Report::join('categories', 'reports.category_id', '=', 'categories.id')
@@ -1313,7 +1321,7 @@ class ReportController extends Controller
 
                 $item->categories = $categoryBreakdown;
                 $item->top_category = $categoryBreakdown->first()->category ?? 'N/A';
-                $item->top_category_count = $categoryBreakdown->first()->count ?? 0;
+                $item->top_category_count = intval($categoryBreakdown->first()->count ?? 0);
 
                 return $item;
             });
@@ -1375,10 +1383,10 @@ class ReportController extends Controller
             ->value('avg_hours');
 
         return [
-            'total_reports' => $totalReports,
-            'completed_reports' => $completedReports,
-            'completion_rate' => $totalReports > 0 ? round(($completedReports / $totalReports) * 100, 1) : 0,
-            'avg_resolution_hours' => $avgResolutionTime ? round($avgResolutionTime, 1) : 0,
+            'total_reports' => intval($totalReports),
+            'completed_reports' => intval($completedReports),
+            'completion_rate' => $totalReports > 0 ? floatval(round(($completedReports / $totalReports) * 100, 1)) : 0.0,
+            'avg_resolution_hours' => $avgResolutionTime ? floatval(round($avgResolutionTime, 1)) : 0.0,
             'sla_compliance' => $this->calculateSLACompliance($filters),
         ];
     }
@@ -1436,8 +1444,11 @@ class ReportController extends Controller
             ->get()
             ->map(function ($staff) {
                 $staff->completion_rate = $staff->assigned_reports_count > 0
-                    ? round(($staff->completed_reports_count / $staff->assigned_reports_count) * 100, 1)
-                    : 0;
+                    ? floatval(round(($staff->completed_reports_count / $staff->assigned_reports_count) * 100, 1))
+                    : 0.0;
+                $staff->assigned_reports_count = intval($staff->assigned_reports_count);
+                $staff->completed_reports_count = intval($staff->completed_reports_count);
+                $staff->this_month_reports_count = intval($staff->this_month_reports_count);
                 return $staff;
             });
     }
@@ -1470,10 +1481,10 @@ class ReportController extends Controller
             })->count();
 
             $compliance[$severity] = [
-                'total' => $reports->count(),
-                'within_sla' => $withinSLA,
-                'compliance_rate' => $reports->count() > 0 ? round(($withinSLA / $reports->count()) * 100, 1) : 0,
-                'target_hours' => $targetHours
+                'total' => intval($reports->count()),
+                'within_sla' => intval($withinSLA),
+                'compliance_rate' => $reports->count() > 0 ? floatval(round(($withinSLA / $reports->count()) * 100, 1)) : 0.0,
+                'target_hours' => intval($targetHours)
             ];
         }
 
@@ -1506,8 +1517,17 @@ class ReportController extends Controller
             ->map(function ($item) {
                 $item->month_name = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
                 $item->completion_rate = $item->total_findings > 0
-                    ? round(($item->closed_findings / $item->total_findings) * 100, 1)
-                    : 0;
+                    ? floatval(round(($item->closed_findings / $item->total_findings) * 100, 1))
+                    : 0.0;
+                $item->year = intval($item->year);
+                $item->month = intval($item->month);
+                $item->total_findings = intval($item->total_findings);
+                $item->closed_findings = intval($item->closed_findings);
+                $item->open_findings = intval($item->open_findings);
+                $item->low_severity = intval($item->low_severity);
+                $item->medium_severity = intval($item->medium_severity);
+                $item->high_severity = intval($item->high_severity);
+                $item->critical_severity = intval($item->critical_severity);
                 return $item;
             });
     }
@@ -1578,11 +1598,18 @@ class ReportController extends Controller
 
         return $query->get()->map(function ($item) {
             $item->completion_rate = $item->total_reports > 0
-                ? round(($item->closed_reports / $item->total_reports) * 100, 1)
-                : 0;
+                ? floatval(round(($item->closed_reports / $item->total_reports) * 100, 1))
+                : 0.0;
             $item->avg_resolution_hours = $item->avg_resolution_hours
-                ? round($item->avg_resolution_hours, 1)
-                : 0;
+                ? floatval(round($item->avg_resolution_hours, 1))
+                : 0.0;
+            $item->total_reports = intval($item->total_reports);
+            $item->closed_reports = intval($item->closed_reports);
+            $item->open_reports = intval($item->open_reports);
+            $item->low_severity = intval($item->low_severity);
+            $item->medium_severity = intval($item->medium_severity);
+            $item->high_severity = intval($item->high_severity);
+            $item->critical_severity = intval($item->critical_severity);
             return $item;
         });
     }
@@ -1692,7 +1719,7 @@ class ReportController extends Controller
                     'total_days' => $totalDays
                 ],
                 'data' => $data,
-                'avg_per_day' => $totalDays > 0 ? round(($data->total_findings ?? 0) / $totalDays, 1) : 0
+                'avg_per_day' => $totalDays > 0 ? floatval(round(($data->total_findings ?? 0) / $totalDays, 1)) : 0.0
             ]
         ];
     }
@@ -1779,10 +1806,10 @@ class ReportController extends Controller
     private function getStatusBreakdown($filters = [])
     {
         return [
-            'closed' => $this->getFilteredQuery($filters)->where('status', 'done')->count(),
-            'open' => $this->getFilteredQuery($filters)->whereIn('status', ['waiting', 'in-progress'])->count(),
-            'waiting' => $this->getFilteredQuery($filters)->where('status', 'waiting')->count(),
-            'in_progress' => $this->getFilteredQuery($filters)->where('status', 'in-progress')->count(),
+            'closed' => intval($this->getFilteredQuery($filters)->where('status', 'done')->count()),
+            'open' => intval($this->getFilteredQuery($filters)->whereIn('status', ['waiting', 'in-progress'])->count()),
+            'waiting' => intval($this->getFilteredQuery($filters)->where('status', 'waiting')->count()),
+            'in_progress' => intval($this->getFilteredQuery($filters)->where('status', 'in-progress')->count()),
         ];
     }
 
@@ -1792,10 +1819,10 @@ class ReportController extends Controller
     private function getSeverityBreakdown($filters = [])
     {
         return [
-            'critical' => $this->getFilteredQuery($filters)->where('severity_rating', 'critical')->count(),
-            'high' => $this->getFilteredQuery($filters)->where('severity_rating', 'high')->count(),
-            'medium' => $this->getFilteredQuery($filters)->where('severity_rating', 'medium')->count(),
-            'low' => $this->getFilteredQuery($filters)->where('severity_rating', 'low')->count(),
+            'critical' => intval($this->getFilteredQuery($filters)->where('severity_rating', 'critical')->count()),
+            'high' => intval($this->getFilteredQuery($filters)->where('severity_rating', 'high')->count()),
+            'medium' => intval($this->getFilteredQuery($filters)->where('severity_rating', 'medium')->count()),
+            'low' => intval($this->getFilteredQuery($filters)->where('severity_rating', 'low')->count()),
         ];
     }
 }
