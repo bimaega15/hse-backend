@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
             // Seed locations
             LocationSeeder::class,
 
+            // Seed projects
+            ProjectSeeder::class,
+
             // Seed banners (new)
             BannerSeeder::class,
 

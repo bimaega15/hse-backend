@@ -140,6 +140,14 @@
             </li>
 
             <li class="side-nav-item">
+                <a href="{{ route('admin.projects.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.projects.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="folder"></i></span>
+                    <span class="menu-text"> Projects </span>
+                </a>
+            </li>
+
+            <li class="side-nav-item">
                 <a href="{{ route('admin.locations.index') }}"
                     class="side-nav-link {{ request()->routeIs('admin.locations.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="map-pin"></i></span>

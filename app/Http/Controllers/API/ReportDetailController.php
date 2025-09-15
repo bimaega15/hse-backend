@@ -121,7 +121,8 @@ class ReportDetailController extends Controller
         }
 
         // Report must be in-progress or done to add details
-        if (!$report->canHaveReportDetails()) {
+        // Skip this check if the HSE staff is the one who created the report
+        if (!$report->canHaveReportDetails() && $report->hse_staff_id !== $user->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Detail laporan hanya dapat ditambahkan setelah laporan diproses HSE',

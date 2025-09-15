@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ObservationController; // Add this import
 use App\Http\Controllers\Admin\LocationController;
+use App\Http\Controllers\Admin\ProjectController;
 
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
@@ -146,6 +147,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::delete('/{id}', [ActionController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/toggle-status', [ActionController::class, 'toggleStatus'])->name('toggle-status');
         Route::get('/by-contributing/{contributingId}', [ActionController::class, 'getByContributing'])->name('by-contributing');
+    });
+
+    // Projects Management Routes
+    Route::prefix('admin/projects')->name('admin.projects.')->group(function () {
+        Route::get('/', [ProjectController::class, 'index'])->name('index');
+        Route::get('/data', [ProjectController::class, 'getData'])->name('data');
+        Route::post('/', [ProjectController::class, 'store'])->name('store');
+        Route::get('/{id}', [ProjectController::class, 'show'])->name('show');
+        Route::put('/{id}', [ProjectController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ProjectController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [ProjectController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Locations Management Routes
