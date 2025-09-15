@@ -30,7 +30,7 @@ class ReportController extends Controller
         $query = Report::with([
             'employee',
             'hseStaff',
-            'location',
+            'locationMaster',
             'categoryMaster',
             'contributingMaster',
             'actionMaster'
@@ -75,7 +75,7 @@ class ReportController extends Controller
                     ->orWhereHas('employee', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     })
-                    ->orWhereHas('location', function ($q) use ($search) {
+                    ->orWhereHas('locationMaster', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
                     })
                     ->orWhereHas('categoryMaster', function ($q) use ($search) {
@@ -143,7 +143,7 @@ class ReportController extends Controller
             $report = Report::create($reportData);
             $report->load([
                 'employee',
-                'location',
+                'locationMaster',
                 'categoryMaster',
                 'contributingMaster',
                 'actionMaster'
@@ -186,7 +186,7 @@ class ReportController extends Controller
         $report = Report::with([
             'employee',
             'hseStaff',
-            'location',
+            'locationMaster',
             'categoryMaster',
             'contributingMaster',
             'actionMaster',
@@ -304,7 +304,7 @@ class ReportController extends Controller
             $report->load([
                 'employee',
                 'hseStaff',
-                'location',
+                'locationMaster',
                 'categoryMaster',
                 'contributingMaster',
                 'actionMaster'
@@ -458,7 +458,7 @@ class ReportController extends Controller
         $report->load([
             'employee',
             'hseStaff',
-            'location',
+            'locationMaster',
             'categoryMaster',
             'contributingMaster',
             'actionMaster'
@@ -527,7 +527,7 @@ class ReportController extends Controller
         $report->load([
             'employee',
             'hseStaff',
-            'location',
+            'locationMaster',
             'categoryMaster',
             'contributingMaster',
             'actionMaster'
@@ -1004,7 +1004,7 @@ class ReportController extends Controller
                         'severity_rating' => $report->severity_rating,
                         'severity_label' => $report->severity_label,
                         'severity_color' => $report->severity_color,
-                        'location' => $report->location?->name,
+                        'location' => $report->locationMaster?->name,
                         'category' => $report->categoryMaster?->name,
                         'employee' => [
                             'id' => $report->employee?->id,
