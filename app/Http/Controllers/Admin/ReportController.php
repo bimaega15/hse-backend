@@ -714,6 +714,7 @@ class ReportController extends Controller
                 ],
                 'trends' => $this->getMonthlyTrends($filters),
                 'categories' => $this->getCategoryBreakdown($filters),
+                'contributing_factors' => $this->getContributingBreakdown($filters),
                 'severity_analysis' => $this->getSeverityAnalysis($filters),
                 'completion_metrics' => $this->getCompletionMetrics($filters),
                 'hse_performance' => $this->getHSEPerformance($filters),
@@ -778,13 +779,33 @@ class ReportController extends Controller
                 categories.name as category,
                 COUNT(*) as total,
                 SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as completed,
-                AVG(CASE 
-                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL 
-                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at) 
-                    ELSE NULL 
+                AVG(CASE
+                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL
+                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at)
+                    ELSE NULL
                 END) as avg_resolution_hours
             ')
             ->groupBy('categories.id', 'categories.name')
+            ->orderBy('total', 'desc')
+            ->get();
+    }
+
+    private function getContributingBreakdown($filters = [])
+    {
+        return $this->getFilteredQuery($filters, 'reports')
+            ->join('contributings', 'reports.contributing_id', '=', 'contributings.id')
+            ->selectRaw('
+                contributings.name as contributing,
+                COUNT(*) as total,
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as closed,
+                SUM(CASE WHEN reports.status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open,
+                AVG(CASE
+                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL
+                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at)
+                    ELSE NULL
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('contributings.id', 'contributings.name')
             ->orderBy('total', 'desc')
             ->get();
     }
@@ -841,6 +862,9 @@ class ReportController extends Controller
         }
         if (!empty($filters['category_id'])) {
             $constraints[] = ['category_id', '=', $filters['category_id']];
+        }
+        if (!empty($filters['contributing_id'])) {
+            $constraints[] = ['contributing_id', '=', $filters['contributing_id']];
         }
         if (!empty($filters['location_id'])) {
             $constraints[] = ['location_id', '=', $filters['location_id']];
@@ -1473,6 +1497,7 @@ class ReportController extends Controller
             'status' => $request->get('status'),
             'severity' => $request->get('severity'),
             'category_id' => $request->get('category_id'),
+            'contributing_id' => $request->get('contributing_id'),
             'location_id' => $request->get('location_id'),
             'project_name' => $request->get('project_name'),
             'hse_staff_id' => $request->get('hse_staff_id'),
@@ -1503,6 +1528,10 @@ class ReportController extends Controller
 
         if (!empty($filters['category_id'])) {
             $query->where('category_id', $filters['category_id']);
+        }
+
+        if (!empty($filters['contributing_id'])) {
+            $query->where('contributing_id', $filters['contributing_id']);
         }
 
         if (!empty($filters['location_id'])) {
@@ -1543,6 +1572,7 @@ class ReportController extends Controller
         try {
             return [
                 'categories' => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'locations' => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'projects' => Report::whereNotNull('project_name')
                     ->where('project_name', '!=', '')
@@ -1558,6 +1588,7 @@ class ReportController extends Controller
             Log::error('Failed to get filter options: ' . $e->getMessage());
             return [
                 'categories' => collect(),
+                'contributing_factors' => collect(),
                 'locations' => collect(),
                 'projects' => collect(),
                 'hse_staff' => collect()
@@ -1591,6 +1622,10 @@ class ReportController extends Controller
 
         if (!empty($filters['category_id'])) {
             $query->where('reports.category_id', $filters['category_id']);
+        }
+
+        if (!empty($filters['contributing_id'])) {
+            $query->where('reports.contributing_id', $filters['contributing_id']);
         }
 
         if (!empty($filters['location_id'])) {

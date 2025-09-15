@@ -1010,6 +1010,74 @@
     </div>
 </div>
 
+<!-- NEW: Contributing Factors Detailed Reports -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card analytics-card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="ri-focus-3-line me-2"></i>Findings by Contributing Factors - Open & Closed
+                </h5>
+            </div>
+            <div class="card-body">
+                <!-- Contributing Factors Chart -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="contributingChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contributing Factors Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Contributing Factor</th>
+                                <th>Total</th>
+                                <th>Closed</th>
+                                <th>Open</th>
+                                <th>Completion Rate</th>
+                                <th>Avg Resolution (h)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (isset($additionalData['contributing_factors']) && count($additionalData['contributing_factors']) > 0)
+                                @foreach ($additionalData['contributing_factors'] as $contributing)
+                                    <tr>
+                                        <td><strong>{{ $contributing->contributing }}</strong></td>
+                                        <td>{{ $contributing->total }}</td>
+                                        <td><span class="badge bg-success">{{ $contributing->closed }}</span></td>
+                                        <td><span class="badge bg-warning">{{ $contributing->open }}</span></td>
+                                        <td>
+                                            @php
+                                                $completionRate = $contributing->total > 0 ? round(($contributing->closed / $contributing->total) * 100, 1) : 0;
+                                            @endphp
+                                            <div class="d-flex align-items-center">
+                                                <span class="me-2">{{ $completionRate }}%</span>
+                                                <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
+                                                    <div class="progress-bar {{ $completionRate >= 80 ? 'bg-success' : ($completionRate >= 60 ? 'bg-warning' : 'bg-danger') }}"
+                                                        style="width: {{ $completionRate }}%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ round($contributing->avg_resolution_hours ?? 0, 1) }}</td>
+                                    </tr>
+                                @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No contributing factors data available</td>
+                                </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- BAIK Performance -->
 <div class="row">
     <div class="col-12">
@@ -1133,6 +1201,7 @@
         const trendsData = @json($additionalData['trends'] ?? []);
         const severityData = @json($additionalData['severity_analysis'] ?? []);
         const categoryData = @json($additionalData['category_detailed_reports'] ?? []);
+        const contributingData = @json($additionalData['contributing_factors'] ?? []);
 
         // Trends Chart
         const trendsCtx = document.getElementById('trendsChart');
@@ -1365,6 +1434,65 @@
             ctx.font = '14px Arial';
             ctx.textAlign = 'center';
             ctx.fillText('No category data available', categoryCtx.width / 2, categoryCtx.height / 2);
+        }
+
+        // Contributing Factors Chart
+        const contributingCtx = document.getElementById('contributingChart');
+        if (contributingCtx && contributingData.length > 0) {
+            window.contributingChartInstance = new Chart(contributingCtx, {
+                type: 'bar',
+                data: {
+                    labels: contributingData.map(item => item.contributing || 'Unknown'),
+                    datasets: [{
+                        label: 'Total Reports',
+                        data: contributingData.map(item => item.total || 0),
+                        backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Closed Reports',
+                        data: contributingData.map(item => parseInt(item.closed) || 0),
+                        backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'Open Reports',
+                        data: contributingData.map(item => parseInt(item.open) || 0),
+                        backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: 'Contributing Factors Analysis'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Reports'
+                            }
+                        }
+                    }
+                }
+            });
+        } else if (contributingCtx) {
+            // Show empty state for contributing factors chart
+            const ctx = contributingCtx.getContext('2d');
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('No contributing factors data available', contributingCtx.width / 2, contributingCtx.height / 2);
         }
     }
 
@@ -1665,6 +1793,7 @@
             updateMonthlyFindingsTable(data.monthly_findings || []);
             updateLocationProjectTables(data.location_project_reports || {});
             updateCategoryDetailedTable(data.category_detailed_reports || []);
+            updateContributingFactorsTable(data.contributing_factors || []);
             updateHSEPerformanceTable(data.hse_performance || []);
             updateSLACompliance(data.completion_metrics || {});
             updateCategoryAnalysisTable(data.categories || []);
@@ -2229,6 +2358,89 @@
                 ctx.fillText('No category data available', categoryCtx.width / 2, categoryCtx.height / 2);
             }
         }
+
+        // Update Contributing Factors Chart
+        const contributingCtx = document.getElementById('contributingChart');
+        if (contributingCtx) {
+            // Destroy existing chart if it exists
+            if (window.contributingChartInstance && typeof window.contributingChartInstance.destroy === 'function') {
+                try {
+                    window.contributingChartInstance.destroy();
+                    window.contributingChartInstance = null;
+                } catch (e) {
+                    console.warn('Error destroying contributing chart:', e);
+                    window.contributingChartInstance = null;
+                }
+            }
+
+            // Clear canvas
+            const ctx = contributingCtx.getContext('2d');
+            ctx.clearRect(0, 0, contributingCtx.width, contributingCtx.height);
+
+            if (data.contributing_factors && data.contributing_factors.length > 0) {
+                try {
+                    window.contributingChartInstance = new Chart(contributingCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: data.contributing_factors.map(item => item.contributing || 'Unknown'),
+                            datasets: [{
+                                label: 'Total Reports',
+                                data: data.contributing_factors.map(item => item.total || 0),
+                                backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                                borderColor: 'rgba(54, 162, 235, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Closed Reports',
+                                data: data.contributing_factors.map(item => parseInt(item.closed) || 0),
+                                backgroundColor: 'rgba(40, 167, 69, 0.8)',
+                                borderColor: 'rgba(40, 167, 69, 1)',
+                                borderWidth: 1
+                            }, {
+                                label: 'Open Reports',
+                                data: data.contributing_factors.map(item => parseInt(item.open) || 0),
+                                backgroundColor: 'rgba(255, 193, 7, 0.8)',
+                                borderColor: 'rgba(255, 193, 7, 1)',
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Contributing Factors Analysis'
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    title: {
+                                        display: true,
+                                        text: 'Number of Reports'
+                                    }
+                                }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error('Error creating contributing chart:', e);
+                    ctx.fillStyle = '#6c757d';
+                    ctx.font = '14px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Chart update failed', contributingCtx.width / 2, contributingCtx.height / 2);
+                }
+            } else {
+                // Show empty state
+                ctx.fillStyle = '#6c757d';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('No contributing factors data available', contributingCtx.width / 2, contributingCtx.height / 2);
+            }
+        }
     }
 
     // Update monthly findings table
@@ -2395,6 +2607,52 @@
                     <td>${category.high_severity}</td>
                     <td>${category.critical_severity}</td>
                     <td>${category.avg_resolution_hours}</td>
+                </tr>
+            `;
+        });
+        tableBody.innerHTML = html;
+    }
+
+    // Update contributing factors table
+    function updateContributingFactorsTable(contributingReports) {
+        console.log('Updating contributing factors table:', contributingReports);
+        const headers = document.querySelectorAll('.card-header h5');
+        let tableBody = null;
+
+        for (let header of headers) {
+            if (header.textContent.includes('Findings by Contributing Factors')) {
+                tableBody = header.closest('.card').querySelector('tbody');
+                break;
+            }
+        }
+
+        if (!tableBody) return;
+
+        if (contributingReports.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No contributing factors data available</td></tr>';
+            return;
+        }
+
+        let html = '';
+        contributingReports.forEach(contributing => {
+            const completionRate = contributing.total > 0 ? Math.round((contributing.closed / contributing.total) * 100 * 10) / 10 : 0;
+            const progressBarClass = completionRate >= 80 ? 'bg-success' : (completionRate >= 60 ? 'bg-warning' : 'bg-danger');
+
+            html += `
+                <tr>
+                    <td><strong>${contributing.contributing}</strong></td>
+                    <td>${contributing.total}</td>
+                    <td><span class="badge bg-success">${contributing.closed}</span></td>
+                    <td><span class="badge bg-warning">${contributing.open}</span></td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span class="me-2">${completionRate}%</span>
+                            <div class="progress flex-grow-1" style="height: 6px; max-width: 80px;">
+                                <div class="progress-bar ${progressBarClass}" style="width: ${completionRate}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${Math.round((contributing.avg_resolution_hours || 0) * 10) / 10}</td>
                 </tr>
             `;
         });

@@ -9,6 +9,7 @@ use App\Models\Contributing;
 use App\Models\Action;
 use App\Models\Location;
 use App\Models\User;
+use App\Models\Report;
 use Illuminate\Http\Request;
 
 class MasterDataController extends Controller
@@ -282,6 +283,7 @@ class MasterDataController extends Controller
                         'contributings_count' => $category->contributings_count,
                     ];
                 }),
+            'contributing_factors' => $this->getContributingFactorsAnalytics(),
         ];
 
         return response()->json([
@@ -289,6 +291,38 @@ class MasterDataController extends Controller
             'data' => $stats,
             'message' => 'Master data statistics retrieved successfully'
         ]);
+    }
+
+    /**
+     * Get contributing factors analytics from reports
+     */
+    private function getContributingFactorsAnalytics()
+    {
+        return Report::join('contributings', 'reports.contributing_id', '=', 'contributings.id')
+            ->selectRaw('
+                contributings.name as contributing,
+                COUNT(*) as total,
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as closed,
+                SUM(CASE WHEN reports.status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open,
+                AVG(CASE
+                    WHEN reports.start_process_at IS NOT NULL AND reports.completed_at IS NOT NULL
+                    THEN TIMESTAMPDIFF(HOUR, reports.start_process_at, reports.completed_at)
+                    ELSE NULL
+                END) as avg_resolution_hours
+            ')
+            ->groupBy('contributings.id', 'contributings.name')
+            ->orderBy('total', 'desc')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'contributing' => $item->contributing,
+                    'total' => (int) $item->total,
+                    'closed' => (int) $item->closed,
+                    'open' => (int) $item->open,
+                    'completion_rate' => $item->total > 0 ? round(($item->closed / $item->total) * 100, 1) : 0,
+                    'avg_resolution_hours' => $item->avg_resolution_hours ? round($item->avg_resolution_hours, 1) : 0,
+                ];
+            });
     }
 
     /**
