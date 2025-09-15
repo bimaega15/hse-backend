@@ -74,7 +74,7 @@ class ReportDetailController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('correction_action', 'like', "%{$search}%")
-                    ->orWhereHas('assignedUser', function($userQuery) use ($search) {
+                    ->orWhereHas('assignedUser', function ($userQuery) use ($search) {
                         $userQuery->where('name', 'like', "%{$search}%");
                     });
             });
@@ -121,8 +121,25 @@ class ReportDetailController extends Controller
         }
 
         // Report must be in-progress or done to add details
-        // Skip this check if the HSE staff is the one who created the report
-        if (!$report->canHaveReportDetails() && $report->hse_staff_id !== $user->id) {
+        // Skip this check if the HSE staff is the one who originally created the report
+        Log::info('Report detail creation check', [
+            'report_id' => $report->id,
+            'canHaveReportDetails' => $report->canHaveReportDetails(),
+            'report_hse_staff_id' => $report->hse_staff_id,
+            'report_employee_id' => $report->employee_id,
+            'current_user_id' => $user->id,
+            'user_role' => $user->role,
+            'report_status' => $report->status
+        ]);
+
+        if (!$report->canHaveReportDetails() && $report->employee_id !== $user->id) {
+            Log::warning('Report detail creation blocked', [
+                'report_id' => $report->id,
+                'reason' => 'Report cannot have details and user is not the original creator',
+                'report_employee_id' => $report->employee_id,
+                'current_user_id' => $user->id
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Detail laporan hanya dapat ditambahkan setelah laporan diproses HSE',
@@ -161,6 +178,17 @@ class ReportDetailController extends Controller
             // Create the report detail
             $reportDetail = ReportDetail::create($reportDetailData);
             $reportDetail->load(['approvedBy', 'createdBy', 'assignedUser', 'report']);
+
+            // Update start_process_at if HSE staff is creating detail for their own NCR and it's the first time
+            if ($report->employee_id === $user->id && is_null($report->start_process_at)) {
+                $report->update(['start_process_at' => now()]);
+
+                Log::info('Report start_process_at updated for HSE staff own NCR', [
+                    'report_id' => $reportId,
+                    'hse_staff_id' => $user->id,
+                    'start_process_at' => now()
+                ]);
+            }
 
             Log::info('Report detail created successfully', [
                 'report_detail_id' => $reportDetail->id,

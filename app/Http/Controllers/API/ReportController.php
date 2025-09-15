@@ -504,14 +504,16 @@ class ReportController extends Controller
             ], 404);
         }
 
-        if ($report->status !== 'in-progress') {
+        // Skip status check if HSE staff is completing their own report
+        if ($report->status !== 'in-progress' && $report->employee_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Laporan harus dalam status in-progress',
             ], 400);
         }
 
-        if ($request->user()->role !== 'hse_staff') {
+        // Skip role check if HSE staff is completing their own report
+        if ($request->user()->role !== 'hse_staff' && $report->employee_id !== $request->user()->id) {
             return response()->json([
                 'success' => false,
                 'message' => 'Hanya HSE staff yang dapat menyelesaikan laporan',
