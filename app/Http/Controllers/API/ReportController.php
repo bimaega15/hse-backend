@@ -113,12 +113,12 @@ class ReportController extends Controller
             $user = $request->user();
 
             // Check if user is employee
-            if ($user->role !== 'employee') {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Hanya karyawan yang dapat membuat laporan'
-                ], 403);
-            }
+            // if ($user->role !== 'employee') {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Hanya karyawan yang dapat membuat laporan'
+            //     ], 403);
+            // }
 
             // Prepare report data
             $reportData = [
