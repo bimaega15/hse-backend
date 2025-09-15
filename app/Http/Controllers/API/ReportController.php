@@ -1182,6 +1182,7 @@ class ReportController extends Controller
             'location_id' => $request->get('location_id'),
             'project_name' => $request->get('project_name'),
             'hse_staff_id' => $request->get('hse_staff_id'),
+            'employee_id' => auth()->id(),
         ];
     }
 
@@ -1272,6 +1273,10 @@ class ReportController extends Controller
 
         if (!empty($filters['hse_staff_id'])) {
             $query->where('hse_staff_id', $filters['hse_staff_id']);
+        }
+
+        if (!empty($filters['employee_id'])) {
+            $query->where('employee_id', $filters['employee_id']);
         }
 
         // Special filters for summary calculations (these take precedence over date range)

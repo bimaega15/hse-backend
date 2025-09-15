@@ -27,7 +27,7 @@ class StoreReportRequest extends FormRequest
 
             // Existing fields
             'description' => 'required|string|max:1000',
-            'location' => 'required|string|max:255',
+            'location_id' => 'required|exists:locations,id',
 
             // Images array validation (basic)
             'images' => 'nullable|array|max:10',
@@ -54,8 +54,8 @@ class StoreReportRequest extends FormRequest
             // Existing fields validation messages
             'description.required' => 'Deskripsi tidak boleh kosong',
             'description.max' => 'Deskripsi maksimal 1000 karakter',
-            'location.required' => 'Lokasi tidak boleh kosong',
-            'location.max' => 'Lokasi maksimal 255 karakter',
+            'location_id.required' => 'Lokasi tidak boleh kosong',
+            'location_id.exists' => 'Lokasi yang dipilih tidak valid',
 
             // Images validation messages
             'images.array' => 'Images harus berupa array',
@@ -72,7 +72,7 @@ class StoreReportRequest extends FormRequest
             'severity_rating' => 'tingkat keparahan',
             'action_taken' => 'aksi yang diambil',
             'description' => 'deskripsi',
-            'location' => 'lokasi',
+            'location_id' => 'lokasi',
             'images' => 'gambar'
         ];
     }
