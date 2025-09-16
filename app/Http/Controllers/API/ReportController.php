@@ -1898,6 +1898,11 @@ class ReportController extends Controller
             $query->where('reports.hse_staff_id', $filters['hse_staff_id']);
         }
 
+        // Filter by logged-in user (employee_id from auth)
+        if (!empty($filters['employee_id'])) {
+            $query->where('reports.employee_id', $filters['employee_id']);
+        }
+
         return $query->count();
     }
 

@@ -57,6 +57,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/actions/{actionId}/path', [MasterDataController::class, 'getActionPath']);
         Route::get('/statistics', [MasterDataController::class, 'getStatistics']);
         Route::get('/users', [MasterDataController::class, 'getEmployeeUsers']);
+        Route::get('/activators', [MasterDataController::class, 'getActivators']);
     });
 
     // IMPORTANT: Dashboard API - untuk home page frontend
