@@ -8,6 +8,7 @@ use App\Models\Observation;
 use App\Models\ObservationDetail;
 use App\Models\User;
 use App\Models\Category;
+use App\Models\Activator;
 use Carbon\Carbon;
 
 class ObservationSeeder extends Seeder
@@ -16,6 +17,7 @@ class ObservationSeeder extends Seeder
     {
         $users = User::whereIn('role', ['employee', 'hse_staff'])->get();
         $categories = Category::active()->get();
+        $activators = Activator::active()->get();
 
         if ($users->isEmpty()) {
             $this->command->warn('No users found. Please run UserSeeder first.');
@@ -24,6 +26,11 @@ class ObservationSeeder extends Seeder
 
         if ($categories->isEmpty()) {
             $this->command->warn('No categories found. Please run CategorySeeder first.');
+            return;
+        }
+
+        if ($activators->isEmpty()) {
+            $this->command->warn('No activators found. Please run ActivatorSeeder first.');
             return;
         }
 
@@ -74,22 +81,22 @@ class ObservationSeeder extends Seeder
             $observation = Observation::create($observationData);
 
             // Create details for at_risk_behavior
-            $this->createObservationDetails($observation, 'at_risk_behavior', $observation->at_risk_behavior, $categories);
+            $this->createObservationDetails($observation, 'at_risk_behavior', $observation->at_risk_behavior, $categories, $activators);
 
             // Create details for nearmiss_incident
-            $this->createObservationDetails($observation, 'nearmiss_incident', $observation->nearmiss_incident, $categories);
+            $this->createObservationDetails($observation, 'nearmiss_incident', $observation->nearmiss_incident, $categories, $activators);
 
             // Create details for informal_risk_mgmt
-            $this->createObservationDetails($observation, 'informal_risk_mgmt', $observation->informal_risk_mgmt, $categories);
+            $this->createObservationDetails($observation, 'informal_risk_mgmt', $observation->informal_risk_mgmt, $categories, $activators);
 
             // Create details for sim_k3
-            $this->createObservationDetails($observation, 'sim_k3', $observation->sim_k3, $categories);
+            $this->createObservationDetails($observation, 'sim_k3', $observation->sim_k3, $categories, $activators);
         }
 
         $this->command->info('ObservationSeeder completed successfully!');
     }
 
-    private function createObservationDetails(Observation $observation, string $type, int $count, $categories)
+    private function createObservationDetails(Observation $observation, string $type, int $count, $categories, $activators = null)
     {
         $sampleDescriptions = [
             'at_risk_behavior' => [
@@ -134,14 +141,21 @@ class ObservationSeeder extends Seeder
         ];
 
         for ($i = 0; $i < $count; $i++) {
-            ObservationDetail::create([
+            $detailData = [
                 'observation_id' => $observation->id,
                 'observation_type' => $type,
                 'category_id' => $categories->random()->id,
                 'description' => $sampleDescriptions[$type][array_rand($sampleDescriptions[$type])],
                 'severity' => ['low', 'medium', 'high', 'critical'][array_rand(['low', 'medium', 'high', 'critical'])],
                 'action_taken' => $sampleActions[array_rand($sampleActions)],
-            ]);
+            ];
+
+            // Add activator_id only for at_risk_behavior type
+            if ($type === 'at_risk_behavior' && $activators && $activators->count() > 0) {
+                $detailData['activator_id'] = $activators->random()->id;
+            }
+
+            ObservationDetail::create($detailData);
         }
     }
 }

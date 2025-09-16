@@ -344,4 +344,27 @@ class ProjectController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get master data for dropdowns
+     */
+    public function getMasterData(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $projects = Project::where('status', 'open')
+                ->select(['id', 'project_name as name'])
+                ->orderBy('project_name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $projects
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

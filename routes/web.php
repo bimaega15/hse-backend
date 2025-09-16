@@ -222,6 +222,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Route::get('/admin/settings', [SettingController::class, 'index'])->name('admin.settings');
 });
 
+// Master Data Routes - accessible by authenticated users
+Route::middleware(['auth'])->prefix('master-data')->name('master-data.')->group(function () {
+    Route::get('/categories', [CategoryController::class, 'getMasterData'])->name('categories');
+    Route::get('/contributings', [ContributingController::class, 'getMasterData'])->name('contributings');
+    Route::get('/actions', [ActionController::class, 'getMasterData'])->name('actions');
+    Route::get('/locations', [LocationController::class, 'getMasterData'])->name('locations');
+    Route::get('/projects', [ProjectController::class, 'getMasterData'])->name('projects');
+    Route::get('/activators', [ActivatorController::class, 'getMasterData'])->name('activators');
+});
+
 Route::middleware(['auth', 'role:hse_staff,admin'])->group(function () {
     Route::get('/hse/dashboard', function () {
         return view('hse.dashboard');

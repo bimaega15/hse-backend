@@ -381,8 +381,13 @@
                 width: '100%'
             });
 
-            // Store categories for detail forms
-            window.categoriesData = formData.categories;
+            // Store all master data for detail forms
+            window.categoriesData = formData.categories || [];
+            window.contributingsData = formData.contributings || [];
+            window.actionsData = formData.actions || [];
+            window.locationsData = formData.locations || [];
+            window.projectsData = formData.projects || [];
+            window.activatorsData = formData.activators || [];
         }
 
         function showFilters() {
@@ -666,71 +671,130 @@
             });
         }
 
-        function submitObservation() {
+        async function submitObservation() {
             clearFormErrors();
 
-            // Collect observation details
+            // Collect observation details with all fields including images
             const details = [];
-            $('#observationDetails .observation-detail-item').each(function() {
-                const detail = {
-                    observation_type: $(this).find('[name$="[observation_type]"]').val(),
-                    category_id: $(this).find('[name$="[category_id]"]').val(),
-                    description: $(this).find('[name$="[description]"]').val(),
-                    severity: $(this).find('[name$="[severity]"]').val(),
-                    action_taken: $(this).find('[name$="[action_taken]"]').val()
-                };
-                details.push(detail);
+            const detailPromises = [];
+
+            $('#observationDetails .observation-detail-item').each(function(index) {
+                const $detail = $(this);
+
+                const detailPromise = new Promise(async (resolve) => {
+                    // Collect all form fields
+                    const detail = {
+                        observation_type: $detail.find('[name$="[observation_type]"]').val(),
+                        category_id: $detail.find('[name$="[category_id]"]').val(),
+                        contributing_id: $detail.find('[name$="[contributing_id]"]').val(),
+                        action_id: $detail.find('[name$="[action_id]"]').val(),
+                        location_id: $detail.find('[name$="[location_id]"]').val(),
+                        project_id: $detail.find('[name$="[project_id]"]').val(),
+                        activator_id: $detail.find('[name$="[activator_id]"]').val(),
+                        report_date: $detail.find('[name$="[report_date]"]').val(),
+                        severity: $detail.find('[name$="[severity]"]').val(),
+                        description: $detail.find('[name$="[description]"]').val(),
+                        action_taken: $detail.find('[name$="[action_taken]"]').val(),
+                        images: []
+                    };
+
+                    // Process images to base64
+                    const fileInput = $detail.find('input[type="file"]')[0];
+                    if (fileInput && fileInput.files.length > 0) {
+                        const imagePromises = [];
+
+                        for (let i = 0; i < fileInput.files.length; i++) {
+                            const file = fileInput.files[i];
+                            if (file.type.startsWith('image/')) {
+                                const imagePromise = new Promise((imageResolve) => {
+                                    const reader = new FileReader();
+                                    reader.onload = function(e) {
+                                        detail.images.push({
+                                            name: file.name,
+                                            type: file.type,
+                                            size: file.size,
+                                            data: e.target.result // base64 string with data:image prefix
+                                        });
+                                        imageResolve();
+                                    };
+                                    reader.readAsDataURL(file);
+                                });
+                                imagePromises.push(imagePromise);
+                            }
+                        }
+
+                        await Promise.all(imagePromises);
+                    }
+
+                    resolve(detail);
+                });
+
+                detailPromises.push(detailPromise);
             });
 
-            const formData = {
-                user_id: $('#userId').val(),
-                waktu_observasi: $('#waktuObservasi').val(),
-                waktu_mulai: $('#waktuMulai').val(),
-                waktu_selesai: $('#waktuSelesai').val(),
-                notes: $('#notes').val(),
-                details: details
-            };
-
-            let url = isEditMode ? `{{ url('/') }}/admin/observations/${currentObservationId}` : '{{ url('/') }}/admin/observations';
-            const method = isEditMode ? 'PUT' : 'POST';
-
-            if (method === 'PUT') {
-                formData._method = 'PUT';
-            }
-
+            // Wait for all details (including images) to be processed
             showFormLoading(true);
 
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                success: function(response) {
-                    if (response.success) {
-                        showAlert('success', 'Success!', response.message);
-                        $('#observationModal').modal('hide');
-                        observationsTable.ajax.reload();
-                        loadStatistics();
-                        resetObservationForm();
-                    } else {
-                        showAlert('error', 'Error', response.message);
-                    }
-                },
-                error: function(xhr) {
-                    if (xhr.status === 422) {
-                        const response = JSON.parse(xhr.responseText);
-                        displayFormErrors(response.errors);
-                    } else {
-                        const response = JSON.parse(xhr.responseText);
-                        showAlert('error', 'Error', response.message || 'Failed to save observation');
-                    }
-                },
-                complete: function() {
-                    showFormLoading(false);
+            try {
+                const allDetails = await Promise.all(detailPromises);
+
+                const formData = {
+                    user_id: $('#userId').val(),
+                    waktu_observasi: $('#waktuObservasi').val(),
+                    waktu_mulai: $('#waktuMulai').val(),
+                    waktu_selesai: $('#waktuSelesai').val(),
+                    notes: $('#notes').val(),
+                    details: allDetails
+                };
+
+                let url = isEditMode ? `{{ url('/') }}/admin/observations/${currentObservationId}` :
+                    '{{ url('/') }}/admin/observations';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                if (method === 'PUT') {
+                    formData._method = 'PUT';
                 }
-            });
+
+                console.log('Submitting form data:', formData); // Debug log
+
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    data: JSON.stringify(formData),
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showAlert('success', 'Success!', response.message);
+                            $('#observationModal').modal('hide');
+                            observationsTable.ajax.reload();
+                            loadStatistics();
+                            resetObservationForm();
+                        } else {
+                            showAlert('error', 'Error', response.message);
+                        }
+                    },
+                    error: function(xhr) {
+                        if (xhr.status === 422) {
+                            const response = JSON.parse(xhr.responseText);
+                            displayFormErrors(response.errors);
+                        } else {
+                            const response = JSON.parse(xhr.responseText);
+                            showAlert('error', 'Error', response.message || 'Failed to save observation');
+                        }
+                    },
+                    complete: function() {
+                        showFormLoading(false);
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error processing form data:', error);
+                showAlert('error', 'Error', 'Failed to process form data');
+                showFormLoading(false);
+            }
         }
 
         function submitStatusUpdate() {
@@ -766,11 +830,59 @@
             detailCounter++;
             const detailId = `detail_${detailCounter}`;
 
+            // Get current datetime for default report date
+            const now = new Date();
+            const localISOTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+
+            // Build dropdown options
             let categoryOptions = '<option value="">Select Category</option>';
             if (window.categoriesData) {
                 window.categoriesData.forEach(function(category) {
                     const selected = existingDetail && existingDetail.category_id == category.id ? 'selected' : '';
                     categoryOptions += `<option value="${category.id}" ${selected}>${category.name}</option>`;
+                });
+            }
+
+            let contributingOptions = '<option value="">Select Contributing Factor</option>';
+            if (window.contributingsData) {
+                window.contributingsData.forEach(function(contributing) {
+                    const selected = existingDetail && existingDetail.contributing_id == contributing.id ?
+                        'selected' : '';
+                    contributingOptions +=
+                        `<option value="${contributing.id}" ${selected}>${contributing.name}</option>`;
+                });
+            }
+
+            let actionOptions = '<option value="">Select Action</option>';
+            if (window.actionsData) {
+                window.actionsData.forEach(function(action) {
+                    const selected = existingDetail && existingDetail.action_id == action.id ? 'selected' : '';
+                    actionOptions += `<option value="${action.id}" ${selected}>${action.name}</option>`;
+                });
+            }
+
+            let locationOptions = '<option value="">Select Location</option>';
+            if (window.locationsData) {
+                window.locationsData.forEach(function(location) {
+                    const selected = existingDetail && existingDetail.location_id == location.id ? 'selected' : '';
+                    locationOptions += `<option value="${location.id}" ${selected}>${location.name}</option>`;
+                });
+            }
+
+            let projectOptions = '<option value="">Select Project (Optional)</option>';
+            if (window.projectsData) {
+                window.projectsData.forEach(function(project) {
+                    const selected = existingDetail && existingDetail.project_id == project.id ? 'selected' : '';
+                    projectOptions += `<option value="${project.id}" ${selected}>${project.project_name}</option>`;
+                });
+            }
+
+            let activatorOptions = '<option value="">Select Activator</option>';
+            if (window.activatorsData) {
+                window.activatorsData.forEach(function(activator) {
+                    const selected = existingDetail && existingDetail.activator_id == activator.id ? 'selected' :
+                        '';
+                    activatorOptions += `<option value="${activator.id}" ${selected}>${activator.name}</option>`;
                 });
             }
 
@@ -781,7 +893,7 @@
                 'sim_k3': 'SIM K3'
             };
 
-            let typeOptions = '<option value="">Select Type</option>';
+            let typeOptions = '<option value="">Select Observation Type</option>';
             Object.keys(observationTypes).forEach(function(key) {
                 const selected = existingDetail && existingDetail.observation_type === key ? 'selected' : '';
                 typeOptions += `<option value="${key}" ${selected}>${observationTypes[key]}</option>`;
@@ -801,65 +913,325 @@
             });
 
             const detailHtml = `
-                <div class="observation-detail-item position-relative" id="${detailId}">
-                    <button type="button" class="remove-detail-btn" onclick="removeObservationDetail('${detailId}')">
-                        <i class="ri-close-line"></i>
-                    </button>
-                    
+                <div class="observation-detail-item border rounded p-3 mb-3 position-relative" id="${detailId}" data-detail-index="${detailCounter}">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0">Detail ${detailCounter}</h6>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeObservationDetail('${detailId}')">
+                            <i class="ri-delete-bin-line me-1"></i>Remove
+                        </button>
+                    </div>
+
                     <div class="row">
-                        <div class="col-md-6">
+                        <!-- Observation Type -->
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Observation Type <span class="text-danger">*</span></label>
-                                <select class="form-select" name="details[${detailCounter}][observation_type]" required>
+                                <select class="form-select observation-type-select" name="details[${detailCounter}][observation_type]" required onchange="handleObservationTypeChangeIndex(this, '${detailId}')">
                                     ${typeOptions}
                                 </select>
+                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+
+                        <!-- Category -->
+                        <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label">Category <span class="text-danger">*</span></label>
                                 <select class="form-select" name="details[${detailCounter}][category_id]" required>
                                     ${categoryOptions}
                                 </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <!-- Contributing Factor -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Contributing Factor <span class="text-danger">*</span></label>
+                                <select class="form-select" name="details[${detailCounter}][contributing_id]" required>
+                                    ${contributingOptions}
+                                </select>
+                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="row">
-                        <div class="col-md-6">
+                        <!-- Action -->
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label class="form-label">Severity <span class="text-danger">*</span></label>
+                                <label class="form-label">Action <span class="text-danger">*</span></label>
+                                <select class="form-select" name="details[${detailCounter}][action_id]" required>
+                                    ${actionOptions}
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <!-- Severity Rating -->
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Severity Rating <span class="text-danger">*</span></label>
                                 <select class="form-select" name="details[${detailCounter}][severity]" required>
                                     ${severityOptions}
                                 </select>
+                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+
+                        <!-- Location -->
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label class="form-label">Action Taken</label>
-                                <input type="text" class="form-control" name="details[${detailCounter}][action_taken]" 
-                                       value="${existingDetail ? existingDetail.action_taken || '' : ''}" 
-                                       placeholder="Action taken (optional)">
+                                <label class="form-label">Location <span class="text-danger">*</span></label>
+                                <select class="form-select" name="details[${detailCounter}][location_id]" required>
+                                    ${locationOptions}
+                                </select>
+                                <div class="invalid-feedback"></div>
                             </div>
                         </div>
                     </div>
-                    
+
+                    <div class="row">
+                        <!-- Report Date -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Report Date <span class="text-danger">*</span></label>
+                                <input type="datetime-local" class="form-control" name="details[${detailCounter}][report_date]" required value="${existingDetail && existingDetail.report_date ? existingDetail.report_date : localISOTime}">
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+
+                        <!-- Project -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Project</label>
+                                <select class="form-select" name="details[${detailCounter}][project_id]">
+                                    ${projectOptions}
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activator Field (only for At Risk Behavior) -->
+                    <div class="row activator-row" id="activator-row-${detailId}" style="display: ${existingDetail && existingDetail.observation_type === 'at_risk_behavior' ? 'block' : 'none'};">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Activator <span class="text-danger">*</span></label>
+                                <select class="form-select" name="details[${detailCounter}][activator_id]" ${existingDetail && existingDetail.observation_type === 'at_risk_behavior' ? 'required' : ''}>
+                                    ${activatorOptions}
+                                </select>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
                     <div class="mb-3">
                         <label class="form-label">Description <span class="text-danger">*</span></label>
-                        <textarea class="form-control" name="details[${detailCounter}][description]" rows="3" required 
-                                  placeholder="Describe the observation in detail">${existingDetail ? existingDetail.description || '' : ''}</textarea>
+                        <textarea class="form-control" name="details[${detailCounter}][description]" rows="4" required maxlength="2000" placeholder="Describe the observation in detail">${existingDetail ? existingDetail.description || '' : ''}</textarea>
+                        <div class="form-text">Maximum 2000 characters</div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <!-- Action Taken -->
+                    <div class="mb-3">
+                        <label class="form-label">Action Taken</label>
+                        <textarea class="form-control" name="details[${detailCounter}][action_taken]" rows="3" maxlength="1000" placeholder="Describe immediate actions taken (optional)">${existingDetail ? existingDetail.action_taken || '' : ''}</textarea>
+                        <div class="form-text">Maximum 1000 characters</div>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <!-- Images -->
+                    <div class="mb-3">
+                        <label class="form-label">Images</label>
+                        <input type="file" class="form-control" name="details[${detailCounter}][images][]" multiple accept="image/*" onchange="previewImages(this, '${detailId}')">
+                        <div class="form-text">You can upload multiple images (JPEG, PNG, JPG, GIF). Maximum 2MB per file.</div>
+                        <div class="invalid-feedback"></div>
+                        <div class="image-preview mt-2" id="image-preview-${detailId}"></div>
                     </div>
                 </div>
             `;
 
             $('#observationDetails').append(detailHtml);
+
+            // Initialize Select2 for all dropdowns in this detail
+            initializeSelect2ForDetail(detailId, detailCounter);
+
+            // Show bottom add button and floating button if more than 0 details
+            updateAddDetailButtons();
+        }
+
+        // Update visibility of add detail buttons
+        function updateAddDetailButtons() {
+            const detailCount = $('#observationDetails .observation-detail-item').length;
+
+            if (detailCount > 0) {
+                $('#bottomAddDetailButton').show();
+                $('#floatingAddDetailBtn').show();
+            } else {
+                $('#bottomAddDetailButton').hide();
+                $('#floatingAddDetailBtn').hide();
+            }
+        }
+
+        // Initialize Select2 for all select elements in a detail item
+        function initializeSelect2ForDetail(detailId, detailCounter) {
+            const detailElement = document.getElementById(detailId);
+
+            // Initialize Select2 for all select elements
+            $(detailElement).find('select').each(function() {
+                const $select = $(this);
+                const fieldName = $select.attr('name');
+                let placeholder = 'Select option';
+
+                // Set specific placeholders based on field name
+                if (fieldName.includes('observation_type')) {
+                    placeholder = 'Select Observation Type';
+                } else if (fieldName.includes('category_id')) {
+                    placeholder = 'Select Category';
+                } else if (fieldName.includes('contributing_id')) {
+                    placeholder = 'Select Contributing Factor';
+                } else if (fieldName.includes('action_id')) {
+                    placeholder = 'Select Action';
+                } else if (fieldName.includes('location_id')) {
+                    placeholder = 'Select Location';
+                } else if (fieldName.includes('project_id')) {
+                    placeholder = 'Select Project (Optional)';
+                } else if (fieldName.includes('activator_id')) {
+                    placeholder = 'Select Activator';
+                } else if (fieldName.includes('severity')) {
+                    placeholder = 'Select Severity';
+                }
+
+                $select.select2({
+                    dropdownParent: $('#observationModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: placeholder,
+                    allowClear: !$select.prop('required'), // Allow clear only if not required
+                    width: '100%'
+                });
+            });
+        }
+
+        // Preview selected images
+        function previewImages(input, detailId) {
+            const previewContainer = document.getElementById(`image-preview-${detailId}`);
+            previewContainer.innerHTML = '';
+
+            if (input.files) {
+                Array.from(input.files).forEach((file, index) => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+
+                        reader.onload = function(e) {
+                            const imageWrapper = document.createElement('div');
+                            imageWrapper.className = 'position-relative d-inline-block me-2 mb-2';
+                            imageWrapper.style.maxWidth = '150px';
+
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'img-thumbnail';
+                            img.style.maxWidth = '150px';
+                            img.style.maxHeight = '150px';
+                            img.style.objectFit = 'cover';
+
+                            const removeBtn = document.createElement('button');
+                            removeBtn.type = 'button';
+                            removeBtn.className = 'btn btn-danger btn-sm position-absolute top-0 end-0';
+                            removeBtn.style.transform = 'translate(50%, -50%)';
+                            removeBtn.innerHTML = '<i class="ri-close-line"></i>';
+                            removeBtn.onclick = function() {
+                                removeImagePreview(input, index, detailId);
+                            };
+
+                            const fileName = document.createElement('small');
+                            fileName.className = 'd-block text-muted mt-1 text-truncate';
+                            fileName.textContent = file.name;
+                            fileName.style.maxWidth = '150px';
+
+                            imageWrapper.appendChild(img);
+                            imageWrapper.appendChild(removeBtn);
+                            imageWrapper.appendChild(fileName);
+                            previewContainer.appendChild(imageWrapper);
+                        };
+
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+
+        // Remove image from preview and file input
+        function removeImagePreview(input, indexToRemove, detailId) {
+            const dt = new DataTransfer();
+
+            Array.from(input.files).forEach((file, index) => {
+                if (index !== indexToRemove) {
+                    dt.items.add(file);
+                }
+            });
+
+            input.files = dt.files;
+            previewImages(input, detailId);
+        }
+
+        // Handle observation type change (show/hide activator field)
+        function handleObservationTypeChangeIndex(selectElement, detailId) {
+            const activatorRow = document.getElementById(`activator-row-${detailId}`);
+            const activatorSelect = activatorRow.querySelector('select[name*="[activator_id]"]');
+            const $activatorSelect = $(activatorSelect);
+
+            if (selectElement.value === 'at_risk_behavior') {
+                activatorRow.style.display = 'block';
+                activatorSelect.setAttribute('required', 'required');
+
+                // Reinitialize Select2 for activator if not already initialized
+                if (!$activatorSelect.hasClass('select2-hidden-accessible')) {
+                    $activatorSelect.select2({
+                        dropdownParent: $('#observationModal'),
+                        theme: 'bootstrap-5',
+                        placeholder: 'Select Activator',
+                        allowClear: false,
+                        width: '100%'
+                    });
+                }
+            } else {
+                activatorRow.style.display = 'none';
+                activatorSelect.removeAttribute('required');
+
+                // Clear the Select2 value
+                if ($activatorSelect.hasClass('select2-hidden-accessible')) {
+                    $activatorSelect.val(null).trigger('change');
+                } else {
+                    activatorSelect.value = '';
+                }
+            }
         }
 
         function removeObservationDetail(detailId) {
+            // Destroy Select2 instances before removing the element
+            $(`#${detailId} select`).each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+
+            // Remove the detail element
             $(`#${detailId}`).remove();
+
+            // Update button visibility
+            updateAddDetailButtons();
         }
 
         function resetObservationForm() {
+            // Destroy all Select2 instances in observation details before clearing
+            $('#observationDetails select').each(function() {
+                if ($(this).hasClass('select2-hidden-accessible')) {
+                    $(this).select2('destroy');
+                }
+            });
+
             $('#observationForm')[0].reset();
             $('#observationId').val('');
             $('#observationDetails').empty();
@@ -867,7 +1239,7 @@
             clearFormErrors();
             showFormLoading(false);
 
-            // Reset Select2
+            // Reset Select2 for user dropdown
             $('#userId').val(null).trigger('change');
         }
 
@@ -941,4 +1313,93 @@
             });
         }
     </script>
+
+    <style>
+        /* Image Preview Styles */
+        .image-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .image-preview .position-relative {
+            transition: all 0.3s ease;
+        }
+
+        .image-preview .position-relative:hover {
+            transform: scale(1.05);
+        }
+
+        .image-preview img {
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .image-preview img:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .image-preview .btn-danger {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Select2 Custom Styles */
+        /* .select2-container--bootstrap-5 .select2-selection--single {
+                    height: calc(2.25rem + 2px) !important;
+                } */
+
+        .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
+            /* line-height: calc(2.25rem) !important; */
+            padding-left: 12px !important;
+        }
+
+        /* Observation Detail Item Styles */
+        .observation-detail-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6 !important;
+            transition: all 0.3s ease;
+        }
+
+        .observation-detail-item:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #0d6efd !important;
+        }
+
+        /* Required field asterisk styling */
+        .form-label .text-danger {
+            font-weight: bold;
+        }
+
+        /* Custom scrollbar for modal */
+        .modal-body {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .modal-body::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+
+        .modal-body::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
 @endpush

@@ -14,15 +14,29 @@ class ObservationDetail extends Model
         'observation_id',
         'observation_type',
         'category_id',
+        'contributing_id',
+        'action_id',
+        'location_id',
+        'project_id',
+        'activator_id',
+        'report_date',
         'description',
         'severity',
-        'action_taken'
+        'action_taken',
+        'images'
     ];
 
     protected $casts = [
-        'id' => 'integer',           // TAMBAHKAN
-        'observation_id' => 'integer', // TAMBAHKAN
-        'category_id' => 'integer',  // TAMBAHKAN
+        'id' => 'integer',
+        'observation_id' => 'integer',
+        'category_id' => 'integer',
+        'contributing_id' => 'integer',
+        'action_id' => 'integer',
+        'location_id' => 'integer',
+        'project_id' => 'integer',
+        'activator_id' => 'integer',
+        'report_date' => 'datetime',
+        'images' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -51,6 +65,31 @@ class ObservationDetail extends Model
     public function category()
     {
         return $this->belongsTo(Category::class);
+    }
+
+    public function activator()
+    {
+        return $this->belongsTo(Activator::class);
+    }
+
+    public function contributing()
+    {
+        return $this->belongsTo(Contributing::class);
+    }
+
+    public function action()
+    {
+        return $this->belongsTo(Action::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class);
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class);
     }
 
     // Scopes
@@ -113,6 +152,11 @@ class ObservationDetail extends Model
     public function getCategoryNameAttribute()
     {
         return $this->category ? $this->category->name : null;
+    }
+
+    public function getActivatorNameAttribute()
+    {
+        return $this->activator ? $this->activator->name : null;
     }
 
     public function getSeverityColorAttribute()

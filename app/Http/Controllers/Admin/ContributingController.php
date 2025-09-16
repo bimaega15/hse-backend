@@ -245,4 +245,27 @@ class ContributingController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get master data for dropdowns
+     */
+    public function getMasterData(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $contributings = Contributing::active()
+                ->select(['id', 'name'])
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $contributings
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -5,7 +5,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-primary bg-gradient rounded">
                             <i class="ri-eye-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -23,7 +24,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-secondary bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-secondary bg-gradient rounded">
                             <i class="ri-draft-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -41,7 +43,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-warning bg-gradient rounded">
                             <i class="ri-send-plane-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -59,7 +62,8 @@
             <div class="card-body">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
-                        <div class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
+                        <div
+                            class="avatar-sm d-flex align-items-center justify-content-center bg-success bg-gradient rounded">
                             <i class="ri-check-line fs-16 text-white"></i>
                         </div>
                     </div>
@@ -401,151 +405,154 @@
     </div>
 @endif
 
-<script>
-    // Additional JavaScript for observations list specific functionality
-    document.addEventListener('DOMContentLoaded', function() {
-        // Update quick action badges
-        updateQuickActionBadges();
+@push('jsSection')
+    <script>
+        // Additional JavaScript for observations list specific functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update quick action badges
+            updateQuickActionBadges();
 
-        // Update recent activity summary
-        updateRecentActivity();
-    });
-
-    function updateQuickActionBadges() {
-        // Update badges in quick actions widget
-        $('#submittedBadge').text($('#submittedObservations').text());
-        $('#draftBadge').text($('#draftObservations').text());
-    }
-
-    function updateRecentActivity() {
-        // This would typically come from an API call
-        // For now, we'll use placeholder logic
-        $.ajax({
-            url: "{{ route('admin.observations.statistics.data') }}",
-            type: 'GET',
-            success: function(response) {
-                if (response.success) {
-                    const stats = response.data;
-
-                    // Update recent activity numbers (you would get these from backend)
-                    $('#todayObservations').text(stats.today_observations || '0');
-                    $('#weekObservations').text(stats.week_observations || '0');
-                    $('#monthObservations').text(stats.month_observations || '0');
-
-                    // Calculate and display review rate
-                    const reviewRate = stats.total_observations > 0 ?
-                        Math.round((stats.reviewed_observations / stats.total_observations) * 100) :
-                        0;
-                    $('#reviewRate').text(reviewRate + '%');
-                }
-            },
-            error: function() {
-                // Set fallback values
-                $('#todayObservations').text('0');
-                $('#weekObservations').text('0');
-                $('#monthObservations').text('0');
-                $('#reviewRate').text('0%');
-            }
+            // Update recent activity summary
+            updateRecentActivity();
         });
-    }
 
-    // Export Excel functionality for observations
-    function exportObservationExcel() {
-        // Get the button element
-        const exportButton = $('button[onclick="exportObservationExcel()"]');
-        
-        const filters = {
-            status: $('#statusFilter').val(),
-            observation_type: $('#observationTypeFilter').val(),
-            start_date: $('#startDateFilter').val(),
-            end_date: $('#endDateFilter').val()
-        };
-
-        // Add URL status filter if exists
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlStatus = urlParams.get('status');
-        if (urlStatus && !filters.status) {
-            filters.url_status = urlStatus;
+        function updateQuickActionBadges() {
+            // Update badges in quick actions widget
+            $('#submittedBadge').text($('#submittedObservations').text());
+            $('#draftBadge').text($('#draftObservations').text());
         }
 
-        // Build query string
-        const params = new URLSearchParams();
-        Object.keys(filters).forEach(key => {
-            if (filters[key]) {
-                params.append(key, filters[key]);
-            }
-        });
+        function updateRecentActivity() {
+            // This would typically come from an API call
+            // For now, we'll use placeholder logic
+            $.ajax({
+                url: "{{ route('admin.observations.statistics.data') }}",
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        const stats = response.data;
 
-        // Show loading indicator
-        const originalText = exportButton.html();
-        exportButton.html('<i class="ri-loader-2-line spinner-border spinner-border-sm me-1"></i>Exporting...');
-        exportButton.prop('disabled', true);
+                        // Update recent activity numbers (you would get these from backend)
+                        $('#todayObservations').text(stats.today_observations || '0');
+                        $('#weekObservations').text(stats.week_observations || '0');
+                        $('#monthObservations').text(stats.month_observations || '0');
 
-        // Create temporary link and trigger download
-        const exportUrl = `{{ route('admin.observations.export.excel') }}?${params.toString()}`;
-        
-        // Use fetch to handle the download properly
-        fetch(exportUrl)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Export failed');
+                        // Calculate and display review rate
+                        const reviewRate = stats.total_observations > 0 ?
+                            Math.round((stats.reviewed_observations / stats.total_observations) * 100) :
+                            0;
+                        $('#reviewRate').text(reviewRate + '%');
+                    }
+                },
+                error: function() {
+                    // Set fallback values
+                    $('#todayObservations').text('0');
+                    $('#weekObservations').text('0');
+                    $('#monthObservations').text('0');
+                    $('#reviewRate').text('0%');
                 }
-                return response.blob();
-            })
-            .then(blob => {
-                // Create download link
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `observations_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.csv`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-
-                // Show success message
-                showAlert('success', 'Success!', 'Observations Excel file has been exported successfully');
-            })
-            .catch(error => {
-                console.error('Export error:', error);
-                showAlert('error', 'Export Failed', 'Failed to export observations Excel file. Please try again.');
-            })
-            .finally(() => {
-                // Restore button state
-                exportButton.html(originalText);
-                exportButton.prop('disabled', false);
             });
-    }
-
-    // Auto-refresh data every 5 minutes for real-time updates
-    setInterval(function() {
-        if (observationsTable) {
-            observationsTable.ajax.reload(null, false); // Don't reset pagination
         }
-        loadStatistics();
-        updateQuickActionBadges();
-        updateRecentActivity();
-    }, 300000); // 5 minutes
 
-    // Table state management
-    $(document).ready(function() {
-        // Show/hide empty state based on table data
-        if (typeof observationsTable !== 'undefined') {
-            observationsTable.on('draw', function() {
-                const info = observationsTable.page.info();
-                if (info.recordsTotal === 0) {
-                    $('#emptyState').removeClass('d-none');
-                    $('#observationsTable').addClass('d-none');
-                } else {
-                    $('#emptyState').addClass('d-none');
-                    $('#observationsTable').removeClass('d-none');
+        // Export Excel functionality for observations
+        function exportObservationExcel() {
+            // Get the button element
+            const exportButton = $('button[onclick="exportObservationExcel()"]');
 
-                    // Update table info
-                    $('#tableInfo').text(
-                        `Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} observations`
+            const filters = {
+                status: $('#statusFilter').val(),
+                observation_type: $('#observationTypeFilter').val(),
+                start_date: $('#startDateFilter').val(),
+                end_date: $('#endDateFilter').val()
+            };
+
+            // Add URL status filter if exists
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlStatus = urlParams.get('status');
+            if (urlStatus && !filters.status) {
+                filters.url_status = urlStatus;
+            }
+
+            // Build query string
+            const params = new URLSearchParams();
+            Object.keys(filters).forEach(key => {
+                if (filters[key]) {
+                    params.append(key, filters[key]);
+                }
+            });
+
+            // Show loading indicator
+            const originalText = exportButton.html();
+            exportButton.html('<i class="ri-loader-2-line spinner-border spinner-border-sm me-1"></i>Exporting...');
+            exportButton.prop('disabled', true);
+
+            // Create temporary link and trigger download
+            const exportUrl = `{{ route('admin.observations.export.excel') }}?${params.toString()}`;
+
+            // Use fetch to handle the download properly
+            fetch(exportUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Export failed');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Create download link
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download =
+                    `observations_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    // Show success message
+                    showAlert('success', 'Success!', 'Observations Excel file has been exported successfully');
+                })
+                .catch(error => {
+                    console.error('Export error:', error);
+                    showAlert('error', 'Export Failed', 'Failed to export observations Excel file. Please try again.');
+                })
+                .finally(() => {
+                    // Restore button state
+                    exportButton.html(originalText);
+                    exportButton.prop('disabled', false);
+                });
+        }
+
+        // Auto-refresh data every 5 minutes for real-time updates
+        setInterval(function() {
+            if (observationsTable) {
+                observationsTable.ajax.reload(null, false); // Don't reset pagination
+            }
+            loadStatistics();
+            updateQuickActionBadges();
+            updateRecentActivity();
+        }, 300000); // 5 minutes
+
+        // Table state management
+        $(document).ready(function() {
+            // Show/hide empty state based on table data
+            if (typeof observationsTable !== 'undefined') {
+                observationsTable.on('draw', function() {
+                    const info = observationsTable.page.info();
+                    if (info.recordsTotal === 0) {
+                        $('#emptyState').removeClass('d-none');
+                        $('#observationsTable').addClass('d-none');
+                    } else {
+                        $('#emptyState').addClass('d-none');
+                        $('#observationsTable').removeClass('d-none');
+
+                        // Update table info
+                        $('#tableInfo').text(
+                            `Showing ${info.start + 1} to ${info.end} of ${info.recordsTotal} observations`
                         );
-                }
-            });
-        }
-    });
-</script>
+                    }
+                });
+            }
+        });
+    </script>
+@endpush

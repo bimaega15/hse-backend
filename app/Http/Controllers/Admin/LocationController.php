@@ -381,4 +381,27 @@ class LocationController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get master data for dropdowns
+     */
+    public function getMasterData(): \Illuminate\Http\JsonResponse
+    {
+        try {
+            $locations = Location::active()
+                ->select(['id', 'name'])
+                ->orderBy('name')
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $locations
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

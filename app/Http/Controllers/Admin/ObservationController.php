@@ -7,6 +7,11 @@ use App\Models\Observation;
 use App\Models\ObservationDetail;
 use App\Models\User;
 use App\Models\Category;
+use App\Models\Contributing;
+use App\Models\Action;
+use App\Models\Location;
+use App\Models\Project;
+use App\Models\Activator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -280,40 +285,73 @@ class ObservationController extends Controller
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'waktu_observasi' => 'required|date_format:H:i',
-            'waktu_mulai' => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
-            'notes' => 'nullable|string|max:1000',
-            'details' => 'required|array|min:1',
-            'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
-            'details.*.category_id' => 'required|exists:categories,id',
-            'details.*.description' => 'required|string|max:1000',
-            'details.*.severity' => 'required|in:low,medium,high,critical',
-            'details.*.action_taken' => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
-            DB::beginTransaction();
+            // Handle JSON request
+            $jsonData = $request->isJson() ? $request->all() : json_decode($request->getContent(), true);
 
-            $observationData = $request->only([
-                'user_id',
-                'waktu_observasi',
-                'waktu_mulai',
-                'waktu_selesai',
-                'notes'
+            if (!$jsonData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid data format'
+                ], 400);
+            }
+
+            $validator = Validator::make($jsonData, [
+                'user_id' => 'required|exists:users,id',
+                'waktu_observasi' => 'required|date_format:H:i',
+                'waktu_mulai' => 'required|date_format:H:i',
+                'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+                'notes' => 'nullable|string|max:1000',
+                'details' => 'required|array|min:1',
+                'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
+                'details.*.category_id' => 'required|exists:categories,id',
+                'details.*.contributing_id' => 'required|exists:contributings,id',
+                'details.*.action_id' => 'required|exists:actions,id',
+                'details.*.location_id' => 'required|exists:locations,id',
+                'details.*.project_id' => 'nullable|exists:projects,id',
+                'details.*.activator_id' => 'nullable|exists:activators,id',
+                'details.*.report_date' => 'required|date',
+                'details.*.description' => 'required|string|max:2000',
+                'details.*.severity' => 'required|in:low,medium,high,critical',
+                'details.*.action_taken' => 'nullable|string|max:1000',
+                'details.*.images' => 'nullable|array',
+                'details.*.images.*.name' => 'required_with:details.*.images.*|string',
+                'details.*.images.*.type' => 'required_with:details.*.images.*|string',
+                'details.*.images.*.size' => 'required_with:details.*.images.*|integer|max:2097152', // 2MB
+                'details.*.images.*.data' => 'required_with:details.*.images.*|string',
             ]);
 
-            $observation = Observation::create($observationData);
+            // Custom validation for activator_id when observation_type is at_risk_behavior
+            $validator->after(function ($validator) use ($jsonData) {
+                if (isset($jsonData['details'])) {
+                    foreach ($jsonData['details'] as $index => $detail) {
+                        if (isset($detail['observation_type']) && $detail['observation_type'] === 'at_risk_behavior') {
+                            if (!isset($detail['activator_id']) || empty($detail['activator_id'])) {
+                                $validator->errors()->add("details.{$index}.activator_id", 'Activator is required for At Risk Behavior observations.');
+                            }
+                        }
+                    }
+                }
+            });
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            DB::beginTransaction();
+
+            $observation = Observation::create([
+                'user_id' => $jsonData['user_id'],
+                'waktu_observasi' => $jsonData['waktu_observasi'],
+                'waktu_mulai' => $jsonData['waktu_mulai'],
+                'waktu_selesai' => $jsonData['waktu_selesai'],
+                'notes' => $jsonData['notes'] ?? null,
+                'status' => 'draft'
+            ]);
 
             // Create observation details and count each type
             $counters = [
@@ -323,17 +361,39 @@ class ObservationController extends Controller
                 'sim_k3' => 0,
             ];
 
-            foreach ($request->details as $detail) {
-                ObservationDetail::create([
+            foreach ($jsonData['details'] as $detailData) {
+                // Create observation detail
+                $detail = ObservationDetail::create([
                     'observation_id' => $observation->id,
-                    'observation_type' => $detail['observation_type'],
-                    'category_id' => $detail['category_id'],
-                    'description' => $detail['description'],
-                    'severity' => $detail['severity'],
-                    'action_taken' => $detail['action_taken'] ?? null,
+                    'observation_type' => $detailData['observation_type'],
+                    'category_id' => $detailData['category_id'],
+                    'contributing_id' => $detailData['contributing_id'],
+                    'action_id' => $detailData['action_id'],
+                    'location_id' => $detailData['location_id'],
+                    'project_id' => $detailData['project_id'] ?? null,
+                    'activator_id' => $detailData['activator_id'] ?? null,
+                    'report_date' => $detailData['report_date'],
+                    'description' => $detailData['description'],
+                    'severity' => $detailData['severity'],
+                    'action_taken' => $detailData['action_taken'] ?? null,
                 ]);
 
-                $counters[$detail['observation_type']]++;
+                // Process and save images as base64
+                if (isset($detailData['images']) && is_array($detailData['images'])) {
+                    $imageArray = [];
+                    foreach ($detailData['images'] as $imageData) {
+                        $imageArray[] = [
+                            'name' => $imageData['name'],
+                            'type' => $imageData['type'],
+                            'size' => $imageData['size'],
+                            'data' => $imageData['data']
+                        ];
+                    }
+                    // Store images as JSON in a separate field or create related model
+                    $detail->update(['images' => json_encode($imageArray)]);
+                }
+
+                $counters[$detailData['observation_type']]++;
             }
 
             // Update counters
@@ -556,12 +616,22 @@ class ObservationController extends Controller
         try {
             $users = User::whereIn('role', ['employee', 'hse_staff'])->where('is_active', true)->get();
             $categories = Category::where('is_active', true)->get();
+            $contributings = Contributing::where('is_active', true)->get();
+            $actions = Action::where('is_active', true)->get();
+            $locations = Location::where('is_active', true)->get();
+            $projects = Project::where('status', 'open')->get();
+            $activators = Activator::where('is_active', true)->get();
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'users' => $users,
-                    'categories' => $categories
+                    'categories' => $categories,
+                    'contributings' => $contributings,
+                    'actions' => $actions,
+                    'locations' => $locations,
+                    'projects' => $projects,
+                    'activators' => $activators
                 ]
             ]);
         } catch (\Exception $e) {

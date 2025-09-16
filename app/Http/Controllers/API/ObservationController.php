@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Observation;
 use App\Models\ObservationDetail;
 use App\Models\Category;
+use App\Models\Activator;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +24,7 @@ class ObservationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Observation::with(['user', 'details.category']);
+        $query = Observation::with(['user', 'details.category', 'details.activator']);
 
         // Filter by user role
         if ($user->role === 'employee') {
@@ -82,10 +83,24 @@ class ObservationController extends Controller
             'details' => 'required|array|min:1',
             'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
             'details.*.category_id' => 'required|exists:categories,id',
-            'details.*.description' => 'required|string|max:1000',
+            'details.*.activator_id' => 'nullable|exists:activators,id',
+            'details.*.description' => 'required|string|max:2000',
             'details.*.severity' => 'required|in:low,medium,high,critical',
-            'details.*.action_taken' => 'nullable|string|max:500',
+            'details.*.action_taken' => 'nullable|string|max:1000',
         ]);
+
+        // Custom validation for activator_id when observation_type is at_risk_behavior
+        $validator->after(function ($validator) use ($request) {
+            if ($request->has('details')) {
+                foreach ($request->details as $index => $detail) {
+                    if (isset($detail['observation_type']) && $detail['observation_type'] === 'at_risk_behavior') {
+                        if (!isset($detail['activator_id']) || empty($detail['activator_id'])) {
+                            $validator->errors()->add("details.{$index}.activator_id", 'Activator is required for At Risk Behavior observations.');
+                        }
+                    }
+                }
+            }
+        });
 
         if ($validator->fails()) {
             return $this->errorResponse('Validation failed', $validator->errors(), 422);
@@ -121,6 +136,7 @@ class ObservationController extends Controller
                     'observation_id' => $observation->id,
                     'observation_type' => $detail['observation_type'],
                     'category_id' => $detail['category_id'],
+                    'activator_id' => $detail['activator_id'] ?? null,
                     'description' => $detail['description'],
                     'severity' => $detail['severity'],
                     'action_taken' => $detail['action_taken'] ?? null,
@@ -151,7 +167,7 @@ class ObservationController extends Controller
     {
         $user = $request->user();
 
-        $query = Observation::with(['user', 'details.category']);
+        $query = Observation::with(['user', 'details.category', 'details.activator']);
 
         // Filter by user role
         if ($user->role === 'employee') {
@@ -199,10 +215,24 @@ class ObservationController extends Controller
             'details' => 'sometimes|required|array|min:1',
             'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
             'details.*.category_id' => 'required|exists:categories,id',
-            'details.*.description' => 'required|string|max:1000',
+            'details.*.activator_id' => 'nullable|exists:activators,id',
+            'details.*.description' => 'required|string|max:2000',
             'details.*.severity' => 'required|in:low,medium,high,critical',
-            'details.*.action_taken' => 'nullable|string|max:500',
+            'details.*.action_taken' => 'nullable|string|max:1000',
         ]);
+
+        // Custom validation for activator_id when observation_type is at_risk_behavior
+        $validator->after(function ($validator) use ($request) {
+            if ($request->has('details')) {
+                foreach ($request->details as $index => $detail) {
+                    if (isset($detail['observation_type']) && $detail['observation_type'] === 'at_risk_behavior') {
+                        if (!isset($detail['activator_id']) || empty($detail['activator_id'])) {
+                            $validator->errors()->add("details.{$index}.activator_id", 'Activator is required for At Risk Behavior observations.');
+                        }
+                    }
+                }
+            }
+        });
 
         if ($validator->fails()) {
             return $this->errorResponse('Validation failed', $validator->errors(), 422);
@@ -237,6 +267,7 @@ class ObservationController extends Controller
                         'observation_id' => $observation->id,
                         'observation_type' => $detail['observation_type'],
                         'category_id' => $detail['category_id'],
+                        'activator_id' => $detail['activator_id'] ?? null,
                         'description' => $detail['description'],
                         'severity' => $detail['severity'],
                         'action_taken' => $detail['action_taken'] ?? null,
