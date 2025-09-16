@@ -156,6 +156,14 @@
             </li>
 
             <li class="side-nav-item">
+                <a href="{{ route('admin.activators.index') }}"
+                    class="side-nav-link {{ request()->routeIs('admin.activators.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="zap"></i></span>
+                    <span class="menu-text"> Activators </span>
+                </a>
+            </li>
+
+            <li class="side-nav-item">
                 <a href="{{ route('admin.banners.index') }}"
                     class="side-nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
                     <span class="menu-icon"><i data-lucide="image"></i></span>

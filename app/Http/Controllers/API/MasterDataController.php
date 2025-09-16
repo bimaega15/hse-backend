@@ -11,6 +11,7 @@ use App\Models\Location;
 use App\Models\User;
 use App\Models\Report;
 use App\Models\Project;
+use App\Models\Activator;
 use Illuminate\Http\Request;
 
 class MasterDataController extends Controller
@@ -406,6 +407,23 @@ class MasterDataController extends Controller
             'success' => true,
             'data' => $employees,
             'message' => 'Employee users retrieved successfully'
+        ]);
+    }
+
+    /**
+     * Get all activators
+     */
+    public function getActivators()
+    {
+        $activators = Activator::active()
+            ->select('id', 'name', 'description', 'created_at')
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $activators,
+            'message' => 'Activators retrieved successfully'
         ]);
     }
 }

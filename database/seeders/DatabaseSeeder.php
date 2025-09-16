@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
 
             // Then seed users
             UserSeeder::class,
+            ActivatorSeeder::class,
 
             // Finally seed reports (depends on users and master data)
             ReportSeeder::class,

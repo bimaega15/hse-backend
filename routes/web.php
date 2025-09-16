@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ObservationController; // Add this import
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\ProjectController;
+use App\Http\Controllers\Admin\ActivatorController;
 
 // Fallback login route for compatibility
 Route::get('/login', function () {
@@ -175,6 +176,17 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         Route::put('/{id}', [LocationController::class, 'update'])->name('update');
         Route::delete('/{id}', [LocationController::class, 'destroy'])->name('destroy');
         Route::patch('/{id}/toggle-status', [LocationController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Activators Management Routes
+    Route::prefix('admin/activators')->name('admin.activators.')->group(function () {
+        Route::get('/', [ActivatorController::class, 'index'])->name('index');
+        Route::get('/data', [ActivatorController::class, 'getData'])->name('data');
+        Route::post('/', [ActivatorController::class, 'store'])->name('store');
+        Route::get('/{id}', [ActivatorController::class, 'show'])->name('show');
+        Route::put('/{id}', [ActivatorController::class, 'update'])->name('update');
+        Route::delete('/{id}', [ActivatorController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/toggle-status', [ActivatorController::class, 'toggleStatus'])->name('toggle-status');
     });
 
     // Banners Management Routes
