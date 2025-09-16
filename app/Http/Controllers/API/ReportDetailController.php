@@ -28,6 +28,8 @@ class ReportDetailController extends Controller
         $report = Report::with([
             'employee',
             'hseStaff',
+            'locationMaster',
+            'project',
             'categoryMaster',
             'contributingMaster',
             'actionMaster',

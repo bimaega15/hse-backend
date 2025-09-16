@@ -366,6 +366,7 @@ class MasterDataController extends Controller
     public function getProjects()
     {
         $projects = Project::select('id', 'code', 'project_name', 'start_date', 'end_date', 'durasi', 'status', 'created_at')
+            ->where('status', '!=', 'closed')
             ->orderBy('project_name')
             ->get()
             ->map(function ($project) {
