@@ -268,7 +268,12 @@ class ObservationController extends Controller
         try {
             $observation = Observation::with([
                 'user:id,name,email,department',
-                'details.category:id,name'
+                'details.category:id,name',
+                'details.contributing:id,name',
+                'details.action:id,name',
+                'details.location:id,name',
+                'details.project:id,project_name',
+                'details.activator:id,name'
             ])->findOrFail($id);
 
             return response()->json([
@@ -426,9 +431,16 @@ class ObservationController extends Controller
             'details' => 'required|array|min:1',
             'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
             'details.*.category_id' => 'required|exists:categories,id',
-            'details.*.description' => 'required|string|max:1000',
+            'details.*.contributing_id' => 'nullable|exists:contributings,id',
+            'details.*.action_id' => 'nullable|exists:actions,id',
+            'details.*.location_id' => 'nullable|exists:locations,id',
+            'details.*.project_id' => 'nullable|exists:projects,id',
+            'details.*.activator_id' => 'nullable|exists:activators,id',
+            'details.*.report_date' => 'nullable|date',
+            'details.*.description' => 'required|string|max:2000',
             'details.*.severity' => 'required|in:low,medium,high,critical',
-            'details.*.action_taken' => 'nullable|string|max:500',
+            'details.*.action_taken' => 'nullable|string|max:1000',
+            'details.*.images' => 'nullable|array',
         ]);
 
         if ($validator->fails()) {
@@ -472,13 +484,26 @@ class ObservationController extends Controller
             ];
 
             foreach ($request->details as $detail) {
+                // Process images if present
+                $images = null;
+                if (isset($detail['images']) && is_array($detail['images'])) {
+                    $images = json_encode($detail['images']);
+                }
+
                 ObservationDetail::create([
                     'observation_id' => $observation->id,
                     'observation_type' => $detail['observation_type'],
                     'category_id' => $detail['category_id'],
+                    'contributing_id' => $detail['contributing_id'] ?? null,
+                    'action_id' => $detail['action_id'] ?? null,
+                    'location_id' => $detail['location_id'] ?? null,
+                    'project_id' => $detail['project_id'] ?? null,
+                    'activator_id' => $detail['activator_id'] ?? null,
+                    'report_date' => $detail['report_date'] ?? null,
                     'description' => $detail['description'],
                     'severity' => $detail['severity'],
                     'action_taken' => $detail['action_taken'] ?? null,
+                    'images' => $images,
                 ]);
 
                 $counters[$detail['observation_type']]++;
@@ -781,7 +806,6 @@ class ObservationController extends Controller
                 ->header('Pragma', 'no-cache')
                 ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
                 ->header('Expires', '0');
-
         } catch (\Exception $e) {
             Log::error('Observation Export Error: ' . $e->getMessage());
             return response()->json([
@@ -795,13 +819,13 @@ class ObservationController extends Controller
     {
         // Create CSV with BOM for proper Excel UTF-8 support
         $csvContent = "\xEF\xBB\xBF";
-        
+
         // Headers
         $headers = [
             'No',
             'Tanggal Dibuat',
             'ID Observer',
-            'Nama Observer', 
+            'Nama Observer',
             'Email Observer',
             'Departemen',
             'Waktu Observasi',
@@ -817,9 +841,9 @@ class ObservationController extends Controller
             'Catatan',
             'Detail Observasi'
         ];
-        
+
         $csvContent .= '"' . implode('","', $headers) . '"' . "\r\n";
-        
+
         // Data rows
         $no = 1;
         foreach ($observations as $observation) {
@@ -854,15 +878,15 @@ class ObservationController extends Controller
                 $this->cleanTextForCsv($observation->notes ?? 'Tidak ada catatan'),
                 $detailsSummary
             ];
-            
+
             // Escape and format each field
-            $escapedRow = array_map(function($field) {
+            $escapedRow = array_map(function ($field) {
                 return '"' . str_replace('"', '""', $field) . '"';
             }, $row);
-            
+
             $csvContent .= implode(',', $escapedRow) . "\r\n";
         }
-        
+
         return $csvContent;
     }
 
@@ -875,7 +899,7 @@ class ObservationController extends Controller
         $summary = [];
         $typeMap = [
             'at_risk_behavior' => 'At Risk',
-            'nearmiss_incident' => 'Near Miss', 
+            'nearmiss_incident' => 'Near Miss',
             'informal_risk_mgmt' => 'Risk Mgmt',
             'sim_k3' => 'SIM K3'
         ];
@@ -884,7 +908,7 @@ class ObservationController extends Controller
             $type = $typeMap[$detail->observation_type] ?? $detail->observation_type;
             $category = optional($detail->category)->name ?? 'N/A';
             $severity = ucfirst($detail->severity ?? 'N/A');
-            
+
             $summary[] = "{$type} - {$category} ({$severity}): " . substr($detail->description, 0, 100);
         }
 

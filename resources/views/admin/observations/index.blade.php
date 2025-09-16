@@ -443,7 +443,10 @@
 
         function populateObservationForm(observation) {
             $('#observationId').val(observation.id);
-            $('#userId').val(observation.user_id);
+
+            // Set observer/user - trigger change to ensure Select2 updates
+            $('#userId').val(observation.user_id).trigger('change');
+
             $('#waktuObservasi').val(observation.waktu_observasi);
             $('#waktuMulai').val(observation.waktu_mulai);
             $('#waktuSelesai').val(observation.waktu_selesai);
@@ -524,8 +527,45 @@
                                 </div>
                                 <div class="card-body">
                                     <h6 class="card-title">Category: ${detail.category ? detail.category.name : 'N/A'}</h6>
+
+                                    ${detail.contributing ? `<p class="card-text"><small class="text-muted"><strong>Contributing Factor:</strong> ${detail.contributing.name}</small></p>` : ''}
+                                    ${detail.action ? `<p class="card-text"><small class="text-muted"><strong>Action:</strong> ${detail.action.name}</small></p>` : ''}
+                                    ${detail.location ? `<p class="card-text"><small class="text-muted"><strong>Location:</strong> ${detail.location.name}</small></p>` : ''}
+                                    ${detail.project ? `<p class="card-text"><small class="text-muted"><strong>Project:</strong> ${detail.project.project_name}</small></p>` : ''}
+                                    ${detail.activator && detail.observation_type === 'at_risk_behavior' ? `<p class="card-text"><small class="text-muted"><strong>Activator:</strong> ${detail.activator.name}</small></p>` : ''}
+                                    ${detail.report_date ? `<p class="card-text"><small class="text-muted"><strong>Report Date:</strong> ${new Date(detail.report_date).toLocaleDateString()}</small></p>` : ''}
+
                                     <p class="card-text">${detail.description}</p>
                                     ${detail.action_taken ? `<p class="card-text"><small class="text-muted"><strong>Action Taken:</strong> ${detail.action_taken}</small></p>` : ''}
+
+                                    ${detail.images && detail.images !== '[]' ? `
+                                        <div class="mt-2">
+                                            <small class="text-muted fw-bold">Images:</small>
+                                            <div class="row mt-1">
+                                                ${(() => {
+                                                    let parsedImages;
+                                                    try {
+                                                        parsedImages = typeof detail.images === 'string' ? JSON.parse(detail.images) : detail.images;
+                                                    } catch (e) {
+                                                        parsedImages = [];
+                                                    }
+
+                                                    if (!Array.isArray(parsedImages)) {
+                                                        parsedImages = [];
+                                                    }
+
+                                                    return parsedImages.map(image => {
+                                                        const imgSrc = typeof image === 'object' ? image.data : image;
+                                                        return `
+                                                            <div class="col-4 mb-2">
+                                                                <img src="${imgSrc}" class="img-thumbnail" style="max-height: 100px; cursor: pointer;" onclick="showImageModal('${imgSrc}')">
+                                                            </div>
+                                                        `;
+                                                    }).join('');
+                                                })()}
+                                            </div>
+                                        </div>
+                                    ` : ''}
                                 </div>
                             </div>
                         </div>
@@ -698,7 +738,20 @@
                         images: []
                     };
 
-                    // Process images to base64
+                    // Add existing images first
+                    $detail.find('[name$="[existing_images][]"]').each(function() {
+                        if (this.value) {
+                            try {
+                                const decodedImage = atob(this.value);
+                                detail.images.push(decodedImage);
+                            } catch (e) {
+                                // If decode fails, use as is
+                                detail.images.push(this.value);
+                            }
+                        }
+                    });
+
+                    // Process new images to base64
                     const fileInput = $detail.find('input[type="file"]')[0];
                     if (fileInput && fileInput.files.length > 0) {
                         const imagePromises = [];
@@ -996,7 +1049,7 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label">Report Date <span class="text-danger">*</span></label>
-                                <input type="datetime-local" class="form-control" name="details[${detailCounter}][report_date]" required value="${existingDetail && existingDetail.report_date ? existingDetail.report_date : localISOTime}">
+                                <input type="datetime-local" class="form-control" name="details[${detailCounter}][report_date]" required value="${existingDetail && existingDetail.report_date ? new Date(existingDetail.report_date).toISOString().slice(0, 16) : localISOTime}">
                                 <div class="invalid-feedback"></div>
                             </div>
                         </div>
@@ -1048,6 +1101,44 @@
                         <input type="file" class="form-control" name="details[${detailCounter}][images][]" multiple accept="image/*" onchange="previewImages(this, '${detailId}')">
                         <div class="form-text">You can upload multiple images (JPEG, PNG, JPG, GIF). Maximum 2MB per file.</div>
                         <div class="invalid-feedback"></div>
+
+                        <!-- Existing Images -->
+                        ${existingDetail && existingDetail.images && existingDetail.images !== '[]' ? `
+                            <div class="mt-2">
+                                <small class="text-muted">Existing Images:</small>
+                                <div class="row mt-1" id="existing-images-${detailId}">
+                                    ${(() => {
+                                        let parsedImages;
+                                        try {
+                                            parsedImages = typeof existingDetail.images === 'string' ? JSON.parse(existingDetail.images) : existingDetail.images;
+                                        } catch (e) {
+                                            parsedImages = [];
+                                        }
+
+                                        if (!Array.isArray(parsedImages)) {
+                                            parsedImages = [];
+                                        }
+
+                                        return parsedImages.map((image, index) => {
+                                            const imgSrc = typeof image === 'object' ? image.data : image;
+                                            return `
+                                                <div class="col-3 mb-3 px-2">
+                                                    <div class="position-relative" style="margin: 10px;">
+                                                        <img src="${imgSrc}" class="img-thumbnail" style="max-height: 100px; cursor: pointer; width: 100%;" onclick="showImageModal('${imgSrc}')">
+                                                        <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -8px; right: -8px; width: 24px; height: 24px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="removeExistingImage('${detailId}', ${index})">
+                                                            <i class="ri-close-line" style="font-size: 12px;"></i>
+                                                        </button>
+                                                        <input type="hidden" name="details[${detailCounter}][existing_images][]" value="${btoa(imgSrc)}">
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('');
+                                    })()}
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <!-- New Images Preview -->
                         <div class="image-preview mt-2" id="image-preview-${detailId}"></div>
                     </div>
                 </div>
@@ -1302,6 +1393,26 @@
                 hour: '2-digit',
                 minute: '2-digit'
             });
+        }
+
+        function showImageModal(imageUrl) {
+            Swal.fire({
+                imageUrl: imageUrl,
+                imageWidth: '90%',
+                imageHeight: 'auto',
+                showCloseButton: true,
+                showConfirmButton: false,
+                customClass: {
+                    image: 'swal2-image-full'
+                }
+            });
+        }
+
+        function removeExistingImage(detailId, index) {
+            const imageContainer = document.querySelector(`#existing-images-${detailId} .col-3:nth-child(${index + 1})`);
+            if (imageContainer) {
+                imageContainer.remove();
+            }
         }
 
         function formatDate(date) {

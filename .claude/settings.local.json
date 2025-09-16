@@ -9,7 +9,8 @@
       "Bash(mysql:*)",
       "Bash(php:*)",
       "Bash(findstr:*)",
-      "Bash(ren:*)"
+      "Bash(ren:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

@@ -90,7 +90,8 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-primary">
-                        <span class="spinner-border spinner-border-sm d-none" id="submitSpinner" role="status"></span>
+                        <span class="spinner-border spinner-border-sm d-none" id="submitSpinner"
+                            role="status"></span>
                         <span id="submitText">Save Observation</span>
                     </button>
                 </div>
@@ -188,7 +189,8 @@
             <div class="col-md-4">
                 <div class="mb-3">
                     <label class="form-label">Observation Type <span class="text-danger">*</span></label>
-                    <select class="form-select observation-type-select" name="details[INDEX][observation_type]" required onchange="handleObservationTypeChange(this)">
+                    <select class="form-select observation-type-select" name="details[INDEX][observation_type]"
+                        required onchange="handleObservationTypeChange(this)">
                         <option value="">Select Observation Type</option>
                         <option value="at_risk_behavior">At Risk Behavior</option>
                         <option value="nearmiss_incident">Nearmiss Incident</option>
@@ -299,7 +301,8 @@
         <!-- Description -->
         <div class="mb-3">
             <label class="form-label">Description <span class="text-danger">*</span></label>
-            <textarea class="form-control" name="details[INDEX][description]" rows="4" required maxlength="2000" placeholder="Describe the observation in detail"></textarea>
+            <textarea class="form-control" name="details[INDEX][description]" rows="4" required maxlength="2000"
+                placeholder="Describe the observation in detail"></textarea>
             <div class="form-text">Maximum 2000 characters</div>
             <div class="invalid-feedback"></div>
         </div>
@@ -307,7 +310,8 @@
         <!-- Action Taken -->
         <div class="mb-3">
             <label class="form-label">Action Taken</label>
-            <textarea class="form-control" name="details[INDEX][action_taken]" rows="3" maxlength="1000" placeholder="Describe immediate actions taken (optional)"></textarea>
+            <textarea class="form-control" name="details[INDEX][action_taken]" rows="3" maxlength="1000"
+                placeholder="Describe immediate actions taken (optional)"></textarea>
             <div class="form-text">Maximum 1000 characters</div>
             <div class="invalid-feedback"></div>
         </div>
@@ -407,7 +411,8 @@
         const clone = template.content.cloneNode(true);
 
         // Replace INDEX placeholders with actual index
-        const html = clone.querySelector('.observation-detail-item').outerHTML.replace(/INDEX/g, observationDetailIndex);
+        const html = clone.querySelector('.observation-detail-item').outerHTML.replace(/INDEX/g,
+        observationDetailIndex);
 
         // Create element and set innerHTML
         const div = document.createElement('div');
@@ -510,7 +515,7 @@
         projects.forEach(project => {
             const option = document.createElement('option');
             option.value = project.id;
-            option.textContent = project.name;
+            option.textContent = project.project_name;
             projectSelect.appendChild(option);
         });
 
@@ -593,7 +598,8 @@
 </script>
 
 <!-- Floating Add Detail Button -->
-<div id="floatingAddDetailBtn" class="floating-add-detail-btn" style="display: none;" onclick="addObservationDetail()">
+<div id="floatingAddDetailBtn" class="floating-add-detail-btn" style="display: none;"
+    onclick="addObservationDetail()">
     <i class="ri-add-line"></i>
     <span class="floating-btn-text">Add Detail</span>
 </div>
