@@ -10,6 +10,7 @@ use App\Models\Action;
 use App\Models\Location;
 use App\Models\User;
 use App\Models\Report;
+use App\Models\Project;
 use Illuminate\Http\Request;
 
 class MasterDataController extends Controller
@@ -356,6 +357,36 @@ class MasterDataController extends Controller
             'success' => true,
             'data' => $locations,
             'message' => 'Locations retrieved successfully'
+        ]);
+    }
+
+    /**
+     * Get all projects
+     */
+    public function getProjects()
+    {
+        $projects = Project::select('id', 'code', 'project_name', 'start_date', 'end_date', 'durasi', 'status', 'created_at')
+            ->orderBy('project_name')
+            ->get()
+            ->map(function ($project) {
+                return [
+                    'id' => $project->id,
+                    'code' => $project->code,
+                    'project_name' => $project->project_name,
+                    'name' => $project->project_name, // Alias for consistency with other master data
+                    'start_date' => $project->start_date,
+                    'end_date' => $project->end_date,
+                    'durasi' => $project->durasi,
+                    'status' => $project->status,
+                    'duration_in_days' => $project->duration_in_days,
+                    'created_at' => $project->created_at
+                ];
+            });
+
+        return response()->json([
+            'success' => true,
+            'data' => $projects,
+            'message' => 'Projects retrieved successfully'
         ]);
     }
 

@@ -15,6 +15,11 @@ use App\Http\Controllers\Admin\ObservationController; // Add this import
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\ProjectController;
 
+// Fallback login route for compatibility
+Route::get('/login', function () {
+    return redirect()->route('admin.login');
+})->name('login');
+
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     // Guest routes (tidak perlu login)
