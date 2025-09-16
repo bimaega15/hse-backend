@@ -38,4 +38,9 @@ class Project extends Model
         }
         return $this->durasi;
     }
+
+    public function reports()
+    {
+        return $this->hasMany(Report::class, 'project_id');
+    }
 }

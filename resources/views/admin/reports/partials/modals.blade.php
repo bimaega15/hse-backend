@@ -110,11 +110,11 @@
                     <div class="row">
                         <div class="col-md-12">
                             <div class="mb-3">
-                                <label for="projectName" class="form-label">Project Name</label>
-                                <input type="text" class="form-control" id="projectName" name="project_name" maxlength="255"
-                                    placeholder="Enter project name (optional)">
-                                <div class="form-text">Maximum 255 characters</div>
-                                <div class="invalid-feedback" id="projectNameError"></div>
+                                <label for="projectId" class="form-label">Project</label>
+                                <select class="form-select" id="projectId" name="project_id">
+                                    <option value="">Select Project (Optional)</option>
+                                </select>
+                                <div class="invalid-feedback" id="projectIdError"></div>
                             </div>
                         </div>
                     </div>

@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Contributing;
 use App\Models\Action;
 use App\Models\Location;
+use App\Models\Project;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,8 @@ class ReportController extends Controller
             $categories = Category::where('is_active', true)->get();
             $contributingFactors = Contributing::where('is_active', true)->get();
             $locations = Location::where('is_active', true)->get();
+            $projects = Project::where('status', 'open')->orderBy('project_name')->get(['id', 'project_name']);
+            Log::info('Projects loaded for form:', ['count' => $projects->count(), 'projects' => $projects->toArray()]);
 
             return response()->json([
                 'success' => true,
@@ -40,7 +43,8 @@ class ReportController extends Controller
                     'hse_staff' => $hseStaff,
                     'categories' => $categories,
                     'contributing_factors' => $contributingFactors,
-                    'locations' => $locations
+                    'locations' => $locations,
+                    'projects' => $projects
                 ]
             ]);
         } catch (\Exception $e) {
@@ -61,7 +65,7 @@ class ReportController extends Controller
             'severity_rating' => 'required|in:low,medium,high,critical',
             'description' => 'required|string|max:2000',
             'location_id' => 'required|exists:locations,id',
-            'project_name' => 'nullable|string|max:255',
+            'project_id' => 'nullable|exists:projects,id',
             'action_taken' => 'nullable|string|max:1000',
             'created_at' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -86,7 +90,7 @@ class ReportController extends Controller
                 'severity_rating',
                 'description',
                 'location_id',
-                'project_name',
+                'project_id',
                 'action_taken',
                 'created_at'
             ]);
@@ -167,6 +171,7 @@ class ReportController extends Controller
                 'contributingMaster:id,name,description',
                 'actionMaster:id,name,description',
                 'locationMaster:id,name',
+                'project:id,project_name',
                 'reportDetails.approvedBy:id,name',
                 'reportDetails.createdBy:id,name'
             ])->findOrFail($id);
@@ -202,7 +207,7 @@ class ReportController extends Controller
             'severity_rating' => 'required|in:low,medium,high,critical',
             'description' => 'required|string|max:2000',
             'location_id' => 'required|exists:locations,id',
-            'project_name' => 'nullable|string|max:255',
+            'project_id' => 'nullable|exists:projects,id',
             'action_taken' => 'nullable|string|max:1000',
             'created_at' => 'required|date',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
@@ -229,7 +234,7 @@ class ReportController extends Controller
                 'severity_rating',
                 'description',
                 'location_id',
-                'project_name',
+                'project_id',
                 'action_taken',
                 'created_at'
             ]);
@@ -515,7 +520,8 @@ class ReportController extends Controller
                 'categoryMaster:id,name',
                 'contributingMaster:id,name',
                 'actionMaster:id,name',
-                'locationMaster:id,name'
+                'locationMaster:id,name',
+                'project:id,project_name'
             ])->orderBy('created_at', 'desc');
 
             // Apply filters with validation
@@ -869,8 +875,8 @@ class ReportController extends Controller
         if (!empty($filters['location_id'])) {
             $constraints[] = ['location_id', '=', $filters['location_id']];
         }
-        if (!empty($filters['project_name'])) {
-            $constraints[] = ['project_name', '=', $filters['project_name']];
+        if (!empty($filters['project_id'])) {
+            $constraints[] = ['project_id', '=', $filters['project_id']];
         }
 
         return User::where('role', 'hse_staff')
@@ -1433,17 +1439,16 @@ class ReportController extends Controller
             ->orderBy('total_reports', 'desc')
             ->get();
 
-        $projectReports = $this->getFilteredQuery($filters)
-            ->whereNotNull('project_name')
-            ->where('project_name', '!=', '')
+        $projectReports = $this->getFilteredQuery($filters, 'reports')
+            ->join('projects', 'reports.project_id', '=', 'projects.id')
             ->selectRaw('
-                project_name,
+                projects.project_name,
                 COUNT(*) as total_reports,
-                SUM(CASE WHEN status = "done" THEN 1 ELSE 0 END) as closed_reports,
-                SUM(CASE WHEN status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_reports,
-                COUNT(CASE WHEN severity_rating IN ("high", "critical") THEN 1 END) as critical_reports
+                SUM(CASE WHEN reports.status = "done" THEN 1 ELSE 0 END) as closed_reports,
+                SUM(CASE WHEN reports.status IN ("waiting", "in-progress") THEN 1 ELSE 0 END) as open_reports,
+                COUNT(CASE WHEN reports.severity_rating IN ("high", "critical") THEN 1 END) as critical_reports
             ')
-            ->groupBy('project_name')
+            ->groupBy('projects.id', 'projects.project_name')
             ->orderBy('total_reports', 'desc')
             ->get();
 
@@ -1499,7 +1504,7 @@ class ReportController extends Controller
             'category_id' => $request->get('category_id'),
             'contributing_id' => $request->get('contributing_id'),
             'location_id' => $request->get('location_id'),
-            'project_name' => $request->get('project_name'),
+            'project_id' => $request->get('project_id'),
             'hse_staff_id' => $request->get('hse_staff_id'),
         ];
     }
@@ -1538,8 +1543,8 @@ class ReportController extends Controller
             $query->where('location_id', $filters['location_id']);
         }
 
-        if (!empty($filters['project_name'])) {
-            $query->where('project_name', $filters['project_name']);
+        if (!empty($filters['project_id'])) {
+            $query->where('project_id', $filters['project_id']);
         }
 
         if (!empty($filters['hse_staff_id'])) {
@@ -1574,11 +1579,9 @@ class ReportController extends Controller
                 'categories' => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'locations' => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-                'projects' => Report::whereNotNull('project_name')
-                    ->where('project_name', '!=', '')
-                    ->distinct()
+                'projects' => \App\Models\Project::where('status', 'open')
                     ->orderBy('project_name')
-                    ->pluck('project_name'),
+                    ->get(['id', 'project_name']),
                 'hse_staff' => User::where('role', 'hse_staff')
                     ->where('is_active', true)
                     ->orderBy('name')
@@ -1632,8 +1635,8 @@ class ReportController extends Controller
             $query->where('reports.location_id', $filters['location_id']);
         }
 
-        if (!empty($filters['project_name'])) {
-            $query->where('reports.project_name', $filters['project_name']);
+        if (!empty($filters['project_id'])) {
+            $query->where('reports.project_id', $filters['project_id']);
         }
 
         if (!empty($filters['hse_staff_id'])) {

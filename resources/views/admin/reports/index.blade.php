@@ -625,6 +625,14 @@
                     width: '100%'
                 });
 
+                $('#projectId').select2({
+                    dropdownParent: $('#reportModal'),
+                    theme: 'bootstrap-5',
+                    placeholder: 'Select Project (Optional)',
+                    allowClear: true,
+                    width: '100%'
+                });
+
                 console.log('All Select2 dropdowns initialized successfully');
             } catch (error) {
                 console.error('Error initializing Select2:', error);
@@ -695,6 +703,8 @@
         }
 
         function populateFormSelects() {
+            console.log('Form data received:', formData);
+
             // Populate Employee dropdown
             $('#employeeId').empty().append('<option value="">Select Employee</option>');
             formData.employees.forEach(function(employee) {
@@ -727,12 +737,25 @@
                 $('#locationId').append(`<option value="${location.id}">${location.name}</option>`);
             });
 
+            // Populate Project dropdown
+            console.log('Projects data:', formData.projects);
+            $('#projectId').empty().append('<option value="">Select Project (Optional)</option>');
+            if (formData.projects && Array.isArray(formData.projects)) {
+                console.log('Populating projects, count:', formData.projects.length);
+                formData.projects.forEach(function(project) {
+                    console.log('Adding project:', project);
+                    $('#projectId').append(`<option value="${project.id}">${project.project_name}</option>`);
+                });
+            } else {
+                console.log('No projects data available or projects is not an array');
+            }
+
             // Reinitialize all Select2 dropdowns after populating data
             reinitializeAllSelect2();
         }
 
         function reinitializeAllSelect2() {
-            const dropdowns = ['#employeeId', '#hseStaffId', '#statusHseStaffId', '#categoryId', '#contributingId', '#actionId', '#severityRating', '#locationId'];
+            const dropdowns = ['#employeeId', '#hseStaffId', '#statusHseStaffId', '#categoryId', '#contributingId', '#actionId', '#severityRating', '#locationId', '#projectId'];
 
             dropdowns.forEach(function(selector) {
                 if ($(selector).hasClass('select2-hidden-accessible')) {
@@ -793,6 +816,14 @@
                 dropdownParent: $('#reportModal'),
                 theme: 'bootstrap-5',
                 placeholder: 'Select Location',
+                allowClear: true,
+                width: '100%'
+            });
+
+            $('#projectId').select2({
+                dropdownParent: $('#reportModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Project (Optional)',
                 allowClear: true,
                 width: '100%'
             });
@@ -909,7 +940,7 @@
             $('#severityRating').val(report.severity_rating).trigger('change');
             $('#locationId').val(report.location_id).trigger('change');
 
-            $('#projectName').val(report.project_name);
+            $('#projectId').val(report.project_id);
             $('#description').val(report.description);
             $('#actionTaken').val(report.action_taken);
 
@@ -1117,7 +1148,7 @@
                             <tr><td class="fw-bold">Status:</td><td><span class="badge bg-${statusColor}">${status}</span></td></tr>
                             <tr><td class="fw-bold">Severity:</td><td><span class="badge bg-${severityColor}">${severityRating}</span></td></tr>
                             <tr><td class="fw-bold">Location:</td><td>${location}</td></tr>
-                            <tr><td class="fw-bold">Project Name:</td><td>${report.project_name ? escapeHtml(report.project_name) : 'N/A'}</td></tr>
+                            <tr><td class="fw-bold">Project:</td><td>${report.project && report.project.project_name ? escapeHtml(report.project.project_name) : 'N/A'}</td></tr>
                         </table>
                     </div>
                 </div>

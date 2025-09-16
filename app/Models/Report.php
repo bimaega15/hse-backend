@@ -18,7 +18,7 @@ class Report extends Model
         'contributing_id',       // Foreign key to contributings
         'action_id',            // Foreign key to actions
         'location_id',          // Foreign key to locations
-        'project_name',         // Project name field
+        'project_id',           // Foreign key to projects
         'severity_rating',      // enum low, medium, high, critical
         'action_taken',         // text field for action taken
         'description',
@@ -37,6 +37,7 @@ class Report extends Model
         'contributing_id' => 'integer',       // TAMBAHKAN
         'action_id' => 'integer',             // TAMBAHKAN
         'location_id' => 'integer',           // TAMBAHKAN
+        'project_id' => 'integer',            // TAMBAHKAN
         'images' => 'array',
         'start_process_at' => 'datetime',
         'completed_at' => 'datetime',
@@ -79,6 +80,11 @@ class Report extends Model
     public function locationMaster()
     {
         return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     // NEW: Report Details relationship

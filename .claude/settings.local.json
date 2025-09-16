@@ -7,7 +7,9 @@
       "Bash(php artisan:*)",
       "Read(//c/**)",
       "Bash(mysql:*)",
-      "Bash(php:*)"
+      "Bash(php:*)",
+      "Bash(findstr:*)",
+      "Bash(ren:*)"
     ],
     "deny": [],
     "ask": []

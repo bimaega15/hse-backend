@@ -129,15 +129,15 @@
                             <label class="form-label fw-bold">
                                 <i class="ri-building-line text-dark me-1"></i>Project
                             </label>
-                            <select class="form-select" id="filter_project" name="project_name">
+                            <select class="form-select" id="filter_project" name="project_id">
                                 <option value="">All Projects</option>
                                 @if (isset($additionalData['filter_options']['projects']))
                                     @foreach ($additionalData['filter_options']['projects'] as $project)
-                                        <option value="{{ $project }}">{{ $project }}</option>
+                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
                                     @endforeach
                                 @endif
                             </select>
-                            <small class="text-muted">Filter by project name</small>
+                            <small class="text-muted">Filter by project</small>
                         </div>
 
                         <!-- HSE Staff Filter -->
@@ -1652,7 +1652,7 @@
             'severity': 'Severity',
             'category_id': 'Category',
             'location_id': 'Location',
-            'project_name': 'Project',
+            'project_id': 'Project',
             'hse_staff_id': 'BAIK Staff'
         };
 
