@@ -148,6 +148,7 @@ class ObservationSeeder extends Seeder
                 'description' => $sampleDescriptions[$type][array_rand($sampleDescriptions[$type])],
                 'severity' => ['low', 'medium', 'high', 'critical'][array_rand(['low', 'medium', 'high', 'critical'])],
                 'action_taken' => $sampleActions[array_rand($sampleActions)],
+                'report_date' => $observation->created_at->copy()->addMinutes(rand(5, 180)), // Add report_date
             ];
 
             // Add activator_id only for at_risk_behavior type

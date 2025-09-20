@@ -503,18 +503,18 @@
                     const a = document.createElement('a');
                     a.href = url;
                     a.download =
-                    `observations_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.csv`;
+                        `observations_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.xlsx`;
                     document.body.appendChild(a);
                     a.click();
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
 
                     // Show success message
-                    showAlert('success', 'Success!', 'Observations Excel file has been exported successfully');
+                    showAlert('success', 'Success!', 'Observations XLSX file has been exported successfully');
                 })
                 .catch(error => {
                     console.error('Export error:', error);
-                    showAlert('error', 'Export Failed', 'Failed to export observations Excel file. Please try again.');
+                    showAlert('error', 'Export Failed', 'Failed to export observations XLSX file. Please try again.');
                 })
                 .finally(() => {
                     // Restore button state

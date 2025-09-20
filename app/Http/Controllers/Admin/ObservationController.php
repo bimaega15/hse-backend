@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Yajra\DataTables\Facades\DataTables;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 
 class ObservationController extends Controller
 {
@@ -795,17 +800,22 @@ class ObservationController extends Controller
 
             $observations = $query->orderBy('created_at', 'desc')->get();
 
-            // Create CSV content with proper Excel formatting
-            $csvContent = $this->generateObservationExcelContent($observations);
+            // Generate Excel file using PhpSpreadsheet
+            $spreadsheet = $this->generateObservationExcelContent($observations);
 
-            $filename = 'observations_export_' . date('Y-m-d_H-i-s') . '.csv';
+            // Create writer and output file
+            $writer = new Xlsx($spreadsheet);
 
-            return response($csvContent)
-                ->header('Content-Type', 'application/vnd.ms-excel')
-                ->header('Content-Disposition', 'attachment; filename="' . $filename . '"')
-                ->header('Pragma', 'no-cache')
-                ->header('Cache-Control', 'must-revalidate, post-check=0, pre-check=0')
-                ->header('Expires', '0');
+            $filename = 'observations_export_' . date('Y-m-d_H-i-s') . '.xlsx';
+            $tempFile = tempnam(sys_get_temp_dir(), 'excel');
+
+            $writer->save($tempFile);
+
+            return response()->download($tempFile, $filename, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+                'Cache-Control' => 'max-age=0',
+            ])->deleteFileAfterSend(true);
         } catch (\Exception $e) {
             Log::error('Observation Export Error: ' . $e->getMessage());
             return response()->json([
@@ -817,11 +827,43 @@ class ObservationController extends Controller
 
     private function generateObservationExcelContent($observations)
     {
-        // Create CSV with BOM for proper Excel UTF-8 support
-        $csvContent = "\xEF\xBB\xBF";
+        // Create new Spreadsheet object
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        // Headers
-        $headers = [
+        // Set worksheet title
+        $sheet->setTitle('Observations');
+
+        $currentRow = 1;
+
+        // Title row
+        $sheet->setCellValue('A' . $currentRow, 'TABEL OBSERVASI HSE');
+        $sheet->mergeCells('A' . $currentRow . ':Q' . $currentRow);
+
+        // Style title
+        $sheet->getStyle('A' . $currentRow)->applyFromArray([
+            'font' => ['bold' => true, 'size' => 16],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'D3D3D3']]
+        ]);
+
+        $currentRow += 2; // Empty line
+
+        // MAIN OBSERVATIONS SECTION
+        $sheet->setCellValue('A' . $currentRow, 'DATA OBSERVASI UTAMA');
+        $sheet->mergeCells('A' . $currentRow . ':Q' . $currentRow);
+
+        // Style section header
+        $sheet->getStyle('A' . $currentRow)->applyFromArray([
+            'font' => ['bold' => true, 'size' => 14],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]
+        ]);
+
+        $currentRow++;
+
+        // Main observations headers (without detail observasi column)
+        $mainHeaders = [
             'No',
             'Tanggal Dibuat',
             'ID Observer',
@@ -838,13 +880,27 @@ class ObservationController extends Controller
             'Risk Management',
             'SIM K3',
             'Status',
-            'Catatan',
-            'Detail Observasi'
+            'Catatan'
         ];
 
-        $csvContent .= '"' . implode('","', $headers) . '"' . "\r\n";
+        // Set main headers
+        $col = 'A';
+        foreach ($mainHeaders as $header) {
+            $sheet->setCellValue($col . $currentRow, $header);
+            $col++;
+        }
 
-        // Data rows
+        // Style main headers
+        $sheet->getStyle('A' . $currentRow . ':Q' . $currentRow)->applyFromArray([
+            'font' => ['bold' => true],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0F0F0']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+        ]);
+
+        $currentRow++;
+
+        // Main data rows
         $no = 1;
         foreach ($observations as $observation) {
             // Calculate duration
@@ -855,12 +911,9 @@ class ObservationController extends Controller
                 $duration = ($end - $start) / 60; // Convert to minutes
             }
 
-            // Get observation details summary
-            $detailsSummary = $this->getObservationDetailsSummary($observation->details);
-
-            $row = [
+            $rowData = [
                 $no++,
-                $observation->created_at ? $observation->created_at->locale('id')->isoFormat('DD MMMM YYYY HH:mm') : 'N/A',
+                $observation->created_at ? $observation->created_at->format('d/m/Y H:i') : 'N/A',
                 $observation->user_id ?? 'N/A',
                 optional($observation->user)->name ?? 'N/A',
                 optional($observation->user)->email ?? 'N/A',
@@ -875,19 +928,127 @@ class ObservationController extends Controller
                 $observation->informal_risk_mgmt ?? 0,
                 $observation->sim_k3 ?? 0,
                 $this->getObservationStatusLabel($observation->status ?? 'N/A'),
-                $this->cleanTextForCsv($observation->notes ?? 'Tidak ada catatan'),
-                $detailsSummary
+                $this->cleanTextForExcel($observation->notes ?? 'Tidak ada catatan')
             ];
 
-            // Escape and format each field
-            $escapedRow = array_map(function ($field) {
-                return '"' . str_replace('"', '""', $field) . '"';
-            }, $row);
+            $col = 'A';
+            foreach ($rowData as $cellValue) {
+                $sheet->setCellValue($col . $currentRow, $cellValue);
+                $col++;
+            }
 
-            $csvContent .= implode(',', $escapedRow) . "\r\n";
+            // Style main data row
+            $sheet->getStyle('A' . $currentRow . ':Q' . $currentRow)->applyFromArray([
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            ]);
+
+            $currentRow++;
         }
 
-        return $csvContent;
+        // Check if there are observation details
+        $hasObservationDetails = false;
+        $totalDetails = 0;
+        foreach ($observations as $observation) {
+            if ($observation->details && count($observation->details) > 0) {
+                $hasObservationDetails = true;
+                $totalDetails += count($observation->details);
+            }
+        }
+
+        // OBSERVATION DETAILS section at fixed position (Row 3, Column S)
+        if ($hasObservationDetails) {
+            $detailsStartRow = 3;
+
+            // OBSERVATION DETAILS SECTION
+            $sheet->setCellValue('S' . $detailsStartRow, 'DETAIL OBSERVASI');
+            $sheet->mergeCells('S' . $detailsStartRow . ':Z' . $detailsStartRow);
+
+            // Style observation details header
+            $sheet->getStyle('S' . $detailsStartRow)->applyFromArray([
+                'font' => ['bold' => true, 'size' => 14],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8E8E8']]
+            ]);
+
+            $detailsStartRow++;
+
+            // Observation details headers
+            $detailsHeaders = [
+                'No',
+                'ID Observasi',
+                'Tipe Observasi',
+                'Kategori',
+                'Deskripsi',
+                'Tingkat Keparahan',
+                'Tanggal Laporan',
+                'Tindakan yang Diambil'
+            ];
+
+            // Set observation details headers starting from column S
+            $col = 'S';
+            foreach ($detailsHeaders as $header) {
+                $sheet->setCellValue($col . $detailsStartRow, $header);
+                $col++;
+            }
+
+            // Style observation details headers
+            $sheet->getStyle('S' . $detailsStartRow . ':Z' . $detailsStartRow)->applyFromArray([
+                'font' => ['bold' => true],
+                'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'F0F0F0']],
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+            ]);
+
+            $detailsStartRow++;
+
+            // Add observation details data
+            $detailNo = 1;
+            foreach ($observations as $observation) {
+                if ($observation->details && count($observation->details) > 0) {
+                    foreach ($observation->details as $detail) {
+                        $typeMap = [
+                            'at_risk_behavior' => 'At Risk Behavior',
+                            'nearmiss_incident' => 'Near Miss Incident',
+                            'informal_risk_mgmt' => 'Informal Risk Management',
+                            'sim_k3' => 'SIM K3'
+                        ];
+
+                        $detailRowData = [
+                            $detailNo++,
+                            $observation->id,
+                            $typeMap[$detail->observation_type] ?? $detail->observation_type,
+                            $this->cleanTextForExcel(optional($detail->category)->name),
+                            $this->cleanTextForExcel($detail->description),
+                            strtoupper($detail->severity ?? 'N/A'),
+                            $detail->report_date ? \Carbon\Carbon::parse($detail->report_date)->format('d/m/Y') : 'N/A',
+                            $this->cleanTextForExcel($detail->action_taken ?? 'Tidak ada tindakan')
+                        ];
+
+                        $col = 'S';
+                        foreach ($detailRowData as $cellValue) {
+                            $sheet->setCellValue($col . $detailsStartRow, $cellValue);
+                            $col++;
+                        }
+
+                        // Style observation details data row
+                        $sheet->getStyle('S' . $detailsStartRow . ':Z' . $detailsStartRow)->applyFromArray([
+                            'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+                        ]);
+
+                        $detailsStartRow++;
+                    }
+                }
+            }
+        }
+
+        // Auto-size columns (including observation details columns S-Z)
+        foreach (range('A', 'Z') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        return $spreadsheet;
     }
 
     private function getObservationDetailsSummary($details)
@@ -922,6 +1083,30 @@ class ObservationController extends Controller
         $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
         $text = preg_replace('/\s+/', ' ', $text);
         return trim($text);
+    }
+
+    private function cleanTextForExcel($text)
+    {
+        if (!$text || trim($text) === '') return 'N/A';
+
+        // Convert to string if not already
+        $text = (string) $text;
+
+        // Remove HTML tags
+        $text = strip_tags($text);
+
+        // Replace line breaks with space for better display in Excel cells
+        $text = str_replace(["\r\n", "\r", "\n"], ' ', $text);
+
+        // Replace multiple spaces with single space
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        // Remove any control characters except space
+        $text = preg_replace('/[^\x20-\x7E\x80-\xFF]/', '', $text);
+
+        $text = trim($text);
+
+        return $text === '' ? 'N/A' : $text;
     }
 
     private function getObservationStatusLabel($status)
