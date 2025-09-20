@@ -460,6 +460,34 @@
                 observation.details.forEach(function(detail) {
                     addObservationDetail(detail);
                 });
+
+                // After adding all details, handle at_risk_behavior category disable for existing data
+                setTimeout(function() {
+                    $('#observationDetails .observation-detail-item').each(function() {
+                        const $detail = $(this);
+                        const observationType = $detail.find('select[name*="[observation_type]"]').val();
+
+                        if (observationType === 'at_risk_behavior') {
+                            const $categorySelect = $detail.find('select[name*="[category_id]"]');
+
+                            // Disable the category select
+                            $categorySelect.prop('disabled', true);
+
+                            // Reinitialize Select2 in disabled state
+                            if ($categorySelect.hasClass('select2-hidden-accessible')) {
+                                $categorySelect.select2('destroy');
+                                $categorySelect.select2({
+                                    dropdownParent: $('#observationModal'),
+                                    theme: 'bootstrap-5',
+                                    placeholder: 'Select Category',
+                                    allowClear: false,
+                                    width: '100%',
+                                    disabled: true
+                                });
+                            }
+                        }
+                    });
+                }, 100);
             }
         }
 
@@ -1273,6 +1301,11 @@
             const activatorSelect = activatorRow.querySelector('select[name*="[activator_id]"]');
             const $activatorSelect = $(activatorSelect);
 
+            // Get category select for this detail
+            const detailElement = document.getElementById(detailId);
+            const categorySelect = detailElement.querySelector('select[name*="[category_id]"]');
+            const $categorySelect = $(categorySelect);
+
             if (selectElement.value === 'at_risk_behavior') {
                 activatorRow.style.display = 'block';
                 activatorSelect.setAttribute('required', 'required');
@@ -1287,6 +1320,31 @@
                         width: '100%'
                     });
                 }
+
+                // Auto-select "unsafe behavior" category and disable the select
+                if (window.categoriesData) {
+                    const unsafeBehaviorCategory = window.categoriesData.find(category =>
+                        category.name.toLowerCase() === 'unsafe behavior'
+                    );
+
+                    if (unsafeBehaviorCategory) {
+                        $categorySelect.val(unsafeBehaviorCategory.id).trigger('change');
+                        $categorySelect.prop('disabled', true);
+
+                        // Disable Select2 if initialized
+                        if ($categorySelect.hasClass('select2-hidden-accessible')) {
+                            $categorySelect.select2('destroy');
+                            $categorySelect.select2({
+                                dropdownParent: $('#observationModal'),
+                                theme: 'bootstrap-5',
+                                placeholder: 'Select Category',
+                                allowClear: false,
+                                width: '100%',
+                                disabled: true
+                            });
+                        }
+                    }
+                }
             } else {
                 activatorRow.style.display = 'none';
                 activatorSelect.removeAttribute('required');
@@ -1297,6 +1355,22 @@
                 } else {
                     activatorSelect.value = '';
                 }
+
+                // Re-enable category select and clear selection
+                $categorySelect.prop('disabled', false);
+
+                if ($categorySelect.hasClass('select2-hidden-accessible')) {
+                    $categorySelect.select2('destroy');
+                    $categorySelect.select2({
+                        dropdownParent: $('#observationModal'),
+                        theme: 'bootstrap-5',
+                        placeholder: 'Select Category',
+                        allowClear: false,
+                        width: '100%'
+                    });
+                }
+
+                $categorySelect.val('').trigger('change');
             }
         }
 
