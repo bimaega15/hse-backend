@@ -7,6 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Observation;
 use App\Models\ObservationDetail;
 use App\Models\Category;
+use App\Models\Contributing;
+use App\Models\Action;
+use App\Models\Location;
+use App\Models\Project;
 use App\Models\Activator;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
@@ -24,7 +28,15 @@ class ObservationController extends Controller
     public function index(Request $request): JsonResponse
     {
         $user = $request->user();
-        $query = Observation::with(['user', 'details.category', 'details.activator']);
+        $query = Observation::with([
+            'user',
+            'details.category',
+            'details.contributing',
+            'details.action',
+            'details.location',
+            'details.project',
+            'details.activator'
+        ]);
 
         // Filter by user role
         if ($user->role === 'employee') {
@@ -83,10 +95,20 @@ class ObservationController extends Controller
             'details' => 'required|array|min:1',
             'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
             'details.*.category_id' => 'required|exists:categories,id',
+            'details.*.contributing_id' => 'required|exists:contributings,id',
+            'details.*.action_id' => 'required|exists:actions,id',
+            'details.*.location_id' => 'required|exists:locations,id',
+            'details.*.project_id' => 'nullable|exists:projects,id',
             'details.*.activator_id' => 'nullable|exists:activators,id',
+            'details.*.report_date' => 'required|date',
             'details.*.description' => 'required|string|max:2000',
             'details.*.severity' => 'required|in:low,medium,high,critical',
             'details.*.action_taken' => 'nullable|string|max:1000',
+            'details.*.images' => 'nullable|array',
+            'details.*.images.*.name' => 'required_with:details.*.images.*|string',
+            'details.*.images.*.type' => 'required_with:details.*.images.*|string',
+            'details.*.images.*.size' => 'required_with:details.*.images.*|integer|max:2097152',
+            'details.*.images.*.data' => 'required_with:details.*.images.*|string',
         ]);
 
         // Custom validation for activator_id when observation_type is at_risk_behavior
@@ -109,18 +131,25 @@ class ObservationController extends Controller
         try {
             DB::beginTransaction();
 
+            // Calculate duration in minutes
+            $startTime = strtotime($request->waktu_mulai);
+            $endTime = strtotime($request->waktu_selesai);
+            $durationInMinutes = ($endTime - $startTime) / 60;
+
             // Create observation
             $observation = Observation::create([
                 'user_id' => $request->user()->id,
                 'waktu_observasi' => $request->waktu_observasi,
                 'waktu_mulai' => $request->waktu_mulai,
                 'waktu_selesai' => $request->waktu_selesai,
+                'duration_in_minutes' => $durationInMinutes,
                 'notes' => $request->notes,
                 'status' => 'submitted',
                 'at_risk_behavior' => 0,
                 'nearmiss_incident' => 0,
                 'informal_risk_mgmt' => 0,
                 'sim_k3' => 0,
+                'total_observations' => count($request->details),
             ]);
 
             // Create observation details and count each type
@@ -132,14 +161,35 @@ class ObservationController extends Controller
             ];
 
             foreach ($request->details as $detail) {
+                // Process and save images as base64
+                $images = null;
+                if (isset($detail['images']) && is_array($detail['images'])) {
+                    $imageArray = [];
+                    foreach ($detail['images'] as $imageData) {
+                        $imageArray[] = [
+                            'name' => $imageData['name'],
+                            'type' => $imageData['type'],
+                            'size' => $imageData['size'],
+                            'data' => $imageData['data']
+                        ];
+                    }
+                    $images = json_encode($imageArray);
+                }
+
                 ObservationDetail::create([
                     'observation_id' => $observation->id,
                     'observation_type' => $detail['observation_type'],
                     'category_id' => $detail['category_id'],
+                    'contributing_id' => $detail['contributing_id'],
+                    'action_id' => $detail['action_id'],
+                    'location_id' => $detail['location_id'],
+                    'project_id' => $detail['project_id'] ?? null,
                     'activator_id' => $detail['activator_id'] ?? null,
+                    'report_date' => $detail['report_date'],
                     'description' => $detail['description'],
                     'severity' => $detail['severity'],
                     'action_taken' => $detail['action_taken'] ?? null,
+                    'images' => $images,
                 ]);
 
                 $counters[$detail['observation_type']]++;
@@ -151,7 +201,15 @@ class ObservationController extends Controller
             DB::commit();
 
             // Load relationships for response
-            $observation->load(['user', 'details.category']);
+            $observation->load([
+                'user',
+                'details.category',
+                'details.contributing',
+                'details.action',
+                'details.location',
+                'details.project',
+                'details.activator'
+            ]);
 
             return $this->successResponse($observation, 'Observation created successfully', 201);
         } catch (\Exception $e) {
@@ -167,7 +225,15 @@ class ObservationController extends Controller
     {
         $user = $request->user();
 
-        $query = Observation::with(['user', 'details.category', 'details.activator']);
+        $query = Observation::with([
+            'user',
+            'details.category',
+            'details.contributing',
+            'details.action',
+            'details.location',
+            'details.project',
+            'details.activator'
+        ]);
 
         // Filter by user role
         if ($user->role === 'employee') {
@@ -215,10 +281,16 @@ class ObservationController extends Controller
             'details' => 'sometimes|required|array|min:1',
             'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
             'details.*.category_id' => 'required|exists:categories,id',
+            'details.*.contributing_id' => 'nullable|exists:contributings,id',
+            'details.*.action_id' => 'nullable|exists:actions,id',
+            'details.*.location_id' => 'nullable|exists:locations,id',
+            'details.*.project_id' => 'nullable|exists:projects,id',
             'details.*.activator_id' => 'nullable|exists:activators,id',
+            'details.*.report_date' => 'nullable|date',
             'details.*.description' => 'required|string|max:2000',
             'details.*.severity' => 'required|in:low,medium,high,critical',
             'details.*.action_taken' => 'nullable|string|max:1000',
+            'details.*.images' => 'nullable|array',
         ]);
 
         // Custom validation for activator_id when observation_type is at_risk_behavior
@@ -241,13 +313,22 @@ class ObservationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Update observation basic info
-            $observation->update($request->only([
+            // Calculate duration in minutes if time fields are provided
+            $updateData = $request->only([
                 'waktu_observasi',
                 'waktu_mulai',
                 'waktu_selesai',
                 'notes'
-            ]));
+            ]);
+
+            if ($request->has('waktu_mulai') && $request->has('waktu_selesai')) {
+                $startTime = strtotime($request->waktu_mulai);
+                $endTime = strtotime($request->waktu_selesai);
+                $updateData['duration_in_minutes'] = ($endTime - $startTime) / 60;
+            }
+
+            // Update observation basic info
+            $observation->update($updateData);
 
             // If details are provided, recreate them
             if ($request->has('details')) {
@@ -263,27 +344,57 @@ class ObservationController extends Controller
                 ];
 
                 foreach ($request->details as $detail) {
+                    // Process and save images as base64
+                    $images = null;
+                    if (isset($detail['images']) && is_array($detail['images'])) {
+                        $imageArray = [];
+                        foreach ($detail['images'] as $imageData) {
+                            $imageArray[] = [
+                                'name' => $imageData['name'],
+                                'type' => $imageData['type'],
+                                'size' => $imageData['size'],
+                                'data' => $imageData['data']
+                            ];
+                        }
+                        $images = json_encode($imageArray);
+                    }
+
                     ObservationDetail::create([
                         'observation_id' => $observation->id,
                         'observation_type' => $detail['observation_type'],
                         'category_id' => $detail['category_id'],
+                        'contributing_id' => $detail['contributing_id'] ?? null,
+                        'action_id' => $detail['action_id'] ?? null,
+                        'location_id' => $detail['location_id'] ?? null,
+                        'project_id' => $detail['project_id'] ?? null,
                         'activator_id' => $detail['activator_id'] ?? null,
+                        'report_date' => $detail['report_date'] ?? null,
                         'description' => $detail['description'],
                         'severity' => $detail['severity'],
                         'action_taken' => $detail['action_taken'] ?? null,
+                        'images' => $images,
                     ]);
 
                     $counters[$detail['observation_type']]++;
                 }
 
-                // Update counters
+                // Update counters and total observations
+                $counters['total_observations'] = count($request->details);
                 $observation->update($counters);
             }
 
             DB::commit();
 
             // Load relationships for response
-            $observation->load(['user', 'details.category']);
+            $observation->load([
+                'user',
+                'details.category',
+                'details.contributing',
+                'details.action',
+                'details.location',
+                'details.project',
+                'details.activator'
+            ]);
 
             return $this->successResponse($observation, 'Observation updated successfully');
         } catch (\Exception $e) {
@@ -350,7 +461,15 @@ class ObservationController extends Controller
 
         try {
             $observation->update(['status' => 'submitted']);
-            $observation->load(['user', 'details.category']);
+            $observation->load([
+                'user',
+                'details.category',
+                'details.contributing',
+                'details.action',
+                'details.location',
+                'details.project',
+                'details.activator'
+            ]);
 
             return $this->successResponse($observation, 'Observation submitted successfully');
         } catch (\Exception $e) {
@@ -381,7 +500,15 @@ class ObservationController extends Controller
 
         try {
             $observation->update(['status' => 'reviewed']);
-            $observation->load(['user', 'details.category']);
+            $observation->load([
+                'user',
+                'details.category',
+                'details.contributing',
+                'details.action',
+                'details.location',
+                'details.project',
+                'details.activator'
+            ]);
 
             return $this->successResponse($observation, 'Observation reviewed successfully');
         } catch (\Exception $e) {
