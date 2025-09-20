@@ -240,15 +240,13 @@
                     url: "{{ route('admin.observations.data') }}",
                     type: 'GET',
                     data: function(d) {
-                        d.status = $('#statusFilter').val();
-                        d.observation_type = $('#observationTypeFilter').val();
-                        d.start_date = $('#startDateFilter').val();
-                        d.end_date = $('#endDateFilter').val();
+                        // Add search filter
+                        d.search = $('#searchFilter').val();
 
                         // Add URL status filter
                         const urlParams = new URLSearchParams(window.location.search);
                         const urlStatus = urlParams.get('status');
-                        if (urlStatus && !d.status) {
+                        if (urlStatus) {
                             d.url_status = urlStatus;
                         }
                     }

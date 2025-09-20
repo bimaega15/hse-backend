@@ -11,7 +11,7 @@
                         </div>
                     </div>
                     <div class="flex-grow-1 ms-3">
-                        <p class="text-uppercase fw-medium text-muted mb-0">Total Observations</p>
+                        <p class="text-uppercase fw-medium text-muted mb-0">Observations</p>
                         <h4 class="fs-16 fw-semibold mb-0" id="totalObservations">-</h4>
                     </div>
                 </div>
@@ -181,46 +181,26 @@
             <div class="card-body border-bottom d-none" id="filtersPanel">
                 <div class="bg-light rounded p-3">
                     <form id="filtersForm" class="row g-3">
-                        <div class="col-md-3">
-                            <label for="statusFilter" class="form-label fw-medium">Status</label>
-                            <select class="form-select" id="statusFilter" name="status">
-                                <option value="">All Status</option>
-                                <option value="draft" {{ $status === 'draft' ? 'selected' : '' }}>Draft</option>
-                                <option value="submitted" {{ $status === 'submitted' ? 'selected' : '' }}>Submitted
-                                </option>
-                                <option value="reviewed" {{ $status === 'reviewed' ? 'selected' : '' }}>Reviewed
-                                </option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="observationTypeFilter" class="form-label fw-medium">Observation Type</label>
-                            <select class="form-select" id="observationTypeFilter" name="observation_type">
-                                <option value="">All Types</option>
-                                <option value="at_risk_behavior">At Risk Behavior</option>
-                                <option value="nearmiss_incident">Near Miss Incident</option>
-                                <option value="informal_risk_mgmt">Informal Risk Management</option>
-                                <option value="sim_k3">SIM K3</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label for="startDateFilter" class="form-label fw-medium">Start Date</label>
-                            <input type="date" class="form-control" id="startDateFilter" name="start_date">
-                        </div>
-                        <div class="col-md-3">
-                            <label for="endDateFilter" class="form-label fw-medium">End Date</label>
-                            <input type="date" class="form-control" id="endDateFilter" name="end_date">
+                        <!-- Search Section -->
+                        <div class="col-12">
+                            <h6 class="fw-medium text-primary mb-3">
+                                <i class="ri-search-line me-1"></i>Search
+                            </h6>
                         </div>
                         <div class="col-12">
-                            <div class="d-flex gap-2 align-items-center">
+                            <label for="searchFilter" class="form-label fw-medium">Search</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchFilter" name="search"
+                                       placeholder="Search by user name, project name, or location name...">
                                 <button type="button" class="btn btn-primary" onclick="applyFilters()">
-                                    <i class="ri-search-line me-1"></i>Apply Filters
+                                    <i class="ri-search-line me-1"></i>Search
                                 </button>
                                 <button type="button" class="btn btn-secondary" onclick="clearFilters()">
-                                    <i class="ri-refresh-line me-1"></i>Clear Filters
+                                    <i class="ri-refresh-line me-1"></i>Clear
                                 </button>
-                                <div class="text-muted small ms-3">
-                                    <i class="ri-information-line me-1"></i>Use advanced filters to narrow down results
-                                </div>
+                            </div>
+                            <div class="form-text">
+                                <i class="ri-information-line me-1"></i>Search by user name, project name, or location name
                             </div>
                         </div>
                     </form>
@@ -405,6 +385,88 @@
     </div>
 @endif
 
+<!-- Export Excel Modal -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">
+                    <i class="ri-file-excel-2-line me-2 text-success"></i>Export Observations to Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="ri-information-line me-2"></i>
+                    <strong>Export Information:</strong> Use the filters below to narrow down your export data. Select users, projects, and locations to include in your Excel
+                    export. Each selected combination will create a separate sheet in the Excel file.
+                </div>
+
+                <!-- Search Filters Section -->
+                <div class="card border-primary mb-4">
+                    <div class="card-header bg-primary bg-gradient text-white">
+                        <h6 class="mb-0">
+                            <i class="ri-search-line me-2"></i>Export Filters
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="exportFiltersForm" class="row g-3">
+                            <div class="col-12">
+                                <label for="exportSearchFilter" class="form-label fw-medium">Search</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="exportSearchFilter" name="export_search"
+                                           placeholder="Search by user name, project name, or location name...">
+                                    <button type="button" class="btn btn-primary btn-sm" onclick="applyExportFilters()">
+                                        <i class="ri-search-line me-1"></i>Search
+                                    </button>
+                                    <button type="button" class="btn btn-secondary btn-sm" onclick="clearExportFilters()">
+                                        <i class="ri-refresh-line me-1"></i>Clear
+                                    </button>
+                                </div>
+                                <div class="form-text">
+                                    <i class="ri-information-line me-1"></i>Search to filter the export data below
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Select Data to Export:</h6>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="selectAllExportItems()">
+                            <i class="ri-check-double-line me-1"></i>Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="deselectAllExportItems()">
+                            <i class="ri-close-line me-1"></i>Deselect All
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <div id="exportModalContent">
+                        <!-- Dynamic content will be loaded here -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading export data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" onclick="proceedWithExport()">
+                    <i class="ri-download-line me-1"></i>Export Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('jsSection')
     <script>
         // Additional JavaScript for observations list specific functionality
@@ -456,14 +518,259 @@
 
         // Export Excel functionality for observations
         function exportObservationExcel() {
+            // Show export modal first
+            showExportModal();
+        }
+
+        function showExportModal() {
+            // Copy current search value to export modal
+            $('#exportSearchFilter').val($('#searchFilter').val());
+
+            // Load grouped data and show modal
+            loadExportData();
+            $('#exportModal').modal('show');
+        }
+
+        function applyExportFilters() {
+            // Reload export data with current filters
+            loadExportData();
+        }
+
+        function clearExportFilters() {
+            // Clear all export filter forms
+            $('#exportFiltersForm')[0].reset();
+            // Reload export data
+            loadExportData();
+        }
+
+        function loadExportData() {
+            // Show loading state
+            $('#exportModalContent').html(`
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading export data...</p>
+                </div>
+            `);
+
+            // Get export filter values
+            const exportFilters = {
+                search: $('#exportSearchFilter').val()
+            };
+
+            $.ajax({
+                url: "{{ route('admin.observations.export.grouped-data') }}",
+                type: 'GET',
+                data: exportFilters,
+                success: function(response) {
+                    if (response.success) {
+                        buildExportModal(response.data);
+                    } else {
+                        showAlert('error', 'Error', 'Failed to load export data');
+                    }
+                },
+                error: function() {
+                    showAlert('error', 'Error', 'Failed to load export data');
+                }
+            });
+        }
+
+        function buildExportModal(groupedData) {
+            let modalContent = '';
+
+            groupedData.forEach((user, index) => {
+                const collapseId = `collapse_user_${user.user_id}`;
+                modalContent += `
+                    <div class="card mb-1">
+                        <div class="card-header">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input user-checkbox me-2" type="checkbox"
+                                           id="user_${user.user_id}" checked onchange="toggleUserSelection(${user.user_id})">
+                                    <label class="form-check-label fw-bold" for="user_${user.user_id}">
+                                        ${user.user_name} <span class="text-muted fw-normal">(${user.user_role || 'Employee'})</span>
+                                    </label>
+                                </div>
+                                <button class="btn btn-sm btn-outline-secondary" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#${collapseId}"
+                                        aria-expanded="true" aria-controls="${collapseId}">
+                                    <i class="ri-arrow-down-s-line"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="collapse show" id="${collapseId}">
+                            <div class="card-body">
+                                <div class="row">
+                `;
+
+                user.projects.forEach(project => {
+                    modalContent += `
+                        <div class="col-md-6 mb-3">
+                            <div class="border rounded p-3">
+                                <div class="form-check">
+                                    <input class="form-check-input project-checkbox" type="checkbox"
+                                           id="project_${user.user_id}_${project.project_id}"
+                                           data-user-id="${user.user_id}"
+                                           data-project-id="${project.project_id}"
+                                           onchange="toggleProjectSelection(${user.user_id}, ${project.project_id})" checked>
+                                    <label class="form-check-label fw-medium" for="project_${user.user_id}_${project.project_id}">
+                                        ${project.project_name}
+                                    </label>
+                                </div>
+                                <div class="ms-4 mt-2">
+                    `;
+
+                    project.locations.forEach(location => {
+                        modalContent += `
+                            <div class="form-check">
+                                <input class="form-check-input location-checkbox" type="checkbox"
+                                       id="location_${user.user_id}_${project.project_id}_${location.location_id}"
+                                       data-user-id="${user.user_id}"
+                                       data-project-id="${project.project_id}"
+                                       data-location-id="${location.location_id}"
+                                       value="${user.user_id}_${project.project_id}_${location.location_id}"
+                                       onchange="toggleLocationSelection(${user.user_id}, ${project.project_id})" checked>
+                                <label class="form-check-label text-muted" for="location_${user.user_id}_${project.project_id}_${location.location_id}">
+                                    ${location.location_name} <span class="badge bg-light text-dark">${location.count}</span>
+                                </label>
+                            </div>
+                        `;
+                    });
+
+                    modalContent += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                modalContent += `
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            $('#exportModalContent').html(modalContent);
+
+            // Add event listeners for collapse buttons
+            $('.collapse').on('show.bs.collapse', function() {
+                const button = $(`button[data-bs-target="#${this.id}"]`);
+                button.find('i').removeClass('ri-arrow-down-s-line').addClass('ri-arrow-up-s-line');
+            });
+
+            $('.collapse').on('hide.bs.collapse', function() {
+                const button = $(`button[data-bs-target="#${this.id}"]`);
+                button.find('i').removeClass('ri-arrow-up-s-line').addClass('ri-arrow-down-s-line');
+            });
+        }
+
+        function toggleUserSelection(userId) {
+            const userCheckbox = $(`#user_${userId}`);
+            const isChecked = userCheckbox.is(':checked');
+
+            // Toggle all project and location checkboxes for this user
+            $(`.project-checkbox[data-user-id="${userId}"]`).prop('checked', isChecked);
+            $(`.location-checkbox[data-user-id="${userId}"]`).prop('checked', isChecked);
+        }
+
+        function toggleProjectSelection(userId, projectId) {
+            const projectCheckbox = $(`#project_${userId}_${projectId}`);
+            const isChecked = projectCheckbox.is(':checked');
+
+            // Toggle all location checkboxes for this project
+            $(`.location-checkbox[data-user-id="${userId}"][data-project-id="${projectId}"]`).prop('checked', isChecked);
+
+            // Update user checkbox state based on project selections
+            updateUserCheckboxState(userId);
+        }
+
+        function toggleLocationSelection(userId, projectId) {
+            // Update project checkbox state based on location selections
+            updateProjectCheckboxState(userId, projectId);
+
+            // Update user checkbox state based on project selections
+            updateUserCheckboxState(userId);
+        }
+
+        function updateProjectCheckboxState(userId, projectId) {
+            const projectCheckbox = $(`#project_${userId}_${projectId}`);
+            const locationCheckboxes = $(`.location-checkbox[data-user-id="${userId}"][data-project-id="${projectId}"]`);
+            const checkedLocations = $(
+                `.location-checkbox[data-user-id="${userId}"][data-project-id="${projectId}"]:checked`);
+
+            // If all locations are checked, check project checkbox
+            if (locationCheckboxes.length === checkedLocations.length && locationCheckboxes.length > 0) {
+                projectCheckbox.prop('checked', true);
+                projectCheckbox.prop('indeterminate', false);
+            }
+            // If no locations are checked, uncheck project checkbox
+            else if (checkedLocations.length === 0) {
+                projectCheckbox.prop('checked', false);
+                projectCheckbox.prop('indeterminate', false);
+            }
+            // If some locations are checked, set indeterminate state
+            else {
+                projectCheckbox.prop('checked', false);
+                projectCheckbox.prop('indeterminate', true);
+            }
+        }
+
+        function updateUserCheckboxState(userId) {
+            const userCheckbox = $(`#user_${userId}`);
+            const projectCheckboxes = $(`.project-checkbox[data-user-id="${userId}"]`);
+            const checkedProjects = $(`.project-checkbox[data-user-id="${userId}"]:checked`);
+
+            // If all projects are checked, check user checkbox
+            if (projectCheckboxes.length === checkedProjects.length && projectCheckboxes.length > 0) {
+                userCheckbox.prop('checked', true);
+                userCheckbox.prop('indeterminate', false);
+            }
+            // If no projects are checked, uncheck user checkbox
+            else if (checkedProjects.length === 0) {
+                userCheckbox.prop('checked', false);
+                userCheckbox.prop('indeterminate', false);
+            }
+            // If some projects are checked, set indeterminate state
+            else {
+                userCheckbox.prop('checked', false);
+                userCheckbox.prop('indeterminate', true);
+            }
+        }
+
+        function selectAllExportItems() {
+            $('.user-checkbox, .project-checkbox, .location-checkbox').prop('checked', true);
+            $('.user-checkbox, .project-checkbox').prop('indeterminate', false);
+        }
+
+        function deselectAllExportItems() {
+            $('.user-checkbox, .project-checkbox, .location-checkbox').prop('checked', false);
+            $('.user-checkbox, .project-checkbox').prop('indeterminate', false);
+        }
+
+        function proceedWithExport() {
+            // Get selected items
+            const selectedItems = [];
+            $('.location-checkbox:checked').each(function() {
+                selectedItems.push($(this).val());
+            });
+
+            if (selectedItems.length === 0) {
+                showAlert('warning', 'No Selection', 'Please select at least one location to export');
+                return;
+            }
+
+            // Close modal
+            $('#exportModal').modal('hide');
+
             // Get the button element
             const exportButton = $('button[onclick="exportObservationExcel()"]');
 
             const filters = {
-                status: $('#statusFilter').val(),
-                observation_type: $('#observationTypeFilter').val(),
-                start_date: $('#startDateFilter').val(),
-                end_date: $('#endDateFilter').val()
+                search: $('#exportSearchFilter').val() || $('#searchFilter').val(),
+                selected_items: selectedItems
             };
 
             // Add URL status filter if exists
@@ -477,7 +784,11 @@
             const params = new URLSearchParams();
             Object.keys(filters).forEach(key => {
                 if (filters[key]) {
-                    params.append(key, filters[key]);
+                    if (Array.isArray(filters[key])) {
+                        filters[key].forEach(item => params.append(key + '[]', item));
+                    } else {
+                        params.append(key, filters[key]);
+                    }
                 }
             });
 

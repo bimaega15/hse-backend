@@ -115,6 +115,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
         // Export Excel
         Route::get('/export/excel', [ObservationController::class, 'exportExcel'])->name('export.excel');
+        Route::get('/export/grouped-data', [ObservationController::class, 'getGroupedExportData'])->name('export.grouped-data');
 
         // Recent observations for dashboard
         Route::get('/recent/graphic', [ObservationController::class, 'getRecent'])->name('recent');
