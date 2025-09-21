@@ -22,6 +22,7 @@ class Project extends Model
     protected $casts = [
         'start_date' => 'date',
         'end_date' => 'date',
+        'durasi' => 'int',
     ];
 
     public function getStatusBadgeAttribute()
