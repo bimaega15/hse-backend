@@ -181,26 +181,82 @@
             <div class="card-body border-bottom d-none" id="filtersPanel">
                 <div class="bg-light rounded p-3">
                     <form id="filtersForm" class="row g-3">
-                        <!-- Search Section -->
+                        <!-- Filters Section -->
                         <div class="col-12">
                             <h6 class="fw-medium text-primary mb-3">
-                                <i class="ri-search-line me-1"></i>Search
+                                <i class="ri-filter-line me-1"></i>Advanced Filters
                             </h6>
                         </div>
+
+                        <!-- Row 1: Observer, Project, Location, Date From -->
+                        <div class="col-md-3">
+                            <label for="observerFilter" class="form-label fw-medium">Observer</label>
+                            <select class="form-select" id="observerFilter" name="observer_id">
+                                <option value="">All Observers</option>
+                                <!-- Options will be populated via JavaScript -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="projectFilter" class="form-label fw-medium">Project</label>
+                            <select class="form-select" id="projectFilter" name="project_id">
+                                <option value="">All Projects</option>
+                                <!-- Options will be populated via JavaScript -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="locationFilter" class="form-label fw-medium">Location</label>
+                            <select class="form-select" id="locationFilter" name="location_id">
+                                <option value="">All Locations</option>
+                                <!-- Options will be populated via JavaScript -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="dateFromFilter" class="form-label fw-medium">Date From</label>
+                            <input type="date" class="form-control" id="dateFromFilter" name="date_from">
+                        </div>
+
+                        <!-- Row 2: Date To, Category, Contributing Factor, Action -->
+                        <div class="col-md-3">
+                            <label for="dateToFilter" class="form-label fw-medium">Date To</label>
+                            <input type="date" class="form-control" id="dateToFilter" name="date_to">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="categoryFilter" class="form-label fw-medium">Category</label>
+                            <select class="form-select" id="categoryFilter" name="category_id">
+                                <option value="">All Categories</option>
+                                <!-- Options will be populated via JavaScript -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="contributingFilter" class="form-label fw-medium">Contributing Factor</label>
+                            <select class="form-select" id="contributingFilter" name="contributing_id">
+                                <option value="">All Contributing Factors</option>
+                                <!-- Options will be populated via JavaScript -->
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="actionFilter" class="form-label fw-medium">Action</label>
+                            <select class="form-select" id="actionFilter" name="action_id">
+                                <option value="">All Actions</option>
+                                <!-- Options will be populated via JavaScript -->
+                            </select>
+                        </div>
+
+                        <!-- Filter Action Buttons -->
                         <div class="col-12">
-                            <label for="searchFilter" class="form-label fw-medium">Search</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="searchFilter" name="search"
-                                       placeholder="Search by user name, project name, or location name...">
-                                <button type="button" class="btn btn-primary" onclick="applyFilters()">
-                                    <i class="ri-search-line me-1"></i>Search
-                                </button>
+                            <div class="d-flex gap-2 justify-content-end">
                                 <button type="button" class="btn btn-secondary" onclick="clearFilters()">
-                                    <i class="ri-refresh-line me-1"></i>Clear
+                                    <i class="ri-refresh-line me-1"></i>Clear All
                                 </button>
-                            </div>
-                            <div class="form-text">
-                                <i class="ri-information-line me-1"></i>Search by user name, project name, or location name
+                                <button type="button" class="btn btn-primary" onclick="applyFilters()">
+                                    <i class="ri-filter-line me-1"></i>Apply Filters
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -214,6 +270,20 @@
                         <span class="visually-hidden">Loading...</span>
                     </div>
                     <p class="mt-2 text-muted">Loading observations data...</p>
+                </div>
+
+                <!-- Index Behavior Panel (Outside Table) -->
+                <div id="indexBehaviorPanel" class="d-none mb-4">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0">
+                                <i class="ri-bar-chart-2-line me-2"></i>Safety Index Behavior Analysis
+                            </h6>
+                        </div>
+                        <div class="card-body" id="indexBehaviorContent">
+                            <!-- Index Behavior calculations will be loaded here -->
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Data Table -->

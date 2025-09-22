@@ -135,6 +135,86 @@
             color: white;
         }
 
+        /* DataTable styling for new columns */
+        #reportsTable .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        #reportsTable td {
+            vertical-align: middle;
+        }
+
+        #reportsTable .text-center {
+            text-align: center !important;
+        }
+
+        /* Responsive table improvements */
+        @media (max-width: 1200px) {
+            #reportsTable .badge {
+                font-size: 0.7rem;
+                padding: 0.2rem 0.4rem;
+            }
+        }
+
+        /* DataTables responsive control styling */
+        table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control:before,
+        table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control:before {
+            background-color: #007bff;
+            border: 2px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 3px #444;
+            color: white;
+            content: '+';
+            cursor: pointer;
+            display: block;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            font-weight: bold;
+            height: 18px;
+            left: 50%;
+            line-height: 14px;
+            margin-left: -9px;
+            margin-top: -9px;
+            position: absolute;
+            text-align: center;
+            top: 50%;
+            width: 18px;
+        }
+
+        table.dataTable.dtr-inline.collapsed > tbody > tr.parent > td.dtr-control:before,
+        table.dataTable.dtr-inline.collapsed > tbody > tr.parent > th.dtr-control:before {
+            content: '-';
+            background-color: #dc3545;
+        }
+
+        table.dataTable.dtr-inline.collapsed > tbody > tr > td.dtr-control,
+        table.dataTable.dtr-inline.collapsed > tbody > tr > th.dtr-control {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        table.dataTable > tbody > tr.child {
+            padding: 0.5em 1em;
+        }
+
+        table.dataTable > tbody > tr.child:hover {
+            background: transparent !important;
+        }
+
+        table.dataTable > tbody > tr.child ul.dtr-details {
+            display: inline-block;
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        table.dataTable > tbody > tr.child span.dtr-title {
+            display: inline-block;
+            min-width: 75px;
+            font-weight: bold;
+        }
+
         /* Detail Timeline Styles for Modal */
         .detail-timeline {
             display: flex;
@@ -468,7 +548,38 @@
             reportsTable = $('#reportsTable').DataTable({
                 processing: true,
                 serverSide: true,
-                responsive: true,
+                responsive: {
+                    details: {
+                        type: 'column',
+                        target: 0,
+                        renderer: function (api, rowIdx, columns) {
+                            var data = $.map(columns, function (col, i) {
+                                return col.hidden ?
+                                    '<tr data-dt-row="' + col.rowIndex + '" data-dt-column="' + col.columnIndex + '">' +
+                                    '<td class="fw-bold">' + col.title + ':</td> ' +
+                                    '<td>' + col.data + '</td>' +
+                                    '</tr>' :
+                                    '';
+                            }).join('');
+
+                            return data ? $('<table class="table table-sm table-striped"/>').append(data) : false;
+                        }
+                    }
+                },
+                columnDefs: [
+                    {
+                        className: 'dtr-control',
+                        orderable: false,
+                        targets: 0
+                    },
+                    { responsivePriority: 1, targets: 0 }, // Row control
+                    { responsivePriority: 2, targets: 1 }, // Employee
+                    { responsivePriority: 3, targets: -1 }, // Actions
+                    { responsivePriority: 4, targets: 9 }, // Severity
+                    { responsivePriority: 5, targets: 10 }, // Status
+                    { responsivePriority: 6, targets: 12 }, // Created At
+                    { responsivePriority: 10, targets: [4, 5, 6, 7] }, // New columns (lower priority)
+                ],
                 ajax: {
                     url: "{{ route('admin.reports.data') }}",
                     type: 'GET',
@@ -477,6 +588,12 @@
                         d.severity = $('#severityFilter').val();
                         d.start_date = $('#startDateFilter').val();
                         d.end_date = $('#endDateFilter').val();
+
+                        // NEW: Additional filter parameters
+                        d.project_id = $('#projectFilter').val();
+                        d.category_id = $('#categoryFilter').val();
+                        d.contributing_id = $('#contributingFilter').val();
+                        d.action_id = $('#actionFilter').val();
 
                         // Add URL status filter
                         const urlParams = new URLSearchParams(window.location.search);
@@ -487,9 +604,10 @@
                     }
                 },
                 columns: [{
-                        data: 'DT_RowIndex',
-                        name: 'DT_RowIndex',
+                        className: 'dtr-control',
                         orderable: false,
+                        data: null,
+                        defaultContent: '',
                         searchable: false
                     },
                     {
@@ -502,7 +620,23 @@
                     },
                     {
                         data: 'report_info',
+                        name: 'locationMaster.name'
+                    },
+                    {
+                        data: 'project_info',
+                        name: 'project.project_name'
+                    },
+                    {
+                        data: 'type_of_report',
                         name: 'categoryMaster.name'
+                    },
+                    {
+                        data: 'contributing_factor',
+                        name: 'contributingMaster.name'
+                    },
+                    {
+                        data: 'action_info',
+                        name: 'actionMaster.name'
                     },
                     {
                         data: 'severity_badge',
@@ -545,7 +679,7 @@
                 },
                 pageLength: 10,
                 order: [
-                    [8, 'desc']
+                    [11, 'desc']
                 ],
                 drawCallback: function() {
                     $('[data-bs-toggle="tooltip"]').tooltip();
@@ -637,6 +771,9 @@
             } catch (error) {
                 console.error('Error initializing Select2:', error);
             }
+
+            // NEW: Initialize filter functionality
+            initFilterFunctionality();
 
             $('#reportForm').on('submit', function(e) {
                 e.preventDefault();
@@ -881,7 +1018,13 @@
         }
 
         function clearFilters() {
-            $('#filtersForm')[0].reset();
+            // Clear Select2 dropdowns
+            $('#statusFilter, #severityFilter, #projectFilter, #categoryFilter, #contributingFilter, #actionFilter').val('').trigger('change');
+
+            // Clear date inputs
+            $('#startDateFilter, #endDateFilter').val('');
+
+            // Reload table
             reportsTable.ajax.reload();
         }
 
@@ -1633,6 +1776,94 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // NEW: Initialize filter functionality
+        function initFilterFunctionality() {
+            // Initialize Select2 for filter dropdowns
+            try {
+                // Status filter
+                $('#statusFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Status',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Severity filter
+                $('#severityFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Severity',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Project filter
+                $('#projectFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Projects',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Category filter (Type of Report)
+                $('#categoryFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Types',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Contributing Factor filter
+                $('#contributingFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Contributing Factors',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                // Action filter
+                $('#actionFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Actions',
+                    allowClear: true,
+                    width: '100%'
+                });
+
+                console.log('Filter Select2 dropdowns initialized successfully');
+            } catch (error) {
+                console.error('Error initializing filter Select2:', error);
+            }
+
+            // Handle contributing factor change to filter actions
+            $('#contributingFilter').on('change', function() {
+                const contributingId = $(this).val();
+                const actionFilter = $('#actionFilter');
+
+                // Reset action filter
+                actionFilter.val('').trigger('change');
+
+                // Rebuild action options based on contributing factor
+                const allActions = @json($filterOptions['actions'] ?? []);
+                actionFilter.empty().append('<option value="">All Actions</option>');
+
+                allActions.forEach(function(action) {
+                    if (!contributingId || action.contributing_id == contributingId) {
+                        actionFilter.append(`<option value="${action.id}">${action.name}</option>`);
+                    }
+                });
+
+                // Reinitialize Select2
+                actionFilter.select2('destroy').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Actions',
+                    allowClear: true,
+                    width: '100%'
+                });
+            });
+
+            // Remove auto-apply functionality - filters will only apply when button is clicked
+            // Date filters also no longer auto-apply
         }
     </script>
 @endpush

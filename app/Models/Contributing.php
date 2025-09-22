@@ -41,6 +41,11 @@ class Contributing extends Model
         return $this->hasMany(Action::class, 'contributing_id')->where('is_active', true);
     }
 
+    public function observationDetails()
+    {
+        return $this->hasMany(ObservationDetail::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

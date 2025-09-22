@@ -506,7 +506,10 @@ class ReportController extends Controller
             $additionalData = $this->getAnalyticsData($filters);
         }
 
-        return view('admin.reports.index', compact('view', 'status', 'additionalData'));
+        // Get filter options for dropdowns
+        $filterOptions = $this->getReportFilterOptions();
+
+        return view('admin.reports.index', compact('view', 'status', 'additionalData', 'filterOptions'));
     }
 
     public function getData(Request $request)
@@ -541,6 +544,23 @@ class ReportController extends Controller
                 $query->whereDate('created_at', '<=', $request->end_date);
             }
 
+            // NEW: Additional filter options
+            if ($request->filled('project_id') && is_numeric($request->project_id)) {
+                $query->where('project_id', $request->project_id);
+            }
+
+            if ($request->filled('category_id') && is_numeric($request->category_id)) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('contributing_id') && is_numeric($request->contributing_id)) {
+                $query->where('contributing_id', $request->contributing_id);
+            }
+
+            if ($request->filled('action_id') && is_numeric($request->action_id)) {
+                $query->where('action_id', $request->action_id);
+            }
+
             // NEW: Handle URL filters (like from sidebar)
             if ($request->filled('url_status') && in_array($request->url_status, ['waiting', 'in-progress', 'done'])) {
                 $query->where('status', $request->url_status);
@@ -573,12 +593,47 @@ class ReportController extends Controller
                 })
                 ->addColumn('report_info', function ($report) {
                     try {
-                        $category = optional($report->categoryMaster)->name ?? 'N/A';
                         $location = optional($report->locationMaster)->name ?: 'N/A';
-                        return "<div class='fw-bold'>{$category}</div><small class='text-muted'><i class='ri-map-pin-line'></i> {$location}</small>";
+                        return "<div class='fw-bold'>Location</div><small class='text-muted'><i class='ri-map-pin-line'></i> {$location}</small>";
                     } catch (\Exception $e) {
                         Log::error('Error in report_info column: ' . $e->getMessage());
                         return 'Error loading report info';
+                    }
+                })
+                ->addColumn('project_info', function ($report) {
+                    try {
+                        $projectName = optional($report->project)->project_name ?? 'No Project';
+                        return "<div class='text-start'><span class='badge bg-light text-dark'>{$projectName}</span></div>";
+                    } catch (\Exception $e) {
+                        Log::error('Error in project_info column: ' . $e->getMessage());
+                        return 'Error loading project';
+                    }
+                })
+                ->addColumn('type_of_report', function ($report) {
+                    try {
+                        $category = optional($report->categoryMaster)->name ?? 'N/A';
+                        return "<div class='text-start'><span class='badge bg-primary'>{$category}</span></div>";
+                    } catch (\Exception $e) {
+                        Log::error('Error in type_of_report column: ' . $e->getMessage());
+                        return 'Error loading type';
+                    }
+                })
+                ->addColumn('contributing_factor', function ($report) {
+                    try {
+                        $contributing = optional($report->contributingMaster)->name ?? 'N/A';
+                        return "<div class='text-start'><span class='badge bg-warning text-dark'>{$contributing}</span></div>";
+                    } catch (\Exception $e) {
+                        Log::error('Error in contributing_factor column: ' . $e->getMessage());
+                        return 'Error loading contributing factor';
+                    }
+                })
+                ->addColumn('action_info', function ($report) {
+                    try {
+                        $action = optional($report->actionMaster)->name ?? 'N/A';
+                        return "<div class='text-start'><span class='badge bg-info'>{$action}</span></div>";
+                    } catch (\Exception $e) {
+                        Log::error('Error in action_info column: ' . $e->getMessage());
+                        return 'Error loading action';
                     }
                 })
                 ->addColumn('severity_badge', function ($report) {
@@ -590,7 +645,7 @@ class ReportController extends Controller
                     ];
                     $severity = $report->severity_rating ?? 'unknown';
                     $color = $colors[$severity] ?? 'secondary';
-                    return "<span class='badge bg-{$color}'>" . ucfirst($severity) . "</span>";
+                    return "<span class='badge bg-{$color} ms-1'>" . ucfirst($severity) . "</span>";
                 })
                 ->addColumn('status_badge', function ($report) {
                     $colors = [
@@ -678,7 +733,7 @@ class ReportController extends Controller
 
                     return $buttons;
                 })
-                ->rawColumns(['employee_info', 'hse_staff_info', 'report_info', 'severity_badge', 'status_badge', 'report_details_count', 'dates_info', 'action'])
+                ->rawColumns(['employee_info', 'hse_staff_info', 'report_info', 'project_info', 'type_of_report', 'contributing_factor', 'action_info', 'severity_badge', 'status_badge', 'report_details_count', 'dates_info', 'action'])
                 ->make(true);
         } catch (\Exception $e) {
             Log::error('DataTables Error: ' . $e->getMessage());
@@ -954,6 +1009,7 @@ class ReportController extends Controller
                 'contributingMaster:id,name',
                 'actionMaster:id,name',
                 'locationMaster:id,name',
+                'project:id,project_name',
                 'reportDetails.createdBy:id,name',
                 'reportDetails.approvedBy:id,name'
             ]);
@@ -973,6 +1029,23 @@ class ReportController extends Controller
 
             if ($request->filled('end_date') && strtotime($request->end_date)) {
                 $query->whereDate('created_at', '<=', $request->end_date);
+            }
+
+            // NEW: Additional filter options for export
+            if ($request->filled('project_id') && is_numeric($request->project_id)) {
+                $query->where('project_id', $request->project_id);
+            }
+
+            if ($request->filled('category_id') && is_numeric($request->category_id)) {
+                $query->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('contributing_id') && is_numeric($request->contributing_id)) {
+                $query->where('contributing_id', $request->contributing_id);
+            }
+
+            if ($request->filled('action_id') && is_numeric($request->action_id)) {
+                $query->where('action_id', $request->action_id);
             }
 
             $reports = $query->orderBy('created_at', 'desc')->get();
@@ -1041,8 +1114,16 @@ class ReportController extends Controller
 
         // Initial reporting headers
         $initialHeaders = [
-            'No', 'Date of Reporting', 'Photo', 'Explanation of Report', 'Potential Severity',
-            'Category of Report', 'Location', 'Type of Report', 'Immediate Action', 'Reported By'
+            'No',
+            'Date of Reporting',
+            'Photo',
+            'Explanation of Report',
+            'Potential Severity',
+            'Category of Report',
+            'Location',
+            'Type of Report',
+            'Immediate Action',
+            'Reported By'
         ];
 
         // Set headers
@@ -1122,8 +1203,13 @@ class ReportController extends Controller
 
             // Corrective action headers
             $correctionHeaders = [
-                'No', 'Correction & corrective Action', 'Due Date', 'PIC',
-                'Status CAR', 'Evidences', 'Approved By'
+                'No',
+                'Correction & corrective Action',
+                'Due Date',
+                'PIC',
+                'Status CAR',
+                'Evidences',
+                'Approved By'
             ];
 
             // Set corrective action headers starting from column L
@@ -1666,6 +1752,27 @@ class ReportController extends Controller
             'medium' => $this->getFilteredQuery($filters)->where('severity_rating', 'medium')->count(),
             'low' => $this->getFilteredQuery($filters)->where('severity_rating', 'low')->count(),
         ];
+    }
+
+    // NEW: Get filter options for reports page
+    private function getReportFilterOptions()
+    {
+        try {
+            return [
+                'projects' => Project::where('status', 'open')->orderBy('project_name')->get(['id', 'project_name']),
+                'categories' => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'actions' => Action::where('is_active', true)->orderBy('name')->get(['id', 'name', 'contributing_id']),
+            ];
+        } catch (\Exception $e) {
+            Log::error('Failed to get report filter options: ' . $e->getMessage());
+            return [
+                'projects' => collect(),
+                'categories' => collect(),
+                'contributing_factors' => collect(),
+                'actions' => collect(),
+            ];
+        }
     }
 
     // NEW: AJAX endpoint for analytics filters

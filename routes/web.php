@@ -100,6 +100,12 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         // DataTables data endpoint
         Route::get('/data', [ObservationController::class, 'getData'])->name('data');
 
+        // Filter data endpoint
+        Route::get('/filter-data', [ObservationController::class, 'getFilterData'])->name('filter-data');
+
+        // Index behavior data endpoint
+        Route::get('/index-behavior-data', [ObservationController::class, 'getIndexBehaviorData'])->name('index-behavior-data');
+
         // CRUD operations
         Route::get('/create', [ObservationController::class, 'create'])->name('create');
         Route::post('/', [ObservationController::class, 'store'])->name('store');

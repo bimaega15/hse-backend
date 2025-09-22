@@ -31,6 +31,11 @@ class Action extends Model
         return $this->belongsTo(Contributing::class);
     }
 
+    public function observationDetails()
+    {
+        return $this->hasMany(ObservationDetail::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

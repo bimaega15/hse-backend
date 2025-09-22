@@ -172,6 +172,7 @@
             initDataTable();
             initForms();
             loadFormData();
+            loadFilterData();
 
             // Set filters from URL params if any
             setFiltersFromUrl();
@@ -235,20 +236,43 @@
             observationsTable = $('#observationsTable').DataTable({
                 processing: true,
                 serverSide: true,
-                responsive: true,
+                responsive: {
+                    breakpoints: [
+                        { name: 'bigdesktop', width: Infinity },
+                        { name: 'meddesktop', width: 1480 },
+                        { name: 'smalldesktop', width: 1280 },
+                        { name: 'medium', width: 1188 },
+                        { name: 'tabletl', width: 1024 },
+                        { name: 'btwtabllandp', width: 848 },
+                        { name: 'tabletp', width: 768 },
+                        { name: 'mobilel', width: 480 },
+                        { name: 'mobilep', width: 320 }
+                    ]
+                },
                 ajax: {
                     url: "{{ route('admin.observations.data') }}",
                     type: 'GET',
                     data: function(d) {
-                        // Add search filter
-                        d.search = $('#searchFilter').val();
+                        // Add remaining filter values
+                        d.observer_id = $('#observerFilter').val();
+                        d.date_from = $('#dateFromFilter').val();
+                        d.date_to = $('#dateToFilter').val();
+                        d.location_id = $('#locationFilter').val();
+                        d.project_id = $('#projectFilter').val();
+                        d.category_id = $('#categoryFilter').val();
+                        d.action_id = $('#actionFilter').val();
+                        d.contributing_id = $('#contributingFilter').val();
 
-                        // Add URL status filter
+                        // Add URL status filter (for backward compatibility)
                         const urlParams = new URLSearchParams(window.location.search);
                         const urlStatus = urlParams.get('status');
-                        if (urlStatus) {
+                        if (urlStatus && !d.status) {
                             d.url_status = urlStatus;
                         }
+                    },
+                    complete: function() {
+                        // Check and update footer after data load
+                        updateIndexBehaviorFooter();
                     }
                 },
                 columns: [{
@@ -363,6 +387,110 @@
             });
         }
 
+        function loadFilterData() {
+            // Initialize Select2 for static filters first
+            initializeStaticFilterSelect2();
+
+            $.ajax({
+                url: "{{ route('admin.observations.filter-data') }}",
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        populateFilterSelects(response.data);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load filter data');
+                    // Initialize Select2 even if data loading fails
+                    initializeFilterSelect2();
+                }
+            });
+        }
+
+        function initializeStaticFilterSelect2() {
+            // No static filters needed anymore
+            // All remaining filters are dynamic
+        }
+
+        function populateFilterSelects(filterData) {
+            // Populate Observer filter
+            $('#observerFilter').empty().append('<option value="">All Observers</option>');
+            filterData.observers.forEach(function(observer) {
+                const roleLabel = observer.role === 'hse_staff' ? 'HSE Staff' : 'Employee';
+                const displayText = `${observer.name} - ${roleLabel} (${observer.department || 'No Dept'})`;
+                $('#observerFilter').append(
+                    `<option value="${observer.id}">${displayText}</option>`
+                );
+            });
+
+            // Populate Location filter
+            $('#locationFilter').empty().append('<option value="">All Locations</option>');
+            filterData.locations.forEach(function(location) {
+                $('#locationFilter').append(`<option value="${location.id}">${location.name}</option>`);
+            });
+
+            // Populate Project filter
+            $('#projectFilter').empty().append('<option value="">All Projects</option>');
+            filterData.projects.forEach(function(project) {
+                $('#projectFilter').append(`<option value="${project.id}">${project.project_name}</option>`);
+            });
+
+            // Populate Category filter
+            $('#categoryFilter').empty().append('<option value="">All Categories</option>');
+            filterData.categories.forEach(function(category) {
+                $('#categoryFilter').append(`<option value="${category.id}">${category.name}</option>`);
+            });
+
+            // Populate Action filter
+            $('#actionFilter').empty().append('<option value="">All Actions</option>');
+            filterData.actions.forEach(function(action) {
+                $('#actionFilter').append(`<option value="${action.id}">${action.name}</option>`);
+            });
+
+            // Populate Contributing Factor filter
+            $('#contributingFilter').empty().append('<option value="">All Contributing Factors</option>');
+            filterData.contributings.forEach(function(contributing) {
+                $('#contributingFilter').append(`<option value="${contributing.id}">${contributing.name}</option>`);
+            });
+
+            // Initialize Select2 for all filter selects
+            initializeFilterSelect2();
+        }
+
+        function initializeFilterSelect2() {
+            // Initialize Select2 for all filter dropdowns
+            const filterSelects = [
+                '#observerFilter',
+                '#locationFilter',
+                '#projectFilter',
+                '#categoryFilter',
+                '#actionFilter',
+                '#contributingFilter'
+            ];
+
+            filterSelects.forEach(function(selector) {
+                const $select = $(selector);
+                if ($select.length) {
+                    // Destroy existing Select2 if exists
+                    if ($select.hasClass('select2-hidden-accessible')) {
+                        $select.select2('destroy');
+                    }
+
+                    // Get placeholder from the first option or set default
+                    const placeholder = $select.find('option:first').text() || 'Select option';
+
+                    // Initialize Select2
+                    $select.select2({
+                        placeholder: placeholder,
+                        allowClear: true,
+                        width: '100%',
+                        minimumResultsForSearch: 5, // Show search only if more than 5 options
+                        escapeMarkup: function (markup) { return markup; }
+                    });
+                }
+            });
+        }
+
         function populateFormSelects() {
             $('#userId').empty().append('<option value="">Select Observer</option>');
             formData.users.forEach(function(user) {
@@ -396,9 +524,284 @@
             observationsTable.ajax.reload();
         }
 
+        function updateIndexBehaviorFooter() {
+            // Check if all 3 required filters are filled
+            const observerId = $('#observerFilter').val();
+            const projectId = $('#projectFilter').val();
+            const locationId = $('#locationFilter').val();
+
+            console.log('updateIndexBehaviorFooter called'); // Debug log
+            console.log('Filters:', { observerId, projectId, locationId }); // Debug log
+
+            if (observerId && projectId && locationId) {
+                console.log('All 3 filters filled, showing loading...'); // Debug log
+                // Show loading state first
+                showIndexBehaviorLoading();
+
+                // All 3 required filters are filled, fetch index behavior data
+                const filterData = {
+                    observer_id: observerId,
+                    project_id: projectId,
+                    location_id: locationId,
+                    date_from: $('#dateFromFilter').val(),
+                    date_to: $('#dateToFilter').val(),
+                    category_id: $('#categoryFilter').val(),
+                    contributing_id: $('#contributingFilter').val(),
+                    action_id: $('#actionFilter').val()
+                };
+
+                $.ajax({
+                    url: "{{ route('admin.observations.index-behavior-data') }}",
+                    type: 'GET',
+                    data: filterData,
+                    beforeSend: function() {
+                        // Ensure loading state is shown
+                        showIndexBehaviorLoading();
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            displayIndexBehaviorPanel(response.data);
+                        } else {
+                            showIndexBehaviorError('No data found for selected filters');
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = 'Failed to calculate index behavior';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        showIndexBehaviorError(errorMessage);
+                    }
+                });
+            } else {
+                // Not all required filters are filled, hide panel
+                hideIndexBehaviorPanel();
+            }
+        }
+
+        function displayIndexBehaviorPanel(data) {
+            const indexBehavior = data.index_behavior;
+
+            // Calculate total minutes and hours for display
+            const totalMinutes = data.total_hours * 60;
+            const atRiskPerJam = 0.5 * data.total_at_risk;
+
+            const content = `
+                <!-- Compact Metrics Row -->
+                <div class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <span class="badge bg-danger-subtle text-danger fs-6 py-2 px-3">
+                            <strong>${data.total_at_risk}</strong> At Risk
+                        </span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-warning-subtle text-warning fs-6 py-2 px-3">
+                            <strong>${data.total_near_miss}</strong> Near Miss
+                        </span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-info-subtle text-info fs-6 py-2 px-3">
+                            <strong>${data.total_risk_mgmt}</strong> Risk Mgmt
+                        </span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-primary-subtle text-primary fs-6 py-2 px-3">
+                            <strong>${data.total_sim_k3}</strong> SIM K3
+                        </span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge bg-light text-dark fs-6 py-2 px-3">
+                            <strong>${data.total_hours}h</strong> Total
+                        </span>
+                    </div>
+                    <div class="col-auto">
+                        <span class="badge fs-6 py-2 px-3" style="background-color: #${indexBehavior.color}; color: #${indexBehavior.textColor};">
+                            <strong>${data.at_risk_per_tahun}</strong> ${indexBehavior.label}
+                        </span>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                data-bs-toggle="collapse" data-bs-target="#calculationDetails"
+                                aria-expanded="false" aria-controls="calculationDetails">
+                            <i class="ri-calculator-line me-1"></i>Show Calculation
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Calculation Details (Collapsible) -->
+                <div class="collapse mt-3" id="calculationDetails">
+                    <div class="bg-light rounded p-3">
+                        <h6 class="text-primary mb-2">
+                            <i class="ri-formula me-1"></i>Safety Index Behavior Calculation
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="calculation-step">
+                                    <small class="text-muted d-block">Step 1: Total Waktu/60</small>
+                                    <code>${totalMinutes} minutes ÷ 60 = ${data.total_hours} hours</code>
+                                </div>
+                                <div class="calculation-step mt-2">
+                                    <small class="text-muted d-block">Step 2: At Risk Per Jam</small>
+                                    <code>0.5 × ${data.total_at_risk} = ${atRiskPerJam}</code>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="calculation-step">
+                                    <small class="text-muted d-block">Step 3: At Risk Per Hari</small>
+                                    <code>${atRiskPerJam} × 8 = ${data.at_risk_per_hari}</code>
+                                </div>
+                                <div class="calculation-step mt-2">
+                                    <small class="text-muted d-block">Step 4: At Risk Per Tahun</small>
+                                    <code>${data.at_risk_per_hari} × 350 = ${data.at_risk_per_tahun}</code>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <strong class="text-dark">Nilai Index Behavior:
+                                        <span style="color: #${indexBehavior.textColor};">${indexBehavior.label}</span>
+                                    </strong>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <small class="text-muted">
+                                        Total Observations: <strong>${data.total_observations}</strong>
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#indexBehaviorContent').html(content);
+            $('#indexBehaviorPanel').removeClass('d-none').hide().fadeIn(400);
+        }
+
+        function hideIndexBehaviorPanel() {
+            $('#indexBehaviorPanel').fadeOut(300, function() {
+                $(this).addClass('d-none');
+                $('#indexBehaviorContent').empty();
+            });
+        }
+
+        function showIndexBehaviorLoading() {
+            console.log('showIndexBehaviorLoading called'); // Debug log
+
+            const loadingContent = `
+                <div class="row g-2 align-items-center">
+                    <div class="col-auto">
+                        <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <span class="text-primary fw-medium">
+                            <i class="ri-calculator-line me-1"></i>Calculating Safety Index Behavior...
+                        </span>
+                    </div>
+                    <div class="col-auto ms-auto">
+                        <small class="text-muted">
+                            <i class="ri-time-line me-1"></i>Processing data
+                        </small>
+                    </div>
+                </div>
+            `;
+
+            $('#indexBehaviorContent').html(loadingContent);
+            $('#indexBehaviorPanel').removeClass('d-none').hide().fadeIn(300);
+
+            console.log('Panel shown for loading'); // Debug log
+        }
+
+        function showIndexBehaviorError(message) {
+            const errorContent = `
+                <div class="text-center py-4">
+                    <div class="d-flex align-items-center justify-content-center">
+                        <i class="ri-error-warning-line text-warning me-3" style="font-size: 2rem;"></i>
+                        <div>
+                            <h6 class="mb-1 text-warning">Unable to Calculate Index Behavior</h6>
+                            <small class="text-muted">${message}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#indexBehaviorContent').html(errorContent);
+            $('#indexBehaviorPanel').removeClass('d-none').hide().fadeIn(300);
+
+            // Auto hide error after 4 seconds
+            setTimeout(function() {
+                hideIndexBehaviorPanel();
+            }, 4000);
+        }
+
         function clearFilters() {
             $('#filtersForm')[0].reset();
+
+            // Reset all Select2 filter selects to default option
+            const filterSelects = [
+                '#observerFilter',
+                '#locationFilter',
+                '#projectFilter',
+                '#categoryFilter',
+                '#actionFilter',
+                '#contributingFilter'
+            ];
+
+            filterSelects.forEach(function(selector) {
+                const $select = $(selector);
+                if ($select.hasClass('select2-hidden-accessible')) {
+                    $select.val('').trigger('change.select2');
+                } else {
+                    $select.val('');
+                }
+            });
+
+            // Clear date inputs
+            $('#dateFromFilter').val('');
+            $('#dateToFilter').val('');
+
+            // Hide index behavior panel
+            hideIndexBehaviorPanel();
+
+            // Reload table
             observationsTable.ajax.reload();
+        }
+
+        // Debug function - call this in browser console to test
+        function testIndexBehaviorPanel() {
+            console.log('Testing panel visibility...');
+            showIndexBehaviorLoading();
+
+            setTimeout(function() {
+                const testData = {
+                    total_observations: 50,
+                    total_at_risk: 15,
+                    total_near_miss: 10,
+                    total_risk_mgmt: 20,
+                    total_sim_k3: 5,
+                    total_hours: 25.5,
+                    at_risk_per_hari: 0.59,
+                    at_risk_per_tahun: 206.5,
+                    index_behavior: {
+                        label: 'Sedang (Warning Zone)',
+                        color: 'FFEB3B',
+                        textColor: '333333'
+                    }
+                };
+                displayIndexBehaviorPanel(testData);
+            }, 2000);
+        }
+
+        // Debug function - call this to check filter values
+        function checkFilterValues() {
+            console.log('Observer:', $('#observerFilter').val());
+            console.log('Project:', $('#projectFilter').val());
+            console.log('Location:', $('#locationFilter').val());
+            console.log('Panel element:', $('#indexBehaviorPanel'));
+            console.log('Panel visible:', $('#indexBehaviorPanel').is(':visible'));
+            console.log('Panel classes:', $('#indexBehaviorPanel').attr('class'));
         }
 
         function createObservation() {
@@ -1583,6 +1986,262 @@
 
         .modal-body::-webkit-scrollbar-thumb:hover {
             background: #555;
+        }
+
+        /* Filter Select2 Fix Styles */
+        #filtersPanel .select2-container {
+            width: 100% !important;
+        }
+
+        #filtersPanel .select2-container .select2-selection--single {
+            height: 38px !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 0.375rem !important;
+            background-color: #fff !important;
+        }
+
+        #filtersPanel .select2-container .select2-selection--single .select2-selection__rendered {
+            line-height: 36px !important;
+            padding-left: 12px !important;
+            padding-right: 20px !important;
+            color: #495057 !important;
+            font-size: 14px !important;
+        }
+
+        #filtersPanel .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 36px !important;
+            top: 1px !important;
+            right: 10px !important;
+        }
+
+        #filtersPanel .select2-container .select2-selection--single .select2-selection__arrow b {
+            border-color: #999 transparent transparent transparent !important;
+            border-style: solid !important;
+            border-width: 5px 4px 0 4px !important;
+            height: 0 !important;
+            left: 50% !important;
+            margin-left: -4px !important;
+            margin-top: -2px !important;
+            position: absolute !important;
+            top: 50% !important;
+            width: 0 !important;
+        }
+
+        #filtersPanel .select2-container--open .select2-selection--single .select2-selection__arrow b {
+            border-color: transparent transparent #999 transparent !important;
+            border-width: 0 4px 5px 4px !important;
+        }
+
+        #filtersPanel .select2-container--focus .select2-selection--single,
+        #filtersPanel .select2-container--open .select2-selection--single {
+            border-color: #80bdff !important;
+            outline: 0 !important;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+        }
+
+        #filtersPanel .select2-dropdown {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.375rem !important;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+        #filtersPanel .select2-results__option {
+            padding: 6px 12px !important;
+            font-size: 14px !important;
+        }
+
+        #filtersPanel .select2-results__option--highlighted[aria-selected] {
+            background-color: #007bff !important;
+            color: white !important;
+        }
+
+        #filtersPanel .select2-results__option[aria-selected=true] {
+            background-color: #e9ecef !important;
+            color: #495057 !important;
+        }
+
+        #filtersPanel .select2-search--dropdown .select2-search__field {
+            border: 1px solid #ced4da !important;
+            border-radius: 0.25rem !important;
+            padding: 4px 8px !important;
+        }
+
+        /* Clear button styling */
+        #filtersPanel .select2-selection__clear {
+            color: #999 !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            line-height: 1 !important;
+            position: absolute !important;
+            right: 26px !important;
+            top: 8px !important;
+        }
+
+        #filtersPanel .select2-selection__clear:hover {
+            color: #333 !important;
+        }
+
+        /* Index Behavior Footer Styling - Force visibility at ALL screen sizes */
+        #indexBehaviorFooter {
+            transition: opacity 0.3s ease-in-out !important;
+            display: table-footer-group !important;
+        }
+
+        #indexBehaviorFooter.d-none {
+            opacity: 0 !important;
+            display: none !important;
+        }
+
+        #indexBehaviorFooter:not(.d-none) {
+            opacity: 1 !important;
+            display: table-footer-group !important;
+        }
+
+        /* Force visibility for debugging */
+        #indexBehaviorFooter.force-visible {
+            display: table-footer-group !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        /* Override DataTables responsive hiding - Force show at ALL screen sizes */
+        @media (max-width: 1199px) {
+            #indexBehaviorFooter,
+            #indexBehaviorFooter.force-visible,
+            #indexBehaviorFooter:not(.d-none) {
+                display: table-footer-group !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        }
+
+        @media (max-width: 991px) {
+            #indexBehaviorFooter,
+            #indexBehaviorFooter.force-visible,
+            #indexBehaviorFooter:not(.d-none) {
+                display: table-footer-group !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        }
+
+        @media (max-width: 767px) {
+            #indexBehaviorFooter,
+            #indexBehaviorFooter.force-visible,
+            #indexBehaviorFooter:not(.d-none) {
+                display: table-footer-group !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        }
+
+        @media (max-width: 575px) {
+            #indexBehaviorFooter,
+            #indexBehaviorFooter.force-visible,
+            #indexBehaviorFooter:not(.d-none) {
+                display: table-footer-group !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+            }
+        }
+
+        /* Clean footer styling */
+        #indexBehaviorFooter td {
+            padding: 15px !important;
+            border: none !important;
+            background-color: #f8f9fa !important;
+        }
+
+        #indexBehaviorContent .card {
+            transition: transform 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #indexBehaviorContent .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Fix container width in table footer */
+        #indexBehaviorContent .container-fluid {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        /* Override any DataTables responsive CSS that might hide footer */
+        table.dataTable tfoot,
+        table.dataTable tfoot tr,
+        table.dataTable tfoot td {
+            display: table-footer-group !important;
+            visibility: visible !important;
+        }
+
+        /* Ensure footer stays visible regardless of responsive breakpoints */
+        .dataTables_wrapper tfoot,
+        .dataTables_wrapper #indexBehaviorFooter {
+            display: table-footer-group !important;
+            visibility: visible !important;
+        }
+
+        /* Loading animation for index behavior */
+        .index-behavior-loading {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.6;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* Smooth slide animation for footer content */
+        #indexBehaviorContent {
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Enhanced spinner animation */
+        .enhanced-spinner {
+            animation: spin 1s linear infinite, pulse-slow 2s infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes pulse-slow {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        /* Loading state styling */
+        .calculating-state {
+            background: linear-gradient(90deg, #f8f9fa 0%, #e9ecef 50%, #f8f9fa 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+            100% {
+                background-position: 200% 0;
+            }
         }
     </style>
 @endpush

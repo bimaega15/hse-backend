@@ -31,6 +31,12 @@ class Location extends Model
         'updated_at' => 'datetime'
     ];
 
+    // Relationships
+    public function observationDetails()
+    {
+        return $this->hasMany(ObservationDetail::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

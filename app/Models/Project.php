@@ -44,4 +44,9 @@ class Project extends Model
     {
         return $this->hasMany(Report::class, 'project_id');
     }
+
+    public function observationDetails()
+    {
+        return $this->hasMany(ObservationDetail::class);
+    }
 }

@@ -178,9 +178,10 @@
             <div class="card-body border-bottom d-none" id="filtersPanel">
                 <div class="bg-light rounded p-3">
                     <form id="filtersForm" class="row g-3">
+                        <!-- Row 1: Basic Filters -->
                         <div class="col-md-3">
                             <label for="statusFilter" class="form-label fw-medium">Status</label>
-                            <select class="form-select" id="statusFilter" name="status">
+                            <select class="form-select filter-select2" id="statusFilter" name="status">
                                 <option value="">All Status</option>
                                 <option value="waiting" {{ $status === 'waiting' ? 'selected' : '' }}>Waiting</option>
                                 <option value="in-progress" {{ $status === 'in-progress' ? 'selected' : '' }}>In
@@ -190,7 +191,7 @@
                         </div>
                         <div class="col-md-3">
                             <label for="severityFilter" class="form-label fw-medium">Severity</label>
-                            <select class="form-select" id="severityFilter" name="severity">
+                            <select class="form-select filter-select2" id="severityFilter" name="severity">
                                 <option value="">All Severity</option>
                                 <option value="low">Low</option>
                                 <option value="medium">Medium</option>
@@ -206,6 +207,54 @@
                             <label for="endDateFilter" class="form-label fw-medium">End Date</label>
                             <input type="date" class="form-control" id="endDateFilter" name="end_date">
                         </div>
+
+                        <!-- Row 2: New Filters -->
+                        <div class="col-md-3">
+                            <label for="projectFilter" class="form-label fw-medium">Project</label>
+                            <select class="form-select filter-select2" id="projectFilter" name="project_id">
+                                <option value="">All Projects</option>
+                                @if(isset($filterOptions['projects']))
+                                    @foreach($filterOptions['projects'] as $project)
+                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="categoryFilter" class="form-label fw-medium">Type of Report</label>
+                            <select class="form-select filter-select2" id="categoryFilter" name="category_id">
+                                <option value="">All Types</option>
+                                @if(isset($filterOptions['categories']))
+                                    @foreach($filterOptions['categories'] as $category)
+                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="contributingFilter" class="form-label fw-medium">Contributing Factor</label>
+                            <select class="form-select filter-select2" id="contributingFilter" name="contributing_id">
+                                <option value="">All Contributing Factors</option>
+                                @if(isset($filterOptions['contributing_factors']))
+                                    @foreach($filterOptions['contributing_factors'] as $contributing)
+                                        <option value="{{ $contributing->id }}">{{ $contributing->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="actionFilter" class="form-label fw-medium">Action</label>
+                            <select class="form-select filter-select2" id="actionFilter" name="action_id">
+                                <option value="">All Actions</option>
+                                @if(isset($filterOptions['actions']))
+                                    @foreach($filterOptions['actions'] as $action)
+                                        <option value="{{ $action->id }}" data-contributing="{{ $action->contributing_id }}">{{ $action->name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
                         <div class="col-12">
                             <div class="d-flex gap-2 align-items-center">
                                 <button type="button" class="btn btn-primary" onclick="applyFilters()">
@@ -238,15 +287,19 @@
                         style="width:100%">
                         <thead class="table-dark">
                             <tr>
-                                <th width="3%">#</th>
-                                <th width="12%">Employee</th>
-                                <th width="12%">BAIK Staff</th>
-                                <th width="12%">Report Info</th>
-                                <th width="8%">Severity</th>
-                                <th width="8%">Status</th>
-                                <th width="10%">CAR Progress</th>
-                                <th width="12%">Created At</th>
-                                <th width="3%">Actions</th>
+                                <th width="3%" class="dtr-control">&nbsp;</th>
+                                <th width="10%">Employee</th>
+                                <th width="10%">BAIK Staff</th>
+                                <th width="10%">Report Info</th>
+                                <th width="8%">Project</th>
+                                <th width="10%">Type of Report</th>
+                                <th width="10%">Contributing Factor</th>
+                                <th width="10%">Action</th>
+                                <th width="6%">Severity</th>
+                                <th width="6%">Status</th>
+                                <th width="8%">CAR Progress</th>
+                                <th width="8%">Created At</th>
+                                <th width="2%">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -491,7 +544,12 @@
                 status: $('#statusFilter').val(),
                 severity: $('#severityFilter').val(),
                 start_date: $('#startDateFilter').val(),
-                end_date: $('#endDateFilter').val()
+                end_date: $('#endDateFilter').val(),
+                // NEW: Additional filter parameters
+                project_id: $('#projectFilter').val(),
+                category_id: $('#categoryFilter').val(),
+                contributing_id: $('#contributingFilter').val(),
+                action_id: $('#actionFilter').val()
             };
 
             // Add URL status filter if exists

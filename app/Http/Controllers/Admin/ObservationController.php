@@ -48,8 +48,12 @@ class ObservationController extends Controller
 
             $query = Observation::with([
                 'user:id,name,email,department',
-                'details.category:id,name'
+                'details.category:id,name',
+                'details.location:id,name',
+                'details.project:id,project_name'
             ])->orderBy('observations.created_at', 'desc');
+
+            Log::info('Initial query built successfully');
 
             // Keep URL status filter for backward compatibility with existing links
             if ($request->filled('status') && in_array($request->status, ['draft', 'submitted', 'reviewed'])) {
@@ -61,30 +65,87 @@ class ObservationController extends Controller
                 $query->where('status', $request->url_status);
             }
 
-            // NEW: Handle search filter (searches in user name, project name, and location name)
-            if ($request->filled('search')) {
-                $searchTerm = '%' . $request->search . '%';
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->whereHas('user', function ($userQuery) use ($searchTerm) {
-                        $userQuery->where('name', 'LIKE', $searchTerm);
-                    })
-                    ->orWhereHas('details.project', function ($projectQuery) use ($searchTerm) {
-                        $projectQuery->where('project_name', 'LIKE', $searchTerm);
-                    })
-                    ->orWhereHas('details.location', function ($locationQuery) use ($searchTerm) {
-                        $locationQuery->where('name', 'LIKE', $searchTerm);
-                    });
+            // ENHANCED: Multiple filter options
+
+            // Filter by observer/user (only remaining filter that we use)
+            if ($request->filled('observer_id') && $request->observer_id !== '') {
+                Log::info('Applying observer filter: ' . $request->observer_id);
+                $query->where('user_id', $request->observer_id);
+            }
+
+            // Filter by date range
+            if ($request->filled('date_from') && $request->date_from !== '') {
+                Log::info('Applying date_from filter: ' . $request->date_from);
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to') && $request->date_to !== '') {
+                Log::info('Applying date_to filter: ' . $request->date_to);
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+
+            // Filter by location
+            if ($request->filled('location_id') && $request->location_id !== '') {
+                Log::info('Applying location filter: ' . $request->location_id);
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('location_id', $request->location_id);
                 });
             }
+
+            // Filter by project
+            if ($request->filled('project_id') && $request->project_id !== '') {
+                Log::info('Applying project filter: ' . $request->project_id);
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('project_id', $request->project_id);
+                });
+            }
+
+            // Filter by category
+            if ($request->filled('category_id') && $request->category_id !== '') {
+                Log::info('Applying category filter: ' . $request->category_id);
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('category_id', $request->category_id);
+                });
+            }
+
+            // Filter by action
+            if ($request->filled('action_id') && $request->action_id !== '') {
+                Log::info('Applying action filter: ' . $request->action_id);
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('action_id', $request->action_id);
+                });
+            }
+
+            // Filter by contributing factor
+            if ($request->filled('contributing_id') && $request->contributing_id !== '') {
+                Log::info('Applying contributing filter: ' . $request->contributing_id);
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('contributing_id', $request->contributing_id);
+                });
+            }
+
+            // Handle search filter (removed but keeping the structure for potential future use)
+            // Search functionality has been removed from UI but keeping controller logic
+
+            Log::info('All filters applied successfully');
 
             return DataTables::of($query)
                 ->addIndexColumn()
                 ->addColumn('observer_info', function ($observation) {
                     try {
-                        $observerName = optional($observation->user)->name ?? 'N/A';
-                        $department = optional($observation->user)->department ?? 'N/A';
+                        if (!$observation) {
+                            return 'No data';
+                        }
+
+                        $observerName = 'N/A';
+                        $department = 'N/A';
                         $userId = $observation->user_id ?? 'N/A';
-                        return "<div class='fw-bold'>{$observerName}</div><small class='text-muted'>Dept: {$department} | ID: {$userId}</small>";
+
+                        if ($observation->user) {
+                            $observerName = $observation->user->name ?? 'N/A';
+                            $department = $observation->user->department ?? 'N/A';
+                        }
+
+                        return "<div class='fw-bold'>" . htmlspecialchars($observerName) . "</div><small class='text-muted'>Dept: " . htmlspecialchars($department) . " | ID: {$userId}</small>";
                     } catch (\Exception $e) {
                         Log::error('Error in observer_info column: ' . $e->getMessage());
                         return 'Error loading observer';
@@ -194,15 +255,16 @@ class ObservationController extends Controller
                 ->make(true);
         } catch (\Exception $e) {
             Log::error('Observations DataTables Error: ' . $e->getMessage());
+            Log::error('Request params: ' . json_encode($request->all()));
             Log::error('Observations DataTables Error Trace: ' . $e->getTraceAsString());
 
             return response()->json([
                 'error' => 'Failed to load data: ' . $e->getMessage(),
-                'draw' => $request->get('draw', 0),
+                'draw' => intval($request->get('draw', 1)),
                 'recordsTotal' => 0,
                 'recordsFiltered' => 0,
                 'data' => []
-            ], 500);
+            ]);
         }
     }
 
@@ -670,6 +732,175 @@ class ObservationController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load form data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getFilterData()
+    {
+        try {
+            // Get all users who have observations (only HSE Staff and Employee roles)
+            $observers = User::whereHas('observations')
+                ->whereIn('role', ['hse_staff', 'employee'])
+                ->select('id', 'name', 'department', 'role')
+                ->get();
+
+            // Get unique departments from users who have observations (only HSE Staff and Employee roles)
+            $departments = User::whereHas('observations')
+                ->whereIn('role', ['hse_staff', 'employee'])
+                ->select('department')
+                ->distinct()
+                ->whereNotNull('department')
+                ->pluck('department');
+
+            // Get categories used in observation details
+            $categories = Category::whereHas('observationDetails')
+                ->select('id', 'name')
+                ->get();
+
+            // Get actions used in observation details
+            $actions = Action::whereHas('observationDetails')
+                ->select('id', 'name')
+                ->get();
+
+            // Get contributing factors used in observation details
+            $contributings = Contributing::whereHas('observationDetails')
+                ->select('id', 'name')
+                ->get();
+
+            // Get locations used in observation details
+            $locations = Location::whereHas('observationDetails')
+                ->select('id', 'name')
+                ->get();
+
+            // Get projects used in observation details
+            $projects = Project::whereHas('observationDetails')
+                ->select('id', 'project_name')
+                ->get();
+
+            // Static observation types
+            $observationTypes = [
+                ['value' => 'at_risk_behavior', 'label' => 'At Risk Behavior'],
+                ['value' => 'nearmiss_incident', 'label' => 'Near Miss Incident'],
+                ['value' => 'informal_risk_mgmt', 'label' => 'Informal Risk Management'],
+                ['value' => 'sim_k3', 'label' => 'SIM K3']
+            ];
+
+            // Static severity levels
+            $severityLevels = [
+                ['value' => 'low', 'label' => 'Low'],
+                ['value' => 'medium', 'label' => 'Medium'],
+                ['value' => 'high', 'label' => 'High'],
+                ['value' => 'critical', 'label' => 'Critical']
+            ];
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'observers' => $observers,
+                    'departments' => $departments,
+                    'categories' => $categories,
+                    'actions' => $actions,
+                    'contributings' => $contributings,
+                    'locations' => $locations,
+                    'projects' => $projects,
+                    'observation_types' => $observationTypes,
+                    'severity_levels' => $severityLevels
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load filter data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getIndexBehaviorData(Request $request)
+    {
+        try {
+            // Check if all 3 required filters are provided
+            if (!$request->filled('observer_id') || !$request->filled('project_id') || !$request->filled('location_id') ||
+                $request->observer_id === '' || $request->project_id === '' || $request->location_id === '') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Observer, Project, and Location filters are required'
+                ]);
+            }
+
+            $query = Observation::with(['details'])
+                ->where('user_id', $request->observer_id)
+                ->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('project_id', $request->project_id)
+                               ->where('location_id', $request->location_id);
+                });
+
+            // Apply additional filters if provided
+            if ($request->filled('date_from') && $request->date_from !== '') {
+                $query->whereDate('created_at', '>=', $request->date_from);
+            }
+            if ($request->filled('date_to') && $request->date_to !== '') {
+                $query->whereDate('created_at', '<=', $request->date_to);
+            }
+            if ($request->filled('category_id') && $request->category_id !== '') {
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('category_id', $request->category_id);
+                });
+            }
+            if ($request->filled('contributing_id') && $request->contributing_id !== '') {
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('contributing_id', $request->contributing_id);
+                });
+            }
+            if ($request->filled('action_id') && $request->action_id !== '') {
+                $query->whereHas('details', function ($detailQuery) use ($request) {
+                    $detailQuery->where('action_id', $request->action_id);
+                });
+            }
+
+            $observations = $query->get();
+
+            // Calculate index behavior metrics
+            $totalAtRisk = 0;
+            $totalNearMiss = 0;
+            $totalRiskMgmt = 0;
+            $totalSimK3 = 0;
+            $totalHours = 0;
+
+            foreach ($observations as $observation) {
+                $totalAtRisk += $observation->at_risk_behavior ?? 0;
+                $totalNearMiss += $observation->nearmiss_incident ?? 0;
+                $totalRiskMgmt += $observation->informal_risk_mgmt ?? 0;
+                $totalSimK3 += $observation->sim_k3 ?? 0;
+                $totalHours += $observation->duration_in_minutes / 60; // Convert minutes to hours
+            }
+
+            // Calculate index behavior
+            $totalObservations = $totalAtRisk + $totalNearMiss + $totalRiskMgmt + $totalSimK3;
+            $atRiskPerHari = $totalHours > 0 ? round($totalAtRisk / $totalHours, 2) : 0;
+            $atRiskPerTahun = round($atRiskPerHari * 350, 2);
+            $indexBehaviorValue = $this->getIndexBehaviorCategory($atRiskPerTahun);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_observations' => $totalObservations,
+                    'total_at_risk' => $totalAtRisk,
+                    'total_near_miss' => $totalNearMiss,
+                    'total_risk_mgmt' => $totalRiskMgmt,
+                    'total_sim_k3' => $totalSimK3,
+                    'total_hours' => round($totalHours, 2),
+                    'at_risk_per_hari' => $atRiskPerHari,
+                    'at_risk_per_tahun' => $atRiskPerTahun,
+                    'index_behavior' => $indexBehaviorValue
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error in getIndexBehaviorData: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to calculate index behavior: ' . $e->getMessage()
             ], 500);
         }
     }

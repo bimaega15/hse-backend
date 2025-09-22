@@ -34,6 +34,11 @@ class Category extends Model
         return $this->hasMany(Contributing::class)->where('is_active', true);
     }
 
+    public function observationDetails()
+    {
+        return $this->hasMany(ObservationDetail::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {
