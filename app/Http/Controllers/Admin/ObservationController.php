@@ -820,8 +820,10 @@ class ObservationController extends Controller
     {
         try {
             // Check if all 3 required filters are provided
-            if (!$request->filled('observer_id') || !$request->filled('project_id') || !$request->filled('location_id') ||
-                $request->observer_id === '' || $request->project_id === '' || $request->location_id === '') {
+            if (
+                !$request->filled('observer_id') || !$request->filled('project_id') || !$request->filled('location_id') ||
+                $request->observer_id === '' || $request->project_id === '' || $request->location_id === ''
+            ) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Observer, Project, and Location filters are required'
@@ -832,7 +834,7 @@ class ObservationController extends Controller
                 ->where('user_id', $request->observer_id)
                 ->whereHas('details', function ($detailQuery) use ($request) {
                     $detailQuery->where('project_id', $request->project_id)
-                               ->where('location_id', $request->location_id);
+                        ->where('location_id', $request->location_id);
                 });
 
             // Apply additional filters if provided
@@ -895,7 +897,6 @@ class ObservationController extends Controller
                     'index_behavior' => $indexBehaviorValue
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error in getIndexBehaviorData: ' . $e->getMessage());
             return response()->json([
@@ -1029,12 +1030,12 @@ class ObservationController extends Controller
                     $q->whereHas('user', function ($userQuery) use ($searchTerm) {
                         $userQuery->where('name', 'LIKE', $searchTerm);
                     })
-                    ->orWhereHas('details.project', function ($projectQuery) use ($searchTerm) {
-                        $projectQuery->where('project_name', 'LIKE', $searchTerm);
-                    })
-                    ->orWhereHas('details.location', function ($locationQuery) use ($searchTerm) {
-                        $locationQuery->where('name', 'LIKE', $searchTerm);
-                    });
+                        ->orWhereHas('details.project', function ($projectQuery) use ($searchTerm) {
+                            $projectQuery->where('project_name', 'LIKE', $searchTerm);
+                        })
+                        ->orWhereHas('details.location', function ($locationQuery) use ($searchTerm) {
+                            $locationQuery->where('name', 'LIKE', $searchTerm);
+                        });
                 });
             }
 
@@ -1055,14 +1056,14 @@ class ObservationController extends Controller
                 }
 
                 if (!empty($selectedCombinations)) {
-                    $query->where(function($q) use ($selectedCombinations) {
+                    $query->where(function ($q) use ($selectedCombinations) {
                         foreach ($selectedCombinations as $combination) {
-                            $q->orWhere(function($subQ) use ($combination) {
+                            $q->orWhere(function ($subQ) use ($combination) {
                                 $subQ->where('observations.user_id', $combination['user_id'])
-                                     ->whereHas('details', function($detailQ) use ($combination) {
-                                         $detailQ->where('project_id', $combination['project_id'])
-                                                 ->where('location_id', $combination['location_id']);
-                                     });
+                                    ->whereHas('details', function ($detailQ) use ($combination) {
+                                        $detailQ->where('project_id', $combination['project_id'])
+                                            ->where('location_id', $combination['location_id']);
+                                    });
                             });
                         }
                     });
@@ -1424,7 +1425,7 @@ class ObservationController extends Controller
                         $clonedObservation->updated_at = $observation->updated_at;
 
                         // Filter details to only include this specific project-location combination
-                        $filteredDetails = $observation->details->filter(function($d) use ($detail) {
+                        $filteredDetails = $observation->details->filter(function ($d) use ($detail) {
                             $dProjectId = $d->project_id ?? 'null';
                             $dLocationId = $d->location_id ?? 'null';
                             $detailProjectId = $detail->project_id ?? 'null';
@@ -1478,9 +1479,9 @@ class ObservationController extends Controller
                 foreach ($observations as $observation) {
                     if ($observation->user_id == $combination['user_id']) {
                         // Check if observation has details matching this project/location
-                        $hasMatchingDetails = $observation->details->contains(function($detail) use ($combination) {
+                        $hasMatchingDetails = $observation->details->contains(function ($detail) use ($combination) {
                             return $detail->project_id == $combination['project_id'] &&
-                                   $detail->location_id == $combination['location_id'];
+                                $detail->location_id == $combination['location_id'];
                         });
 
                         if ($hasMatchingDetails) {
@@ -1494,7 +1495,7 @@ class ObservationController extends Controller
                             $clonedObservation->updated_at = $observation->updated_at;
 
                             // Filter details to only include this specific project-location combination
-                            $filteredDetails = $observation->details->filter(function($d) use ($combination) {
+                            $filteredDetails = $observation->details->filter(function ($d) use ($combination) {
                                 return $d->project_id == $combination['project_id'] && $d->location_id == $combination['location_id'];
                             });
 
@@ -1611,7 +1612,7 @@ class ObservationController extends Controller
         $sheet->mergeCells('H' . $headerRow1 . ':K' . $headerRow1);
 
         // Second row headers for result columns
-        $resultHeaders = ['At Risk Behavior', 'Nearmiss', 'SIM K3', 'STAR'];
+        $resultHeaders = ['At Risk Behavior', 'Nearmiss', 'SIM K3', 'Risk Mgmt'];
         $col = 'H';
         foreach ($resultHeaders as $header) {
             $sheet->setCellValue($col . $headerRow2, $header);
@@ -1655,11 +1656,11 @@ class ObservationController extends Controller
 
             // Get main location from first detail
             $mainLocation = $observation->details->first() ?
-                           optional($observation->details->first()->location)->name : 'N/A';
+                optional($observation->details->first()->location)->name : 'N/A';
 
             // Get main activity description from first detail
             $mainActivity = $observation->details->first() ?
-                           $observation->details->first()->description : 'N/A';
+                $observation->details->first()->description : 'N/A';
 
             $rowData = [
                 $no++,
@@ -1672,7 +1673,7 @@ class ObservationController extends Controller
                 $observation->at_risk_behavior ?? 0,
                 $observation->nearmiss_incident ?? 0,
                 $observation->sim_k3 ?? 0,
-                0 // STAR - not available in current data structure
+                $observation->informal_risk_mgmt ?? 0,
             ];
 
             $col = 'A';
@@ -2223,9 +2224,9 @@ class ObservationController extends Controller
                 'observation_details.location_id',
                 DB::raw('COUNT(*) as count')
             )
-            ->join('observations', 'observations.id', '=', 'observation_details.observation_id')
-            ->whereNotNull('observation_details.location_id')
-            ->whereNotNull('observation_details.project_id');
+                ->join('observations', 'observations.id', '=', 'observation_details.observation_id')
+                ->whereNotNull('observation_details.location_id')
+                ->whereNotNull('observation_details.project_id');
 
             // Keep minimal filters for export compatibility
             if ($request->filled('status')) {
@@ -2238,22 +2239,22 @@ class ObservationController extends Controller
                 $query->where(function ($q) use ($searchTerm) {
                     $q->whereExists(function ($userQuery) use ($searchTerm) {
                         $userQuery->select(DB::raw(1))
-                                 ->from('users')
-                                 ->whereColumn('users.id', 'observations.user_id')
-                                 ->where('users.name', 'LIKE', $searchTerm);
+                            ->from('users')
+                            ->whereColumn('users.id', 'observations.user_id')
+                            ->where('users.name', 'LIKE', $searchTerm);
                     })
-                    ->orWhereExists(function ($projectQuery) use ($searchTerm) {
-                        $projectQuery->select(DB::raw(1))
-                                    ->from('projects')
-                                    ->whereColumn('projects.id', 'observation_details.project_id')
-                                    ->where('projects.project_name', 'LIKE', $searchTerm);
-                    })
-                    ->orWhereExists(function ($locationQuery) use ($searchTerm) {
-                        $locationQuery->select(DB::raw(1))
-                                     ->from('locations')
-                                     ->whereColumn('locations.id', 'observation_details.location_id')
-                                     ->where('locations.name', 'LIKE', $searchTerm);
-                    });
+                        ->orWhereExists(function ($projectQuery) use ($searchTerm) {
+                            $projectQuery->select(DB::raw(1))
+                                ->from('projects')
+                                ->whereColumn('projects.id', 'observation_details.project_id')
+                                ->where('projects.project_name', 'LIKE', $searchTerm);
+                        })
+                        ->orWhereExists(function ($locationQuery) use ($searchTerm) {
+                            $locationQuery->select(DB::raw(1))
+                                ->from('locations')
+                                ->whereColumn('locations.id', 'observation_details.location_id')
+                                ->where('locations.name', 'LIKE', $searchTerm);
+                        });
                 });
             }
 
@@ -2313,7 +2314,6 @@ class ObservationController extends Controller
                 'success' => true,
                 'data' => $finalData
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error getting grouped export data: ' . $e->getMessage());
             Log::error('Stack trace: ' . $e->getTraceAsString());
