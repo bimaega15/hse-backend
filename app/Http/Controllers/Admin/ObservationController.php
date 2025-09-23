@@ -879,7 +879,8 @@ class ObservationController extends Controller
 
             // Calculate index behavior
             $totalObservations = $totalAtRisk + $totalNearMiss + $totalRiskMgmt + $totalSimK3;
-            $atRiskPerHari = $totalHours > 0 ? round($totalAtRisk / $totalHours, 2) : 0;
+            $atRiskPerJam = round($totalHours * $totalAtRisk, 2);
+            $atRiskPerHari = round($atRiskPerJam * 8, 2);
             $atRiskPerTahun = round($atRiskPerHari * 350, 2);
             $indexBehaviorValue = $this->getIndexBehaviorCategory($atRiskPerTahun);
 
@@ -892,6 +893,7 @@ class ObservationController extends Controller
                     'total_risk_mgmt' => $totalRiskMgmt,
                     'total_sim_k3' => $totalSimK3,
                     'total_hours' => round($totalHours, 2),
+                    'at_risk_per_jam' => $atRiskPerJam,
                     'at_risk_per_hari' => $atRiskPerHari,
                     'at_risk_per_tahun' => $atRiskPerTahun,
                     'index_behavior' => $indexBehaviorValue
@@ -1743,8 +1745,8 @@ class ObservationController extends Controller
         $currentRow++;
 
         // At Risk Per Jam calculation
-        $atRiskPerJam = round(0.5 * $totalAtRisk, 2);
-        $sheet->setCellValue('C' . $currentRow, 'At Risk Per Jam = 0,5 * Total At Risk Behavior = 0.5 x ' . $totalAtRisk);
+        $atRiskPerJam = round($totalWaktuJam * $totalAtRisk, 2);
+        $sheet->setCellValue('C' . $currentRow, 'At Risk Per Jam = ' . $totalWaktuJam . ' * Total At Risk Behavior = ' . $totalWaktuJam . ' x ' . $totalAtRisk);
         $sheet->setCellValue('D' . $currentRow, $atRiskPerJam);
         $currentRow++;
 

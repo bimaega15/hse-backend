@@ -237,16 +237,42 @@
                 processing: true,
                 serverSide: true,
                 responsive: {
-                    breakpoints: [
-                        { name: 'bigdesktop', width: Infinity },
-                        { name: 'meddesktop', width: 1480 },
-                        { name: 'smalldesktop', width: 1280 },
-                        { name: 'medium', width: 1188 },
-                        { name: 'tabletl', width: 1024 },
-                        { name: 'btwtabllandp', width: 848 },
-                        { name: 'tabletp', width: 768 },
-                        { name: 'mobilel', width: 480 },
-                        { name: 'mobilep', width: 320 }
+                    breakpoints: [{
+                            name: 'bigdesktop',
+                            width: Infinity
+                        },
+                        {
+                            name: 'meddesktop',
+                            width: 1480
+                        },
+                        {
+                            name: 'smalldesktop',
+                            width: 1280
+                        },
+                        {
+                            name: 'medium',
+                            width: 1188
+                        },
+                        {
+                            name: 'tabletl',
+                            width: 1024
+                        },
+                        {
+                            name: 'btwtabllandp',
+                            width: 848
+                        },
+                        {
+                            name: 'tabletp',
+                            width: 768
+                        },
+                        {
+                            name: 'mobilel',
+                            width: 480
+                        },
+                        {
+                            name: 'mobilep',
+                            width: 320
+                        }
                     ]
                 },
                 ajax: {
@@ -485,7 +511,9 @@
                         allowClear: true,
                         width: '100%',
                         minimumResultsForSearch: 5, // Show search only if more than 5 options
-                        escapeMarkup: function (markup) { return markup; }
+                        escapeMarkup: function(markup) {
+                            return markup;
+                        }
                     });
                 }
             });
@@ -531,7 +559,11 @@
             const locationId = $('#locationFilter').val();
 
             console.log('updateIndexBehaviorFooter called'); // Debug log
-            console.log('Filters:', { observerId, projectId, locationId }); // Debug log
+            console.log('Filters:', {
+                observerId,
+                projectId,
+                locationId
+            }); // Debug log
 
             if (observerId && projectId && locationId) {
                 console.log('All 3 filters filled, showing loading...'); // Debug log
@@ -584,7 +616,7 @@
 
             // Calculate total minutes and hours for display
             const totalMinutes = data.total_hours * 60;
-            const atRiskPerJam = 0.5 * data.total_at_risk;
+            const atRiskPerJam = data.at_risk_per_jam;
 
             const content = `
                 <!-- Compact Metrics Row -->
@@ -623,7 +655,7 @@
                         <button type="button" class="btn btn-outline-secondary btn-sm"
                                 data-bs-toggle="collapse" data-bs-target="#calculationDetails"
                                 aria-expanded="false" aria-controls="calculationDetails">
-                            <i class="ri-calculator-line me-1"></i>Show Calculation
+                            <i class="ri-calculator-line me-1"></i> Calculation
                         </button>
                     </div>
                 </div>
@@ -642,7 +674,7 @@
                                 </div>
                                 <div class="calculation-step mt-2">
                                     <small class="text-muted d-block">Step 2: At Risk Per Jam</small>
-                                    <code>0.5 × ${data.total_at_risk} = ${atRiskPerJam}</code>
+                                    <code>${data.total_hours} × ${data.total_at_risk} = ${atRiskPerJam}</code>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -968,44 +1000,46 @@
                                     ${detail.action_taken ? `<p class="card-text"><small class="text-muted"><strong>Action Taken:</strong> ${detail.action_taken}</small></p>` : ''}
 
                                     ${detail.images && detail.images !== '[]' ? `
-                                        <div class="mt-2">
-                                            <small class="text-muted fw-bold">Images:</small>
-                                            <div class="row mt-1">
-                                                ${(() => {
-                                                    let parsedImages;
-                                                    try {
-                                                        parsedImages = typeof detail.images === 'string' ? JSON.parse(detail.images) : detail.images;
-                                                    } catch (e) {
-                                                        parsedImages = [];
-                                                    }
+                                                <div class="mt-2">
+                                                    <small class="text-muted fw-bold">Images:</small>
+                                                    <div class="row mt-1">
+                                                        ${(() => {
+                                                            let parsedImages;
+                                                            try {
+                                                                parsedImages = typeof detail.images === 'string' ? JSON.parse(detail.images) : detail.images;
+                                                            } catch (e) {
+                                                                parsedImages = [];
+                                                            }
 
-                                                    if (!Array.isArray(parsedImages)) {
-                                                        parsedImages = [];
-                                                    }
+                                                            if (!Array.isArray(parsedImages)) {
+                                                                parsedImages = [];
+                                                            }
 
-                                                    return parsedImages.map(image => {
-                                                        const imgSrc = typeof image === 'object' ? image.data : image;
-                                                        return `
+                                                            return parsedImages.map(image => {
+                                                                const imgSrc = typeof image === 'object' ? image.data : image;
+                                                                return `
                                                             <div class="col-4 mb-2">
                                                                 <img src="${imgSrc}" class="img-thumbnail" style="max-height: 100px; cursor: pointer;" onclick="showImageModal('${imgSrc}')">
                                                             </div>
                                                         `;
-                                                    }).join('');
-                                                })()}
-                                            </div>
-                                        </div>
-                                    ` : ''}
+                }).join('');
+            })()
+        } <
+        /div> < /
+        div >
+            ` : ''}
                                 </div>
                             </div>
                         </div>
                     `;
-                });
-                detailsHtml += '</div>';
-            } else {
-                detailsHtml = '<p class="text-muted">No observation details available</p>';
-            }
+        });
+        detailsHtml += '</div>';
+        }
+        else {
+            detailsHtml = '<p class="text-muted">No observation details available</p>';
+        }
 
-            const html = `
+        const html = `
                 <div class="row">
                     <div class="col-md-6">
                         <h6 class="fw-bold">Observer Information</h6>
@@ -1076,7 +1110,7 @@
                 </div>
             `;
 
-            $('#observationDetailsContent').html(html);
+        $('#observationDetailsContent').html(html);
         }
 
         function editObservationFromView() {
@@ -1195,7 +1229,8 @@
                                             name: file.name,
                                             type: file.type,
                                             size: file.size,
-                                            data: e.target.result // base64 string with data:image prefix
+                                            data: e.target
+                                                .result // base64 string with data:image prefix
                                         });
                                         imageResolve();
                                     };
@@ -1533,24 +1568,24 @@
 
                         <!-- Existing Images -->
                         ${existingDetail && existingDetail.images && existingDetail.images !== '[]' ? `
-                            <div class="mt-2">
-                                <small class="text-muted">Existing Images:</small>
-                                <div class="row mt-1" id="existing-images-${detailId}">
-                                    ${(() => {
-                                        let parsedImages;
-                                        try {
-                                            parsedImages = typeof existingDetail.images === 'string' ? JSON.parse(existingDetail.images) : existingDetail.images;
-                                        } catch (e) {
-                                            parsedImages = [];
-                                        }
+                                    <div class="mt-2">
+                                        <small class="text-muted">Existing Images:</small>
+                                        <div class="row mt-1" id="existing-images-${detailId}">
+                                            ${(() => {
+                                                let parsedImages;
+                                                try {
+                                                    parsedImages = typeof existingDetail.images === 'string' ? JSON.parse(existingDetail.images) : existingDetail.images;
+                                                } catch (e) {
+                                                    parsedImages = [];
+                                                }
 
-                                        if (!Array.isArray(parsedImages)) {
-                                            parsedImages = [];
-                                        }
+                                                if (!Array.isArray(parsedImages)) {
+                                                    parsedImages = [];
+                                                }
 
-                                        return parsedImages.map((image, index) => {
-                                            const imgSrc = typeof image === 'object' ? image.data : image;
-                                            return `
+                                                return parsedImages.map((image, index) => {
+                                                    const imgSrc = typeof image === 'object' ? image.data : image;
+                                                    return `
                                                 <div class="col-3 mb-3 px-2">
                                                     <div class="position-relative" style="margin: 10px;">
                                                         <img src="${imgSrc}" class="img-thumbnail" style="max-height: 100px; cursor: pointer; width: 100%;" onclick="showImageModal('${imgSrc}')">
@@ -1561,11 +1596,12 @@
                                                     </div>
                                                 </div>
                                             `;
-                                        }).join('');
-                                    })()}
-                                </div>
-                            </div>
-                        ` : ''}
+        }).join('');
+        })()
+        } <
+        /div> < /
+        div >
+            ` : ''}
 
                         <!-- New Images Preview -->
                         <div class="image-preview mt-2" id="image-preview-${detailId}"></div>
@@ -1573,13 +1609,13 @@
                 </div>
             `;
 
-            $('#observationDetails').append(detailHtml);
+        $('#observationDetails').append(detailHtml);
 
-            // Initialize Select2 for all dropdowns in this detail
-            initializeSelect2ForDetail(detailId, detailCounter);
+        // Initialize Select2 for all dropdowns in this detail
+        initializeSelect2ForDetail(detailId, detailCounter);
 
-            // Show bottom add button and floating button if more than 0 details
-            updateAddDetailButtons();
+        // Show bottom add button and floating button if more than 0 details
+        updateAddDetailButtons();
         }
 
         // Update visibility of add detail buttons
@@ -1939,8 +1975,8 @@
 
         /* Select2 Custom Styles */
         /* .select2-container--bootstrap-5 .select2-selection--single {
-                    height: calc(2.25rem + 2px) !important;
-                } */
+                            height: calc(2.25rem + 2px) !important;
+                        } */
 
         .select2-container--bootstrap-5 .select2-selection--single .select2-selection__rendered {
             /* line-height: calc(2.25rem) !important; */
@@ -2106,6 +2142,7 @@
 
         /* Override DataTables responsive hiding - Force show at ALL screen sizes */
         @media (max-width: 1199px) {
+
             #indexBehaviorFooter,
             #indexBehaviorFooter.force-visible,
             #indexBehaviorFooter:not(.d-none) {
@@ -2116,6 +2153,7 @@
         }
 
         @media (max-width: 991px) {
+
             #indexBehaviorFooter,
             #indexBehaviorFooter.force-visible,
             #indexBehaviorFooter:not(.d-none) {
@@ -2126,6 +2164,7 @@
         }
 
         @media (max-width: 767px) {
+
             #indexBehaviorFooter,
             #indexBehaviorFooter.force-visible,
             #indexBehaviorFooter:not(.d-none) {
@@ -2136,6 +2175,7 @@
         }
 
         @media (max-width: 575px) {
+
             #indexBehaviorFooter,
             #indexBehaviorFooter.force-visible,
             #indexBehaviorFooter:not(.d-none) {
@@ -2154,12 +2194,12 @@
 
         #indexBehaviorContent .card {
             transition: transform 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         #indexBehaviorContent .card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
 
         /* Fix container width in table footer */
@@ -2192,9 +2232,11 @@
             0% {
                 opacity: 1;
             }
+
             50% {
                 opacity: 0.6;
             }
+
             100% {
                 opacity: 1;
             }
@@ -2214,15 +2256,19 @@
             from {
                 transform: rotate(0deg);
             }
+
             to {
                 transform: rotate(360deg);
             }
         }
 
         @keyframes pulse-slow {
-            0%, 100% {
+
+            0%,
+            100% {
                 opacity: 1;
             }
+
             50% {
                 opacity: 0.7;
             }
@@ -2239,6 +2285,7 @@
             0% {
                 background-position: -200% 0;
             }
+
             100% {
                 background-position: 200% 0;
             }
