@@ -95,8 +95,8 @@ class BannerController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'title' => 'required|string|max:255',
-                'description' => 'required|string|max:1000',
+                'title' => 'nullable|string|max:255',
+                'description' => 'nullable|string|max:1000',
                 'icon' => 'nullable|string|max:100',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'background_color' => 'nullable|string|max:7|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -104,9 +104,7 @@ class BannerController extends Controller
                 'is_active' => 'required|boolean',
                 'sort_order' => 'nullable|integer|min:0'
             ], [
-                'title.required' => 'Judul banner wajib diisi',
                 'title.max' => 'Judul banner maksimal 255 karakter',
-                'description.required' => 'Deskripsi banner wajib diisi',
                 'description.max' => 'Deskripsi maksimal 1000 karakter',
                 'icon.max' => 'Icon maksimal 100 karakter',
                 'image.image' => 'File harus berupa gambar',
@@ -252,8 +250,8 @@ class BannerController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'title' => 'required|string|max:255',
-                'description' => 'required|string|max:1000',
+                'title' => 'nullable|string|max:255',
+                'description' => 'nullable|string|max:1000',
                 'icon' => 'nullable|string|max:100',
                 'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
                 'background_color' => 'nullable|string|max:7|regex:/^#[0-9A-Fa-f]{6}$/',
@@ -261,9 +259,7 @@ class BannerController extends Controller
                 'is_active' => 'required|boolean',
                 'sort_order' => 'nullable|integer|min:0'
             ], [
-                'title.required' => 'Judul banner wajib diisi',
                 'title.max' => 'Judul banner maksimal 255 karakter',
-                'description.required' => 'Deskripsi banner wajib diisi',
                 'description.max' => 'Deskripsi maksimal 1000 karakter',
                 'icon.max' => 'Icon maksimal 100 karakter',
                 'image.image' => 'File harus berupa gambar',

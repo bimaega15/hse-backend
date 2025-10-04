@@ -868,18 +868,22 @@ class ObservationController extends Controller
             $totalRiskMgmt = 0;
             $totalSimK3 = 0;
             $totalHours = 0;
+            $totalMinutes = 0;
 
             foreach ($observations as $observation) {
                 $totalAtRisk += $observation->at_risk_behavior ?? 0;
                 $totalNearMiss += $observation->nearmiss_incident ?? 0;
                 $totalRiskMgmt += $observation->informal_risk_mgmt ?? 0;
                 $totalSimK3 += $observation->sim_k3 ?? 0;
-                $totalHours += $observation->duration_in_minutes / 60; // Convert minutes to hours
+                $totalMinutes += $observation->duration_in_minutes ?? 0;
+                $totalHours += $observation->duration_in_minutes > 0 ? 60 / $observation->duration_in_minutes : 0; // 60 / duration formula
             }
 
             // Calculate index behavior
             $totalObservations = $totalAtRisk + $totalNearMiss + $totalRiskMgmt + $totalSimK3;
-            $atRiskPerJam = round($totalHours * $totalAtRisk, 2);
+            // Calculate like Excel: (60 / Total Minutes) * Total At Risk
+            $totalWaktuJam = $totalMinutes > 0 ? round(60 / $totalMinutes, 2) : 0;
+            $atRiskPerJam = round($totalWaktuJam * $totalAtRisk, 2);
             $atRiskPerHari = round($atRiskPerJam * 8, 2);
             $atRiskPerTahun = round($atRiskPerHari * 350, 2);
             $indexBehaviorValue = $this->getIndexBehaviorCategory($atRiskPerTahun);
@@ -892,6 +896,8 @@ class ObservationController extends Controller
                     'total_near_miss' => $totalNearMiss,
                     'total_risk_mgmt' => $totalRiskMgmt,
                     'total_sim_k3' => $totalSimK3,
+                    'total_minutes' => $totalMinutes,
+                    'total_waktu_jam' => $totalWaktuJam,
                     'total_hours' => round($totalHours, 2),
                     'at_risk_per_jam' => $atRiskPerJam,
                     'at_risk_per_hari' => $atRiskPerHari,
@@ -1738,9 +1744,9 @@ class ObservationController extends Controller
         ]);
         $currentRow++;
 
-        // Total Waktu/60 calculation
-        $totalWaktuJam = round($totalWaktu / 60, 2);
-        $sheet->setCellValue('C' . $currentRow, 'Total Waktu/60 =');
+        // 60/Total Waktu calculation
+        $totalWaktuJam = $totalWaktu > 0 ? round(60 / $totalWaktu, 2) : 0;
+        $sheet->setCellValue('C' . $currentRow, '60/Total Waktu =');
         $sheet->setCellValue('D' . $currentRow, $totalWaktuJam);
         $currentRow++;
 

@@ -614,8 +614,8 @@
         function displayIndexBehaviorPanel(data) {
             const indexBehavior = data.index_behavior;
 
-            // Calculate total minutes and hours for display
-            const totalMinutes = data.total_hours * 60;
+            // Use actual total minutes from backend
+            const totalMinutes = data.total_minutes;
             const atRiskPerJam = data.at_risk_per_jam;
 
             const content = `
@@ -643,7 +643,7 @@
                     </div>
                     <div class="col-auto">
                         <span class="badge bg-light text-dark fs-6 py-2 px-3">
-                            <strong>${data.total_hours}h</strong> Total
+                            <strong>${data.total_waktu_jam}h</strong> Total
                         </span>
                     </div>
                     <div class="col-auto">
@@ -669,12 +669,12 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="calculation-step">
-                                    <small class="text-muted d-block">Step 1: Total Waktu/60</small>
-                                    <code>${totalMinutes} minutes ÷ 60 = ${data.total_hours} hours</code>
+                                    <small class="text-muted d-block">Step 1: 60/Total Waktu</small>
+                                    <code>60 ÷ ${totalMinutes} minutes = ${totalMinutes > 0 ? (60 / totalMinutes).toFixed(2) : 0} hours</code>
                                 </div>
                                 <div class="calculation-step mt-2">
                                     <small class="text-muted d-block">Step 2: At Risk Per Jam</small>
-                                    <code>${data.total_hours} × ${data.total_at_risk} = ${atRiskPerJam}</code>
+                                    <code>${data.total_waktu_jam} × ${data.total_at_risk} = ${atRiskPerJam}</code>
                                 </div>
                             </div>
                             <div class="col-md-6">

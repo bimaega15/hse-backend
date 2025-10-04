@@ -41,6 +41,18 @@ class Banner extends Model
         return $query->orderBy('sort_order', 'asc')->orderBy('created_at', 'asc');
     }
 
+    // Get title with default if null
+    public function getTitleAttribute($value)
+    {
+        return $value ?? 'Banner';
+    }
+
+    // Get description with default if null
+    public function getDescriptionAttribute($value)
+    {
+        return $value ?? '';
+    }
+
     // Get image URL accessor
     public function getImageUrlAttribute()
     {
