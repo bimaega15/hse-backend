@@ -174,6 +174,65 @@
     </div>
 </div>
 
+<!-- Project and Location Selection Modal -->
+<div class="modal fade" id="projectLocationModal" tabindex="-1" aria-labelledby="projectLocationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="projectLocationForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectLocationModalLabel">
+                        <i class="ri-map-pin-line me-2 text-primary"></i>Select Project & Location
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Required Information:</strong> Please select a project and location before saving your observation. This information is required for proper categorization and reporting.
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="quickProjectSelect" class="form-label">Project <span class="text-danger">*</span></label>
+                                <select class="form-select" id="quickProjectSelect" name="project_id" required>
+                                    <option value="">Select Project</option>
+                                    <!-- Options will be populated via JavaScript -->
+                                </select>
+                                <div class="invalid-feedback" id="quickProjectError"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="quickLocationSelect" class="form-label">Location <span class="text-danger">*</span></label>
+                                <select class="form-select" id="quickLocationSelect" name="location_id" required>
+                                    <option value="">Select Location</option>
+                                    <!-- Options will be populated via JavaScript -->
+                                </select>
+                                <div class="invalid-feedback" id="quickLocationError"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="ri-lightbulb-line me-2"></i>
+                        <small><strong>Note:</strong> These values will be applied to all observation details you add later. You can always modify them individually for each detail if needed.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-check-line me-1"></i>Submit
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Observation Detail Template -->
 <template id="observationDetailTemplate">
     <div class="observation-detail-item border rounded p-3 mb-3" data-detail-index="">

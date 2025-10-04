@@ -13,6 +13,8 @@ class Observation extends Model
 
     protected $fillable = [
         'user_id',
+        'location_id',
+        'project_id',
         'waktu_observasi',
         'at_risk_behavior',
         'nearmiss_incident',
@@ -27,6 +29,8 @@ class Observation extends Model
     protected $casts = [
         'id' => 'integer',                    // TAMBAHKAN
         'user_id' => 'integer',               // TAMBAHKAN
+        'location_id' => 'integer',          // TAMBAHKAN
+        'project_id' => 'integer',           // TAMBAHKAN
         'at_risk_behavior' => 'integer',      // TAMBAHKAN
         'nearmiss_incident' => 'integer',     // TAMBAHKAN
         'informal_risk_mgmt' => 'integer',    // TAMBAHKAN
@@ -51,6 +55,16 @@ class Observation extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function location()
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(Project::class, 'project_id');
     }
 
     public function details()

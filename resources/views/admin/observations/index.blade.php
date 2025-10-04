@@ -186,6 +186,7 @@
         let observationsTable;
         let isEditMode = false;
         let currentObservationId = null;
+        let currentObservationData = null; // Store current observation data for edit mode
         let formData = {};
         let detailCounter = 0;
 
@@ -877,6 +878,9 @@
         function populateObservationForm(observation) {
             $('#observationId').val(observation.id);
 
+            // Store observation data for later use
+            currentObservationData = observation;
+
             // Set observer/user - trigger change to ensure Select2 updates
             $('#userId').val(observation.user_id).trigger('change');
 
@@ -1176,6 +1180,19 @@
 
         async function submitObservation() {
             clearFormErrors();
+
+            // First check if observation details exist
+            const observationDetailElements = $('#observationDetails .observation-detail-item');
+            if (observationDetailElements.length === 0) {
+                // No observation details, show project/location modal first
+                // In edit mode, pass existing project and location data
+                if (isEditMode && currentObservationData) {
+                    showProjectLocationModal(currentObservationData.project_id, currentObservationData.location_id);
+                } else {
+                    showProjectLocationModal();
+                }
+                return;
+            }
 
             // Collect observation details with all fields including images
             const details = [];
@@ -1838,6 +1855,7 @@
             $('#observationId').val('');
             $('#observationDetails').empty();
             detailCounter = 0;
+            currentObservationData = null; // Clear stored observation data
             clearFormErrors();
             showFormLoading(false);
 
@@ -1933,6 +1951,238 @@
                 month: 'short',
                 year: 'numeric'
             });
+        }
+
+        // Project/Location Modal Functions
+        function showProjectLocationModal(existingProjectId = null, existingLocationId = null) {
+            // Clear any existing errors
+            $('#quickProjectError').text('');
+            $('#quickLocationError').text('');
+            $('#quickProjectSelect').removeClass('is-invalid');
+            $('#quickLocationSelect').removeClass('is-invalid');
+
+            // Populate the dropdowns
+            populateQuickProjectDropdown();
+            populateQuickLocationDropdown();
+
+            // Set existing values if provided (for edit mode)
+            if (existingProjectId) {
+                setTimeout(function() {
+                    $('#quickProjectSelect').val(existingProjectId).trigger('change');
+                }, 100);
+            }
+
+            if (existingLocationId) {
+                setTimeout(function() {
+                    $('#quickLocationSelect').val(existingLocationId).trigger('change');
+                }, 100);
+            }
+
+            // Show the modal
+            $('#projectLocationModal').modal('show');
+        }
+
+        function populateQuickProjectDropdown() {
+            $('#quickProjectSelect').empty().append('<option value="">Select Project</option>');
+            if (window.projectsData) {
+                window.projectsData.forEach(function(project) {
+                    $('#quickProjectSelect').append(`<option value="${project.id}">${project.project_name}</option>`);
+                });
+            }
+
+            // Initialize Select2
+            if ($('#quickProjectSelect').hasClass('select2-hidden-accessible')) {
+                $('#quickProjectSelect').select2('destroy');
+            }
+            $('#quickProjectSelect').select2({
+                dropdownParent: $('#projectLocationModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Project',
+                allowClear: false,
+                width: '100%'
+            });
+        }
+
+        function populateQuickLocationDropdown() {
+            $('#quickLocationSelect').empty().append('<option value="">Select Location</option>');
+            if (window.locationsData) {
+                window.locationsData.forEach(function(location) {
+                    $('#quickLocationSelect').append(`<option value="${location.id}">${location.name}</option>`);
+                });
+            }
+
+            // Initialize Select2
+            if ($('#quickLocationSelect').hasClass('select2-hidden-accessible')) {
+                $('#quickLocationSelect').select2('destroy');
+            }
+            $('#quickLocationSelect').select2({
+                dropdownParent: $('#projectLocationModal'),
+                theme: 'bootstrap-5',
+                placeholder: 'Select Location',
+                allowClear: false,
+                width: '100%'
+            });
+        }
+
+        // Handle project/location form submission
+        $('#projectLocationForm').on('submit', function(e) {
+            e.preventDefault();
+
+            const projectId = $('#quickProjectSelect').val();
+            const locationId = $('#quickLocationSelect').val();
+
+            // Clear previous errors
+            $('#quickProjectError').text('');
+            $('#quickLocationError').text('');
+            $('#quickProjectSelect').removeClass('is-invalid');
+            $('#quickLocationSelect').removeClass('is-invalid');
+
+            let hasError = false;
+
+            // Validate required fields
+            if (!projectId) {
+                $('#quickProjectSelect').addClass('is-invalid');
+                $('#quickProjectError').text('Please select a project');
+                hasError = true;
+            }
+
+            if (!locationId) {
+                $('#quickLocationSelect').addClass('is-invalid');
+                $('#quickLocationError').text('Please select a location');
+                hasError = true;
+            }
+
+            if (hasError) {
+                return;
+            }
+
+            // Hide the modal
+            $('#projectLocationModal').modal('hide');
+
+            // Submit the observation with project and location data
+            submitObservationWithProjectLocation(projectId, locationId);
+        });
+
+        function addObservationDetailWithDefaults(projectId, locationId) {
+            // Add a new observation detail
+            addObservationDetail();
+
+            // Wait a moment for the detail to be added, then set the default values
+            setTimeout(function() {
+                const lastDetail = $('#observationDetails .observation-detail-item').last();
+
+                // Set project if provided
+                if (projectId) {
+                    const projectSelect = lastDetail.find('select[name*="[project_id]"]');
+                    projectSelect.val(projectId);
+                    if (projectSelect.hasClass('select2-hidden-accessible')) {
+                        projectSelect.trigger('change.select2');
+                    }
+                }
+
+                // Set location if provided
+                if (locationId) {
+                    const locationSelect = lastDetail.find('select[name*="[location_id]"]');
+                    locationSelect.val(locationId);
+                    if (locationSelect.hasClass('select2-hidden-accessible')) {
+                        locationSelect.trigger('change.select2');
+                    }
+                }
+
+                // Scroll to the newly added detail
+                lastDetail[0].scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+
+                // Focus on the first select field
+                setTimeout(function() {
+                    lastDetail.find('select[name*="[observation_type]"]').focus();
+                }, 500);
+            }, 100);
+        }
+
+        async function submitObservationWithProjectLocation(projectId, locationId) {
+            clearFormErrors();
+            showFormLoading(true);
+
+            try {
+                const formData = {
+                    user_id: $('#userId').val(),
+                    waktu_observasi: $('#waktuObservasi').val(),
+                    waktu_mulai: $('#waktuMulai').val(),
+                    waktu_selesai: $('#waktuSelesai').val(),
+                    notes: $('#notes').val(),
+                    location_id: locationId,
+                    project_id: projectId,
+                    details: []
+                };
+
+                let url = isEditMode ? `{{ url('/') }}/admin/observations/${currentObservationId}` :
+                    '{{ url('/') }}/admin/observations';
+                const method = isEditMode ? 'PUT' : 'POST';
+
+                if (method === 'PUT') {
+                    formData._method = 'PUT';
+                }
+
+                console.log('Submitting observation with project/location:', formData);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+
+                const result = await response.json();
+
+                console.log('Backend response:', result);
+
+                if (result.success) {
+                    showFormLoading(false);
+                    $('#observationModal').modal('hide');
+
+                    // Show success message
+                    Swal.fire({
+                        title: 'Success!',
+                        text: isEditMode ? 'Observation updated successfully!' : 'Observation created successfully!',
+                        icon: 'success',
+                        confirmButtonText: 'OK'
+                    });
+
+                    // Reload the table
+                    observationsTable.ajax.reload();
+                } else {
+                    showFormLoading(false);
+
+                    if (result.errors) {
+                        displayFormErrors(result.errors);
+                    } else {
+                        Swal.fire({
+                            title: 'Error!',
+                            text: result.message || 'Failed to save observation',
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
+                }
+            } catch (error) {
+                showFormLoading(false);
+                console.error('Error submitting observation:', error);
+
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'An unexpected error occurred while saving the observation',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
         }
     </script>
 

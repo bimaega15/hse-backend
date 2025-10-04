@@ -376,13 +376,15 @@ class ObservationController extends Controller
                 'waktu_mulai' => 'required|date_format:H:i',
                 'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
                 'notes' => 'nullable|string|max:1000',
-                'details' => 'required|array|min:1',
+                'location_id' => 'nullable|exists:locations,id',
+                'project_id' => 'nullable|exists:projects,id',
+                'details' => 'nullable|array',
                 'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
                 'details.*.category_id' => 'required|exists:categories,id',
                 'details.*.contributing_id' => 'required|exists:contributings,id',
                 'details.*.action_id' => 'required|exists:actions,id',
                 'details.*.location_id' => 'required|exists:locations,id',
-                'details.*.project_id' => 'nullable|exists:projects,id',
+                'details.*.project_id' => 'required|exists:projects,id',
                 'details.*.activator_id' => 'nullable|exists:activators,id',
                 'details.*.report_date' => 'required|date',
                 'details.*.description' => 'required|string|max:2000',
@@ -397,7 +399,7 @@ class ObservationController extends Controller
 
             // Custom validation for activator_id when observation_type is at_risk_behavior
             $validator->after(function ($validator) use ($jsonData) {
-                if (isset($jsonData['details'])) {
+                if (isset($jsonData['details']) && !empty($jsonData['details'])) {
                     foreach ($jsonData['details'] as $index => $detail) {
                         if (isset($detail['observation_type']) && $detail['observation_type'] === 'at_risk_behavior') {
                             if (!isset($detail['activator_id']) || empty($detail['activator_id'])) {
@@ -424,6 +426,8 @@ class ObservationController extends Controller
                 'waktu_mulai' => $jsonData['waktu_mulai'],
                 'waktu_selesai' => $jsonData['waktu_selesai'],
                 'notes' => $jsonData['notes'] ?? null,
+                'location_id' => $jsonData['location_id'] ?? null,
+                'project_id' => $jsonData['project_id'] ?? null,
                 'status' => 'draft'
             ]);
 
@@ -435,7 +439,9 @@ class ObservationController extends Controller
                 'sim_k3' => 0,
             ];
 
-            foreach ($jsonData['details'] as $detailData) {
+            // Only process details if array is not empty
+            if (!empty($jsonData['details'])) {
+                foreach ($jsonData['details'] as $detailData) {
                 // Create observation detail
                 $detail = ObservationDetail::create([
                     'observation_id' => $observation->id,
@@ -468,6 +474,7 @@ class ObservationController extends Controller
                 }
 
                 $counters[$detailData['observation_type']]++;
+                }
             }
 
             // Update counters
@@ -491,36 +498,65 @@ class ObservationController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'user_id' => 'required|exists:users,id',
-            'waktu_observasi' => 'required|date_format:H:i',
-            'waktu_mulai' => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
-            'notes' => 'nullable|string|max:1000',
-            'details' => 'required|array|min:1',
-            'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
-            'details.*.category_id' => 'required|exists:categories,id',
-            'details.*.contributing_id' => 'nullable|exists:contributings,id',
-            'details.*.action_id' => 'nullable|exists:actions,id',
-            'details.*.location_id' => 'nullable|exists:locations,id',
-            'details.*.project_id' => 'nullable|exists:projects,id',
-            'details.*.activator_id' => 'nullable|exists:activators,id',
-            'details.*.report_date' => 'nullable|date',
-            'details.*.description' => 'required|string|max:2000',
-            'details.*.severity' => 'required|in:low,medium,high,critical',
-            'details.*.action_taken' => 'nullable|string|max:1000',
-            'details.*.images' => 'nullable|array',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
+            // Handle JSON request
+            $jsonData = $request->isJson() ? $request->all() : json_decode($request->getContent(), true);
+
+            if (!$jsonData) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid data format'
+                ], 400);
+            }
+
+            $validator = Validator::make($jsonData, [
+                'user_id' => 'required|exists:users,id',
+                'waktu_observasi' => 'required|date_format:H:i',
+                'waktu_mulai' => 'required|date_format:H:i',
+                'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+                'notes' => 'nullable|string|max:1000',
+                'location_id' => 'nullable|exists:locations,id',
+                'project_id' => 'nullable|exists:projects,id',
+                'details' => 'nullable|array',
+                'details.*.observation_type' => 'required|in:at_risk_behavior,nearmiss_incident,informal_risk_mgmt,sim_k3',
+                'details.*.category_id' => 'required|exists:categories,id',
+                'details.*.contributing_id' => 'required|exists:contributings,id',
+                'details.*.action_id' => 'required|exists:actions,id',
+                'details.*.location_id' => 'required|exists:locations,id',
+                'details.*.project_id' => 'required|exists:projects,id',
+                'details.*.activator_id' => 'nullable|exists:activators,id',
+                'details.*.report_date' => 'required|date',
+                'details.*.description' => 'required|string|max:2000',
+                'details.*.severity' => 'required|in:low,medium,high,critical',
+                'details.*.action_taken' => 'nullable|string|max:1000',
+                'details.*.images' => 'nullable|array',
+                'details.*.images.*.name' => 'required_with:details.*.images.*|string',
+                'details.*.images.*.type' => 'required_with:details.*.images.*|string',
+                'details.*.images.*.size' => 'required_with:details.*.images.*|integer|max:2097152', // 2MB
+                'details.*.images.*.data' => 'required_with:details.*.images.*|string',
+            ]);
+
+            // Custom validation for activator_id when observation_type is at_risk_behavior
+            $validator->after(function ($validator) use ($jsonData) {
+                if (isset($jsonData['details']) && !empty($jsonData['details'])) {
+                    foreach ($jsonData['details'] as $index => $detail) {
+                        if (isset($detail['observation_type']) && $detail['observation_type'] === 'at_risk_behavior') {
+                            if (!isset($detail['activator_id']) || empty($detail['activator_id'])) {
+                                $validator->errors()->add("details.{$index}.activator_id", 'Activator is required for At Risk Behavior observations.');
+                            }
+                        }
+                    }
+                }
+            });
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
             DB::beginTransaction();
 
             $observation = Observation::findOrFail($id);
@@ -532,15 +568,15 @@ class ObservationController extends Controller
                 ], 400);
             }
 
-            $observationData = $request->only([
-                'user_id',
-                'waktu_observasi',
-                'waktu_mulai',
-                'waktu_selesai',
-                'notes'
+            $observation->update([
+                'user_id' => $jsonData['user_id'],
+                'waktu_observasi' => $jsonData['waktu_observasi'],
+                'waktu_mulai' => $jsonData['waktu_mulai'],
+                'waktu_selesai' => $jsonData['waktu_selesai'],
+                'notes' => $jsonData['notes'] ?? null,
+                'location_id' => $jsonData['location_id'] ?? null,
+                'project_id' => $jsonData['project_id'] ?? null,
             ]);
-
-            $observation->update($observationData);
 
             // Delete existing details and recreate
             $observation->details()->delete();
@@ -552,30 +588,42 @@ class ObservationController extends Controller
                 'sim_k3' => 0,
             ];
 
-            foreach ($request->details as $detail) {
-                // Process images if present
-                $images = null;
-                if (isset($detail['images']) && is_array($detail['images'])) {
-                    $images = json_encode($detail['images']);
+            // Only process details if array is not empty
+            if (!empty($jsonData['details'])) {
+                foreach ($jsonData['details'] as $detailData) {
+                    // Create observation detail
+                    $detail = ObservationDetail::create([
+                        'observation_id' => $observation->id,
+                        'observation_type' => $detailData['observation_type'],
+                        'category_id' => $detailData['category_id'],
+                        'contributing_id' => $detailData['contributing_id'],
+                        'action_id' => $detailData['action_id'],
+                        'location_id' => $detailData['location_id'],
+                        'project_id' => $detailData['project_id'] ?? null,
+                        'activator_id' => $detailData['activator_id'] ?? null,
+                        'report_date' => $detailData['report_date'],
+                        'description' => $detailData['description'],
+                        'severity' => $detailData['severity'],
+                        'action_taken' => $detailData['action_taken'] ?? null,
+                    ]);
+
+                    // Process and save images as base64
+                    if (isset($detailData['images']) && is_array($detailData['images'])) {
+                        $imageArray = [];
+                        foreach ($detailData['images'] as $imageData) {
+                            $imageArray[] = [
+                                'name' => $imageData['name'],
+                                'type' => $imageData['type'],
+                                'size' => $imageData['size'],
+                                'data' => $imageData['data']
+                            ];
+                        }
+                        // Store images as JSON in a separate field or create related model
+                        $detail->update(['images' => json_encode($imageArray)]);
+                    }
+
+                    $counters[$detailData['observation_type']]++;
                 }
-
-                ObservationDetail::create([
-                    'observation_id' => $observation->id,
-                    'observation_type' => $detail['observation_type'],
-                    'category_id' => $detail['category_id'],
-                    'contributing_id' => $detail['contributing_id'] ?? null,
-                    'action_id' => $detail['action_id'] ?? null,
-                    'location_id' => $detail['location_id'] ?? null,
-                    'project_id' => $detail['project_id'] ?? null,
-                    'activator_id' => $detail['activator_id'] ?? null,
-                    'report_date' => $detail['report_date'] ?? null,
-                    'description' => $detail['description'],
-                    'severity' => $detail['severity'],
-                    'action_taken' => $detail['action_taken'] ?? null,
-                    'images' => $images,
-                ]);
-
-                $counters[$detail['observation_type']]++;
             }
 
             $observation->update($counters);
