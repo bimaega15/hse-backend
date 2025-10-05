@@ -480,12 +480,13 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <form id="exportFiltersForm" class="row g-3">
+                        <form id="exportFiltersForm" class="row g-3" onsubmit="return false;">
                             <div class="col-12">
                                 <label for="exportSearchFilter" class="form-label fw-medium">Search</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="exportSearchFilter" name="export_search"
-                                           placeholder="Search by user name, project name, or location name...">
+                                           placeholder="Search by user name, project name, or location name..."
+                                           onkeypress="handleExportSearchKeypress(event)">
                                     <button type="button" class="btn btn-primary btn-sm" onclick="applyExportFilters()">
                                         <i class="ri-search-line me-1"></i>Search
                                     </button>
@@ -611,6 +612,17 @@
             $('#exportFiltersForm')[0].reset();
             // Reload export data
             loadExportData();
+        }
+
+        function handleExportSearchKeypress(event) {
+            // Check if Enter key was pressed
+            if (event.key === 'Enter' || event.keyCode === 13) {
+                // Prevent default form submission
+                event.preventDefault();
+                // Call the search function
+                applyExportFilters();
+                return false;
+            }
         }
 
         function loadExportData() {

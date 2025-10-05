@@ -337,6 +337,8 @@ class ObservationController extends Controller
         try {
             $observation = Observation::with([
                 'user:id,name,email,department',
+                'project:id,project_name',
+                'location:id,name',
                 'details.category:id,name',
                 'details.contributing:id,name',
                 'details.action:id,name',
@@ -428,7 +430,7 @@ class ObservationController extends Controller
                 'notes' => $jsonData['notes'] ?? null,
                 'location_id' => $jsonData['location_id'] ?? null,
                 'project_id' => $jsonData['project_id'] ?? null,
-                'status' => 'draft'
+                'status' => 'submitted'
             ]);
 
             // Create observation details and count each type
@@ -442,38 +444,38 @@ class ObservationController extends Controller
             // Only process details if array is not empty
             if (!empty($jsonData['details'])) {
                 foreach ($jsonData['details'] as $detailData) {
-                // Create observation detail
-                $detail = ObservationDetail::create([
-                    'observation_id' => $observation->id,
-                    'observation_type' => $detailData['observation_type'],
-                    'category_id' => $detailData['category_id'],
-                    'contributing_id' => $detailData['contributing_id'],
-                    'action_id' => $detailData['action_id'],
-                    'location_id' => $detailData['location_id'],
-                    'project_id' => $detailData['project_id'] ?? null,
-                    'activator_id' => $detailData['activator_id'] ?? null,
-                    'report_date' => $detailData['report_date'],
-                    'description' => $detailData['description'],
-                    'severity' => $detailData['severity'],
-                    'action_taken' => $detailData['action_taken'] ?? null,
-                ]);
+                    // Create observation detail
+                    $detail = ObservationDetail::create([
+                        'observation_id' => $observation->id,
+                        'observation_type' => $detailData['observation_type'],
+                        'category_id' => $detailData['category_id'],
+                        'contributing_id' => $detailData['contributing_id'],
+                        'action_id' => $detailData['action_id'],
+                        'location_id' => $detailData['location_id'],
+                        'project_id' => $detailData['project_id'] ?? null,
+                        'activator_id' => $detailData['activator_id'] ?? null,
+                        'report_date' => $detailData['report_date'],
+                        'description' => $detailData['description'],
+                        'severity' => $detailData['severity'],
+                        'action_taken' => $detailData['action_taken'] ?? null,
+                    ]);
 
-                // Process and save images as base64
-                if (isset($detailData['images']) && is_array($detailData['images'])) {
-                    $imageArray = [];
-                    foreach ($detailData['images'] as $imageData) {
-                        $imageArray[] = [
-                            'name' => $imageData['name'],
-                            'type' => $imageData['type'],
-                            'size' => $imageData['size'],
-                            'data' => $imageData['data']
-                        ];
+                    // Process and save images as base64
+                    if (isset($detailData['images']) && is_array($detailData['images'])) {
+                        $imageArray = [];
+                        foreach ($detailData['images'] as $imageData) {
+                            $imageArray[] = [
+                                'name' => $imageData['name'],
+                                'type' => $imageData['type'],
+                                'size' => $imageData['size'],
+                                'data' => $imageData['data']
+                            ];
+                        }
+                        // Store images as JSON in a separate field or create related model
+                        $detail->update(['images' => json_encode($imageArray)]);
                     }
-                    // Store images as JSON in a separate field or create related model
-                    $detail->update(['images' => json_encode($imageArray)]);
-                }
 
-                $counters[$detailData['observation_type']]++;
+                    $counters[$detailData['observation_type']]++;
                 }
             }
 
@@ -878,11 +880,20 @@ class ObservationController extends Controller
                 ]);
             }
 
-            $query = Observation::with(['details'])
+            $query = Observation::with(['details', 'project:id,project_name', 'location:id,name'])
                 ->where('user_id', $request->observer_id)
-                ->whereHas('details', function ($detailQuery) use ($request) {
-                    $detailQuery->where('project_id', $request->project_id)
-                        ->where('location_id', $request->location_id);
+                ->where(function ($q) use ($request) {
+                    // Case 1: Observation has details with matching project_id and location_id
+                    $q->whereHas('details', function ($detailQuery) use ($request) {
+                        $detailQuery->where('project_id', $request->project_id)
+                            ->where('location_id', $request->location_id);
+                    })
+                    // Case 2: Observation has no details but has project_id and location_id in main table
+                    ->orWhere(function ($noDetailQ) use ($request) {
+                        $noDetailQ->whereDoesntHave('details')
+                            ->where('observations.project_id', $request->project_id)
+                            ->where('observations.location_id', $request->location_id);
+                    });
                 });
 
             // Apply additional filters if provided
@@ -919,12 +930,29 @@ class ObservationController extends Controller
             $totalMinutes = 0;
 
             foreach ($observations as $observation) {
-                $totalAtRisk += $observation->at_risk_behavior ?? 0;
-                $totalNearMiss += $observation->nearmiss_incident ?? 0;
-                $totalRiskMgmt += $observation->informal_risk_mgmt ?? 0;
-                $totalSimK3 += $observation->sim_k3 ?? 0;
-                $totalMinutes += $observation->duration_in_minutes ?? 0;
-                $totalHours += $observation->duration_in_minutes > 0 ? 60 / $observation->duration_in_minutes : 0; // 60 / duration formula
+                // Calculate duration in minutes
+                $duration = 0;
+                if ($observation->waktu_mulai && $observation->waktu_selesai) {
+                    $start = strtotime($observation->waktu_mulai);
+                    $end = strtotime($observation->waktu_selesai);
+                    $duration = ($end - $start) / 60;
+                }
+
+                // If observation has no details but has project_id and location_id, set counts to 0
+                if (!$observation->details->count() && $observation->project_id && $observation->location_id) {
+                    $totalAtRisk += 0;
+                    $totalNearMiss += 0;
+                    $totalRiskMgmt += 0;
+                    $totalSimK3 += 0;
+                } else {
+                    $totalAtRisk += $observation->at_risk_behavior ?? 0;
+                    $totalNearMiss += $observation->nearmiss_incident ?? 0;
+                    $totalRiskMgmt += $observation->informal_risk_mgmt ?? 0;
+                    $totalSimK3 += $observation->sim_k3 ?? 0;
+                }
+
+                $totalMinutes += $duration;
+                $totalHours += $duration > 0 ? 60 / $duration : 0; // 60 / duration formula
             }
 
             // Calculate index behavior
@@ -1061,6 +1089,8 @@ class ObservationController extends Controller
         try {
             $query = Observation::with([
                 'user:id,name,email,department',
+                'project:id,project_name',
+                'location:id,name',
                 'details.category:id,name',
                 'details.contributing:id,name',
                 'details.action:id,name',
@@ -1116,9 +1146,18 @@ class ObservationController extends Controller
                         foreach ($selectedCombinations as $combination) {
                             $q->orWhere(function ($subQ) use ($combination) {
                                 $subQ->where('observations.user_id', $combination['user_id'])
-                                    ->whereHas('details', function ($detailQ) use ($combination) {
-                                        $detailQ->where('project_id', $combination['project_id'])
-                                            ->where('location_id', $combination['location_id']);
+                                    ->where(function ($projectLocationQ) use ($combination) {
+                                        // Case 1: Observation has details with matching project_id and location_id
+                                        $projectLocationQ->whereHas('details', function ($detailQ) use ($combination) {
+                                            $detailQ->where('project_id', $combination['project_id'])
+                                                ->where('location_id', $combination['location_id']);
+                                        })
+                                        // Case 2: Observation has no details but has project_id and location_id in main table
+                                        ->orWhere(function ($noDetailQ) use ($combination) {
+                                            $noDetailQ->whereDoesntHave('details')
+                                                ->where('observations.project_id', $combination['project_id'])
+                                                ->where('observations.location_id', $combination['location_id']);
+                                        });
                                     });
                             });
                         }
@@ -1496,18 +1535,45 @@ class ObservationController extends Controller
 
                 // Fallback for observations without project/location details
                 if (empty($combinations)) {
-                    $groupKey = $userName . '_No Project_No Location';
+                    // Check if observation has project_id and location_id in main table (but no details)
+                    if ($observation->project_id && $observation->location_id) {
+                        $projectName = $observation->project ? $observation->project->project_name : 'Unknown Project';
+                        $locationName = $observation->location ? $observation->location->name : 'Unknown Location';
 
-                    if (!isset($grouped[$groupKey])) {
-                        $grouped[$groupKey] = [
-                            'user_name' => $userName,
-                            'project_name' => 'No Project',
-                            'location_name' => 'No Location',
-                            'observations' => collect([])
-                        ];
+                        $groupKey = $userName . '_' . $projectName . '_' . $locationName;
+
+                        if (!isset($grouped[$groupKey])) {
+                            $grouped[$groupKey] = [
+                                'user_name' => $userName,
+                                'project_name' => $projectName,
+                                'location_name' => $locationName,
+                                'observations' => collect([])
+                            ];
+                        }
+
+                        // Set all observation counts to 0 since there are no details
+                        $observation->at_risk_behavior = 0;
+                        $observation->nearmiss_incident = 0;
+                        $observation->informal_risk_mgmt = 0;
+                        $observation->sim_k3 = 0;
+                        $observation->total_observations = 0;
+
+                        $grouped[$groupKey]['observations']->push($observation);
+                    } else {
+                        // Completely no project/location information
+                        $groupKey = $userName . '_No Project_No Location';
+
+                        if (!isset($grouped[$groupKey])) {
+                            $grouped[$groupKey] = [
+                                'user_name' => $userName,
+                                'project_name' => 'No Project',
+                                'location_name' => 'No Location',
+                                'observations' => collect([])
+                            ];
+                        }
+
+                        $grouped[$groupKey]['observations']->push($observation);
                     }
-
-                    $grouped[$groupKey]['observations']->push($observation);
                 }
             }
         } else {
@@ -1540,22 +1606,41 @@ class ObservationController extends Controller
                                 $detail->location_id == $combination['location_id'];
                         });
 
-                        if ($hasMatchingDetails) {
+                        // Check if observation has no details but has project_id and location_id in main table
+                        $hasMatchingMainProjectLocation = !$observation->details->count() &&
+                            $observation->project_id == $combination['project_id'] &&
+                            $observation->location_id == $combination['location_id'];
+
+                        if ($hasMatchingDetails || $hasMatchingMainProjectLocation) {
                             // Clone observation for this specific combination
                             $clonedObservation = $observation->replicate();
                             $clonedObservation->setRelation('user', $observation->user);
+                            $clonedObservation->setRelation('project', $observation->project);
+                            $clonedObservation->setRelation('location', $observation->location);
 
                             // Preserve original attributes including timestamps
                             $clonedObservation->id = $observation->id;
                             $clonedObservation->created_at = $observation->created_at;
                             $clonedObservation->updated_at = $observation->updated_at;
 
-                            // Filter details to only include this specific project-location combination
-                            $filteredDetails = $observation->details->filter(function ($d) use ($combination) {
-                                return $d->project_id == $combination['project_id'] && $d->location_id == $combination['location_id'];
-                            });
+                            if ($hasMatchingDetails) {
+                                // Filter details to only include this specific project-location combination
+                                $filteredDetails = $observation->details->filter(function ($d) use ($combination) {
+                                    return $d->project_id == $combination['project_id'] && $d->location_id == $combination['location_id'];
+                                });
+                                $clonedObservation->setRelation('details', $filteredDetails);
+                            } else {
+                                // No details - set observation counts to 0
+                                $clonedObservation->at_risk_behavior = 0;
+                                $clonedObservation->nearmiss_incident = 0;
+                                $clonedObservation->informal_risk_mgmt = 0;
+                                $clonedObservation->sim_k3 = 0;
+                                $clonedObservation->total_observations = 0;
 
-                            $clonedObservation->setRelation('details', $filteredDetails);
+                                // Set empty details collection
+                                $clonedObservation->setRelation('details', collect([]));
+                            }
+
                             $grouped[$groupKey]['observations']->push($clonedObservation);
                         }
                     }
@@ -1710,13 +1795,21 @@ class ObservationController extends Controller
                 $duration = ($end - $start) / 60;
             }
 
-            // Get main location from first detail
-            $mainLocation = $observation->details->first() ?
-                optional($observation->details->first()->location)->name : 'N/A';
+            // Get main location from first detail, fallback to observation's location
+            if ($observation->details->first()) {
+                $mainLocation = optional($observation->details->first()->location)->name ?: 'N/A';
+            } else {
+                // Use location from main observation table if no details
+                $mainLocation = $observation->location ? $observation->location->name : 'N/A';
+            }
 
-            // Get main activity description from first detail
-            $mainActivity = $observation->details->first() ?
-                $observation->details->first()->description : 'N/A';
+            // Get main activity description from first detail, fallback to observation's project
+            if ($observation->details->first()) {
+                $mainActivity = $observation->details->first()->description ?: 'N/A';
+            } else {
+                // Use project name from main observation table if no details
+                $mainActivity = $observation->project ? $observation->project->project_name : 'N/A';
+            }
 
             $rowData = [
                 $no++,
@@ -2273,8 +2366,8 @@ class ObservationController extends Controller
     public function getGroupedExportData(Request $request)
     {
         try {
-            // Start with a simpler query
-            $query = ObservationDetail::select(
+            // Query untuk mendapatkan data dari ObservationDetail
+            $detailQuery = ObservationDetail::select(
                 'observations.user_id',
                 'observation_details.project_id',
                 'observation_details.location_id',
@@ -2284,15 +2377,28 @@ class ObservationController extends Controller
                 ->whereNotNull('observation_details.location_id')
                 ->whereNotNull('observation_details.project_id');
 
-            // Keep minimal filters for export compatibility
+            // Query untuk mendapatkan data dari Observation yang tidak memiliki detail tapi ada project_id dan location_id
+            $observationQuery = Observation::select(
+                'user_id',
+                'project_id',
+                'location_id',
+                DB::raw('1 as count')
+            )
+                ->whereNotNull('project_id')
+                ->whereNotNull('location_id')
+                ->whereDoesntHave('details'); // Observation yang tidak memiliki detail
+
+            // Apply filters untuk detail query
             if ($request->filled('status')) {
-                $query->where('observations.status', $request->status);
+                $detailQuery->where('observations.status', $request->status);
+                $observationQuery->where('status', $request->status);
             }
 
-            // Handle search filter for grouped export data (searches in user name, project name, and location name)
+            // Handle search filter untuk detail query
             if ($request->filled('search')) {
                 $searchTerm = '%' . $request->search . '%';
-                $query->where(function ($q) use ($searchTerm) {
+
+                $detailQuery->where(function ($q) use ($searchTerm) {
                     $q->whereExists(function ($userQuery) use ($searchTerm) {
                         $userQuery->select(DB::raw(1))
                             ->from('users')
@@ -2312,11 +2418,30 @@ class ObservationController extends Controller
                                 ->where('locations.name', 'LIKE', $searchTerm);
                         });
                 });
+
+                $observationQuery->where(function ($q) use ($searchTerm) {
+                    $q->whereHas('user', function ($userQuery) use ($searchTerm) {
+                        $userQuery->where('name', 'LIKE', $searchTerm);
+                    })
+                        ->orWhereHas('project', function ($projectQuery) use ($searchTerm) {
+                            $projectQuery->where('project_name', 'LIKE', $searchTerm);
+                        })
+                        ->orWhereHas('location', function ($locationQuery) use ($searchTerm) {
+                            $locationQuery->where('name', 'LIKE', $searchTerm);
+                        });
+                });
             }
 
-            // Group and get results
-            $results = $query->groupBy('observations.user_id', 'observation_details.project_id', 'observation_details.location_id')
+            // Group and get results untuk detail query
+            $detailResults = $detailQuery->groupBy('observations.user_id', 'observation_details.project_id', 'observation_details.location_id')
                 ->get();
+
+            // Group and get results untuk observation query (yang tanpa detail)
+            $observationResults = $observationQuery->groupBy('user_id', 'project_id', 'location_id')
+                ->get();
+
+            // Gabungkan kedua hasil
+            $allResults = $detailResults->concat($observationResults);
 
             // Get lookup data
             $users = User::select('id', 'name', 'role')->get()->keyBy('id');
@@ -2326,7 +2451,7 @@ class ObservationController extends Controller
             // Manual grouping
             $groupedData = [];
 
-            foreach ($results as $result) {
+            foreach ($allResults as $result) {
                 $userId = $result->user_id;
                 $projectId = $result->project_id;
                 $locationId = $result->location_id;
@@ -2351,12 +2476,23 @@ class ObservationController extends Controller
                     ];
                 }
 
-                // Add location
-                $groupedData[$userId]['projects'][$projectId]['locations'][] = [
-                    'location_id' => $locationId,
-                    'location_name' => $locations[$locationId] ?? 'Unknown Location',
-                    'count' => $result->count
-                ];
+                // Check apakah location sudah ada untuk kombinasi user-project ini
+                $locationExists = false;
+                foreach ($groupedData[$userId]['projects'][$projectId]['locations'] as $existingLocation) {
+                    if ($existingLocation['location_id'] == $locationId) {
+                        $locationExists = true;
+                        break;
+                    }
+                }
+
+                // Add location jika belum ada
+                if (!$locationExists) {
+                    $groupedData[$userId]['projects'][$projectId]['locations'][] = [
+                        'location_id' => $locationId,
+                        'location_name' => $locations[$locationId] ?? 'Unknown Location',
+                        'count' => $result->count
+                    ];
+                }
             }
 
             // Convert to array and reindex

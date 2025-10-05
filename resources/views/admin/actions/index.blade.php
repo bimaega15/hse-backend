@@ -329,6 +329,14 @@
         }
 
         function initFilter() {
+            // Initialize Select2 for contributing factor filter
+            $('#contributingFilter').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'All Contributing Factors',
+                allowClear: true,
+                width: '100%'
+            });
+
             $('#contributingFilter').on('change', function() {
                 actionsTable.ajax.reload();
                 loadStats();
@@ -336,10 +344,35 @@
         }
 
         function loadStats() {
-            // This would typically load from an API endpoint
-            // For now, we'll use placeholder values
+            // Show loading state
             $('#totalActions').text('...');
             $('#activeActions').text('...');
+
+            // Get filter value
+            const contributingId = $('#contributingFilter').val();
+
+            // Make AJAX request to get statistics
+            $.ajax({
+                url: "{{ route('admin.actions.statistics') }}",
+                type: 'GET',
+                data: {
+                    contributing_id: contributingId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#totalActions').text(response.data.total_actions);
+                        $('#activeActions').text(response.data.active_actions);
+                    } else {
+                        $('#totalActions').text('0');
+                        $('#activeActions').text('0');
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load statistics:', xhr);
+                    $('#totalActions').text('-');
+                    $('#activeActions').text('-');
+                }
+            });
         }
 
         function createAction() {

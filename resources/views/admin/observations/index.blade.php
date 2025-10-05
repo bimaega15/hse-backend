@@ -1052,6 +1052,8 @@
                             <tr><td class="fw-bold">User ID:</td><td>${observation.user_id || 'N/A'}</td></tr>
                             <tr><td class="fw-bold">Email:</td><td>${observation.user ? observation.user.email : 'N/A'}</td></tr>
                             <tr><td class="fw-bold">Department:</td><td>${observation.user ? observation.user.department : 'N/A'}</td></tr>
+                            <tr><td class="fw-bold">Project:</td><td>${observation.project ? observation.project.project_name : 'No Project Assigned'}</td></tr>
+                            <tr><td class="fw-bold">Location:</td><td>${observation.location ? observation.location.name : 'No Location Assigned'}</td></tr>
                         </table>
                     </div>
                     <div class="col-md-6">

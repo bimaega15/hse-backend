@@ -265,6 +265,37 @@ class ActionController extends Controller
     }
 
     /**
+     * Get statistics for actions
+     */
+    public function getStatistics(Request $request)
+    {
+        try {
+            $query = Action::query();
+
+            // Filter by contributing factor if provided
+            if ($request->has('contributing_id') && $request->contributing_id != '') {
+                $query->where('contributing_id', $request->contributing_id);
+            }
+
+            $totalActions = $query->count();
+            $activeActions = $query->where('is_active', true)->count();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'total_actions' => $totalActions,
+                    'active_actions' => $activeActions
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load statistics.'
+            ], 500);
+        }
+    }
+
+    /**
      * Get master data for dropdowns
      */
     public function getMasterData(): \Illuminate\Http\JsonResponse

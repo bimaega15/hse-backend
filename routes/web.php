@@ -154,6 +154,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::prefix('admin/actions')->name('admin.actions.')->group(function () {
         Route::get('/', [ActionController::class, 'index'])->name('index');
         Route::get('/data', [ActionController::class, 'getData'])->name('data');
+        Route::get('/statistics', [ActionController::class, 'getStatistics'])->name('statistics');
         Route::post('/', [ActionController::class, 'store'])->name('store');
         Route::get('/{id}', [ActionController::class, 'show'])->name('show');
         Route::put('/{id}', [ActionController::class, 'update'])->name('update');
