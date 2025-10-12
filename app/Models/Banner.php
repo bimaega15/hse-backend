@@ -44,7 +44,7 @@ class Banner extends Model
     // Get title with default if null
     public function getTitleAttribute($value)
     {
-        return $value ?? 'Banner';
+        return $value ?? '';
     }
 
     // Get description with default if null

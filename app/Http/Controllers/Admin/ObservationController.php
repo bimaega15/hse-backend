@@ -374,9 +374,9 @@ class ObservationController extends Controller
 
             $validator = Validator::make($jsonData, [
                 'user_id' => 'required|exists:users,id',
-                'waktu_observasi' => 'required|date_format:H:i',
-                'waktu_mulai' => 'required|date_format:H:i',
-                'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+                'waktu_observasi' => 'required|date_format:H:i:s',
+                'waktu_mulai' => 'required|date_format:H:i:s',
+                'waktu_selesai' => 'required|date_format:H:i:s|after:waktu_mulai',
                 'notes' => 'nullable|string|max:1000',
                 'location_id' => 'nullable|exists:locations,id',
                 'project_id' => 'nullable|exists:projects,id',
@@ -513,9 +513,9 @@ class ObservationController extends Controller
 
             $validator = Validator::make($jsonData, [
                 'user_id' => 'required|exists:users,id',
-                'waktu_observasi' => 'required|date_format:H:i',
-                'waktu_mulai' => 'required|date_format:H:i',
-                'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+                'waktu_observasi' => 'required|date_format:H:i:s',
+                'waktu_mulai' => 'required|date_format:H:i:s',
+                'waktu_selesai' => 'required|date_format:H:i:s|after:waktu_mulai',
                 'notes' => 'nullable|string|max:1000',
                 'location_id' => 'nullable|exists:locations,id',
                 'project_id' => 'nullable|exists:projects,id',
@@ -888,12 +888,12 @@ class ObservationController extends Controller
                         $detailQuery->where('project_id', $request->project_id)
                             ->where('location_id', $request->location_id);
                     })
-                    // Case 2: Observation has no details but has project_id and location_id in main table
-                    ->orWhere(function ($noDetailQ) use ($request) {
-                        $noDetailQ->whereDoesntHave('details')
-                            ->where('observations.project_id', $request->project_id)
-                            ->where('observations.location_id', $request->location_id);
-                    });
+                        // Case 2: Observation has no details but has project_id and location_id in main table
+                        ->orWhere(function ($noDetailQ) use ($request) {
+                            $noDetailQ->whereDoesntHave('details')
+                                ->where('observations.project_id', $request->project_id)
+                                ->where('observations.location_id', $request->location_id);
+                        });
                 });
 
             // Apply additional filters if provided
@@ -1152,12 +1152,12 @@ class ObservationController extends Controller
                                             $detailQ->where('project_id', $combination['project_id'])
                                                 ->where('location_id', $combination['location_id']);
                                         })
-                                        // Case 2: Observation has no details but has project_id and location_id in main table
-                                        ->orWhere(function ($noDetailQ) use ($combination) {
-                                            $noDetailQ->whereDoesntHave('details')
-                                                ->where('observations.project_id', $combination['project_id'])
-                                                ->where('observations.location_id', $combination['location_id']);
-                                        });
+                                            // Case 2: Observation has no details but has project_id and location_id in main table
+                                            ->orWhere(function ($noDetailQ) use ($combination) {
+                                                $noDetailQ->whereDoesntHave('details')
+                                                    ->where('observations.project_id', $combination['project_id'])
+                                                    ->where('observations.location_id', $combination['location_id']);
+                                            });
                                     });
                             });
                         }

@@ -90,9 +90,9 @@ class ObservationController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'waktu_observasi' => 'required|date_format:H:i',
-            'waktu_mulai' => 'required|date_format:H:i',
-            'waktu_selesai' => 'required|date_format:H:i|after:waktu_mulai',
+            'waktu_observasi' => 'required|date_format:H:i:s',
+            'waktu_mulai' => 'required|date_format:H:i:s',
+            'waktu_selesai' => 'required|date_format:H:i:s|after:waktu_mulai',
             'notes' => 'nullable|string|max:1000',
             'location_id' => 'nullable|exists:locations,id',
             'project_id' => 'nullable|exists:projects,id',
@@ -287,9 +287,9 @@ class ObservationController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'waktu_observasi' => 'sometimes|required|date_format:H:i',
-            'waktu_mulai' => 'sometimes|required|date_format:H:i',
-            'waktu_selesai' => 'sometimes|required|date_format:H:i|after:waktu_mulai',
+            'waktu_observasi' => 'sometimes|required|date_format:H:i:s',
+            'waktu_mulai' => 'sometimes|required|date_format:H:i:s',
+            'waktu_selesai' => 'sometimes|required|date_format:H:i:s|after:waktu_mulai',
             'notes' => 'nullable|string|max:1000',
             'location_id' => 'nullable|exists:locations,id',
             'project_id' => 'nullable|exists:projects,id',

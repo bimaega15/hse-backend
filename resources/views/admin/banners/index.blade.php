@@ -75,10 +75,9 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="mb-3">
-                                            <label for="bannerTitle" class="form-label">Banner Title <span
-                                                    class="text-danger">*</span></label>
+                                            <label for="bannerTitle" class="form-label">Banner Title</label>
                                             <input type="text" class="form-control" id="bannerTitle" name="title"
-                                                required maxlength="255" placeholder="Enter banner title">
+                                                maxlength="255" placeholder="Enter banner title">
                                             <div class="invalid-feedback" id="titleError"></div>
                                         </div>
                                     </div>
@@ -94,10 +93,9 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="bannerDescription" class="form-label">Description <span
-                                            class="text-danger">*</span></label>
+                                    <label for="bannerDescription" class="form-label">Description</label>
                                     <textarea class="form-control" id="bannerDescription" name="description" rows="4" maxlength="1000"
-                                        placeholder="Enter banner description" required></textarea>
+                                        placeholder="Enter banner description"></textarea>
                                     <div class="form-text">Maximum 1000 characters</div>
                                     <div class="invalid-feedback" id="descriptionError"></div>
                                 </div>
@@ -393,12 +391,12 @@
         function initPreviewUpdates() {
             // Update preview when inputs change
             $('#bannerTitle').on('input', function() {
-                const title = $(this).val() || 'Banner Title';
+                const title = $(this).val() || '';
                 $('#previewTitle').text(title);
             });
 
             $('#bannerDescription').on('input', function() {
-                const description = $(this).val() || 'Banner description will appear here';
+                const description = $(this).val() || '';
                 $('#previewDescription').text(description);
             });
 
@@ -654,7 +652,8 @@
             clearFormErrors();
 
             const formData = new FormData($('#bannerForm')[0]);
-            let url = isEditMode ? `{{ url('/') }}/admin/banners/${$('#bannerId').val()}` : '{{ url('/') }}/admin/banners';
+            let url = isEditMode ? `{{ url('/') }}/admin/banners/${$('#bannerId').val()}` :
+                '{{ url('/') }}/admin/banners';
             const method = isEditMode ? 'PUT' : 'POST';
 
             if (method === 'PUT') {
@@ -803,4 +802,3 @@
         }
     </script>
 @endpush
-    
