@@ -35,9 +35,9 @@ class Observation extends Model
         'nearmiss_incident' => 'integer',     // TAMBAHKAN
         'informal_risk_mgmt' => 'integer',    // TAMBAHKAN
         'sim_k3' => 'integer',                // TAMBAHKAN
-        'waktu_observasi' => 'datetime:H:i',
-        'waktu_mulai' => 'datetime:H:i',
-        'waktu_selesai' => 'datetime:H:i',
+        'waktu_observasi' => 'datetime:H:i:s',
+        'waktu_mulai' => 'datetime:H:i:s',
+        'waktu_selesai' => 'datetime:H:i:s',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
