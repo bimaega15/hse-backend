@@ -103,6 +103,34 @@
                 </div>
             </li>
 
+            <li class="side-nav-item">
+                <a data-bs-toggle="collapse" href="#sidebarBehaviorIndex"
+                    aria-expanded="{{ request()->routeIs('admin.behavior-index.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarBehaviorIndex"
+                    class="side-nav-link {{ request()->routeIs('admin.behavior-index.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="bar-chart-2"></i></span>
+                    <span class="menu-text"> Behavior Index</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.behavior-index.*') ? 'show' : '' }}"
+                    id="sidebarBehaviorIndex">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.behavior-index.trend') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.behavior-index.trend') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Observasi Index & Trend</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.behavior-index.table') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.behavior-index.table') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Tabel Index Behavior</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
             <li class="side-nav-title">Master Data</li>
 
             <li class="side-nav-item">
@@ -329,6 +357,21 @@
                 reportsToggle.setAttribute('aria-expanded', 'true');
             }
         }
+
+        // Handle sidebar active states for behavior index
+        if (currentPath.includes('/admin/behavior-index')) {
+            const behaviorIndexCollapse = document.getElementById('sidebarBehaviorIndex');
+            const behaviorIndexToggle = document.querySelector('[href="#sidebarBehaviorIndex"]');
+
+            if (behaviorIndexCollapse) {
+                behaviorIndexCollapse.classList.add('show');
+            }
+
+            if (behaviorIndexToggle) {
+                behaviorIndexToggle.classList.add('active');
+                behaviorIndexToggle.setAttribute('aria-expanded', 'true');
+            }
+        }
     });
 
     // Handle collapse state when clicking on role filter links
@@ -360,6 +403,14 @@
             const reportsCollapse = document.getElementById('sidebarReports');
             if (reportsCollapse) {
                 sessionStorage.setItem('keepReportsOpen', 'true');
+            }
+        }
+
+        // Handle behavior index section
+        if (target && target.getAttribute('href') && target.getAttribute('href').includes('admin/behavior-index')) {
+            const behaviorIndexCollapse = document.getElementById('sidebarBehaviorIndex');
+            if (behaviorIndexCollapse) {
+                sessionStorage.setItem('keepBehaviorIndexOpen', 'true');
             }
         }
     });

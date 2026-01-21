@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\ObservationController; // Add this import
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ActivatorController;
+use App\Http\Controllers\Admin\BehaviorIndexController;
 
 // Fallback login route for compatibility
 Route::get('/login', function () {
@@ -224,6 +225,13 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     // Notifications Routes
     Route::prefix('admin/notifications')->name('admin.notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
+    });
+
+    // Behavior Index Routes
+    Route::prefix('admin/behavior-index')->name('admin.behavior-index.')->group(function () {
+        Route::get('/trend', [BehaviorIndexController::class, 'indexTrend'])->name('trend');
+        Route::get('/table', [BehaviorIndexController::class, 'indexBehavior'])->name('table');
+        Route::get('/data', [BehaviorIndexController::class, 'getIndexBehaviorDataAjax'])->name('data');
     });
 
     // Tambahkan routes khusus admin lainnya disini
