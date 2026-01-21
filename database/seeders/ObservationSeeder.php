@@ -68,6 +68,8 @@ class ObservationSeeder extends Seeder
         $observations = [
             [
                 'user_id' => $usersList->get(0)->id,
+                'location_id' => $locations->random()->id,
+                'project_id' => $projects->random()->id,
                 'waktu_observasi' => '08:00:00',
                 'at_risk_behavior' => 2,
                 'nearmiss_incident' => 1,
@@ -81,6 +83,8 @@ class ObservationSeeder extends Seeder
             ],
             [
                 'user_id' => $usersList->get(1)->id,
+                'location_id' => $locations->random()->id,
+                'project_id' => $projects->random()->id,
                 'waktu_observasi' => '14:00:00',
                 'at_risk_behavior' => 1,
                 'nearmiss_incident' => 0,
@@ -94,6 +98,8 @@ class ObservationSeeder extends Seeder
             ],
             [
                 'user_id' => $usersList->get(2)->id,
+                'location_id' => $locations->random()->id,
+                'project_id' => $projects->random()->id,
                 'waktu_observasi' => '10:30:00',
                 'at_risk_behavior' => 3,
                 'nearmiss_incident' => 2,
@@ -107,6 +113,8 @@ class ObservationSeeder extends Seeder
             ],
             [
                 'user_id' => $usersList->get(3)->id,
+                'location_id' => $locations->random()->id,
+                'project_id' => $projects->random()->id,
                 'waktu_observasi' => '09:15:00',
                 'at_risk_behavior' => 1,
                 'nearmiss_incident' => 3,
@@ -120,6 +128,8 @@ class ObservationSeeder extends Seeder
             ],
             [
                 'user_id' => $usersList->get(4)->id,
+                'location_id' => $locations->random()->id,
+                'project_id' => $projects->random()->id,
                 'waktu_observasi' => '16:00:00',
                 'at_risk_behavior' => 0,
                 'nearmiss_incident' => 1,
@@ -141,6 +151,8 @@ class ObservationSeeder extends Seeder
             $johnDoeObservations = [
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '07:30:00',
                     'at_risk_behavior' => 1,
                     'nearmiss_incident' => 0,
@@ -154,6 +166,8 @@ class ObservationSeeder extends Seeder
                 ],
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '13:45:00',
                     'at_risk_behavior' => 2,
                     'nearmiss_incident' => 1,
@@ -167,6 +181,8 @@ class ObservationSeeder extends Seeder
                 ],
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '15:20:00',
                     'at_risk_behavior' => 0,
                     'nearmiss_incident' => 2,
@@ -180,6 +196,8 @@ class ObservationSeeder extends Seeder
                 ],
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '11:10:00',
                     'at_risk_behavior' => 3,
                     'nearmiss_incident' => 0,
@@ -193,6 +211,8 @@ class ObservationSeeder extends Seeder
                 ],
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '09:30:00',
                     'at_risk_behavior' => 1,
                     'nearmiss_incident' => 1,
@@ -206,6 +226,8 @@ class ObservationSeeder extends Seeder
                 ],
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '14:15:00',
                     'at_risk_behavior' => 2,
                     'nearmiss_incident' => 2,
@@ -219,6 +241,8 @@ class ObservationSeeder extends Seeder
                 ],
                 [
                     'user_id' => $johnDoe->id,
+                    'location_id' => $locations->random()->id,
+                    'project_id' => $projects->random()->id,
                     'waktu_observasi' => '16:45:00',
                     'at_risk_behavior' => 0,
                     'nearmiss_incident' => 0,
@@ -240,6 +264,8 @@ class ObservationSeeder extends Seeder
                 $specificObservations = [
                     [
                         'user_id' => $johnDoe->id,
+                        'location_id' => $specificLocation->id,
+                        'project_id' => $specificProject->id,
                         'waktu_observasi' => '08:30:00',
                         'at_risk_behavior' => 2,
                         'nearmiss_incident' => 1,
@@ -253,6 +279,8 @@ class ObservationSeeder extends Seeder
                     ],
                     [
                         'user_id' => $johnDoe->id,
+                        'location_id' => $specificLocation->id,
+                        'project_id' => $specificProject->id,
                         'waktu_observasi' => '14:20:00',
                         'at_risk_behavior' => 1,
                         'nearmiss_incident' => 0,
@@ -266,6 +294,8 @@ class ObservationSeeder extends Seeder
                     ],
                     [
                         'user_id' => $johnDoe->id,
+                        'location_id' => $specificLocation->id,
+                        'project_id' => $specificProject->id,
                         'waktu_observasi' => '10:15:00',
                         'at_risk_behavior' => 3,
                         'nearmiss_incident' => 2,
@@ -279,6 +309,8 @@ class ObservationSeeder extends Seeder
                     ],
                     [
                         'user_id' => $johnDoe->id,
+                        'location_id' => $specificLocation->id,
+                        'project_id' => $specificProject->id,
                         'waktu_observasi' => '15:45:00',
                         'at_risk_behavior' => 0,
                         'nearmiss_incident' => 1,
@@ -292,6 +324,8 @@ class ObservationSeeder extends Seeder
                     ],
                     [
                         'user_id' => $johnDoe->id,
+                        'location_id' => $specificLocation->id,
+                        'project_id' => $specificProject->id,
                         'waktu_observasi' => '11:30:00',
                         'at_risk_behavior' => 1,
                         'nearmiss_incident' => 3,
