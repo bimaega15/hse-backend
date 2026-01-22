@@ -64,15 +64,15 @@ class DashboardController extends Controller
                 ->map(function ($report) {
                     return [
                         'id' => $report->id,
-                        'reporter' => $report->employee->name,
-                        'department' => $report->employee->department ?? 'N/A',
-                        'category' => $report->categoryMaster->name ?? 'N/A',
-                        'severity' => ucfirst($report->severity_rating),
-                        'status' => $this->getStatusLabel($report->status),
-                        'date' => $report->created_at->diffForHumans(),
-                        'location' => $report->location,
-                        'hse_staff' => $report->hseStaff->name ?? 'Unassigned',
-                        'avatarClass' => $this->getAvatarClass($report->severity_rating)
+                        'reporter' => $report->employee?->name ?? 'Unknown',
+                        'department' => $report->employee?->department ?? 'N/A',
+                        'category' => $report->categoryMaster?->name ?? 'N/A',
+                        'severity' => ucfirst($report->severity_rating ?? 'unknown'),
+                        'status' => $this->getStatusLabel($report->status ?? 'waiting'),
+                        'date' => $report->created_at?->diffForHumans() ?? 'N/A',
+                        'location' => $report->location ?? 'N/A',
+                        'hse_staff' => $report->hseStaff?->name ?? 'Unassigned',
+                        'avatarClass' => $this->getAvatarClass($report->severity_rating ?? 'low')
                     ];
                 });
 
@@ -239,7 +239,10 @@ class DashboardController extends Controller
         }
 
         $totalHours = $completedReports->sum(function ($report) {
-            return $report->start_process_at->diffInHours($report->completed_at);
+            if ($report->start_process_at && $report->completed_at) {
+                return $report->start_process_at->diffInHours($report->completed_at);
+            }
+            return 0;
         });
 
         $avgHours = $totalHours / $completedReports->count();
@@ -316,13 +319,14 @@ class DashboardController extends Controller
             ->get();
 
         foreach ($recentCompleted as $report) {
+            $hseStaffName = $report->hseStaff?->name ?? 'HSE Staff';
             $activities[] = [
                 'type' => 'success',
                 'icon' => 'ri-check-line',
                 'title' => 'Report Completed',
-                'description' => $report->hseStaff->name . ' completed investigation for report #' . $report->id,
-                'time' => $report->completed_at->diffForHumans(),
-                'timestamp' => $report->completed_at->timestamp
+                'description' => $hseStaffName . ' completed investigation for report #' . $report->id,
+                'time' => $report->completed_at?->diffForHumans() ?? 'N/A',
+                'timestamp' => $report->completed_at?->timestamp ?? 0
             ];
         }
 
@@ -337,10 +341,10 @@ class DashboardController extends Controller
             $activities[] = [
                 'type' => 'warning',
                 'icon' => 'ri-alert-line',
-                'title' => 'New ' . ucfirst($report->severity_rating) . ' Incident',
-                'description' => $report->description,
-                'time' => $report->created_at->diffForHumans(),
-                'timestamp' => $report->created_at->timestamp
+                'title' => 'New ' . ucfirst($report->severity_rating ?? 'unknown') . ' Incident',
+                'description' => $report->description ?? 'No description',
+                'time' => $report->created_at?->diffForHumans() ?? 'N/A',
+                'timestamp' => $report->created_at?->timestamp ?? 0
             ];
         }
 
@@ -458,13 +462,13 @@ class DashboardController extends Controller
 
                     return [
                         'id' => $observation->id,
-                        'observer' => $observation->user->name ?? 'Unknown',
-                        'department' => $observation->user->department ?? 'N/A',
+                        'observer' => $observation->user?->name ?? 'Unknown',
+                        'department' => $observation->user?->department ?? 'N/A',
                         'type' => $observationType,
                         'count' => $totalCount,
-                        'status' => ucfirst($observation->status),
-                        'date' => $observation->created_at->diffForHumans(),
-                        'avatarClass' => $this->getObservationAvatarClass($observation->status)
+                        'status' => ucfirst($observation->status ?? 'draft'),
+                        'date' => $observation->created_at?->diffForHumans() ?? 'N/A',
+                        'avatarClass' => $this->getObservationAvatarClass($observation->status ?? 'draft')
                     ];
                 });
 
