@@ -590,10 +590,11 @@
                         d.end_date = $('#endDateFilter').val();
 
                         // NEW: Additional filter parameters
+                        d.project_status = $('#projectStatusFilter').val();
                         d.project_id = $('#projectFilter').val();
                         d.category_id = $('#categoryFilter').val();
                         d.contributing_id = $('#contributingFilter').val();
-                        d.action_id = $('#actionFilter').val();
+                        d.location_id = $('#locationFilter').val();
 
                         // Add URL status filter
                         const urlParams = new URLSearchParams(window.location.search);
@@ -774,6 +775,9 @@
 
             // NEW: Initialize filter functionality
             initFilterFunctionality();
+
+            // Trigger project status filter on page load to filter projects
+            $('#projectStatusFilter').trigger('change');
 
             $('#reportForm').on('submit', function(e) {
                 e.preventDefault();
@@ -1019,7 +1023,10 @@
 
         function clearFilters() {
             // Clear Select2 dropdowns
-            $('#statusFilter, #severityFilter, #projectFilter, #categoryFilter, #contributingFilter, #actionFilter').val('').trigger('change');
+            $('#statusFilter, #severityFilter, #projectStatusFilter, #projectFilter, #categoryFilter, #contributingFilter, #locationFilter').val('').trigger('change');
+
+            // Reset project status to default 'open'
+            $('#projectStatusFilter').val('open').trigger('change');
 
             // Clear date inputs
             $('#startDateFilter, #endDateFilter').val('');
@@ -1798,6 +1805,14 @@
                     width: '100%'
                 });
 
+                // Project Status filter
+                $('#projectStatusFilter').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Projects',
+                    allowClear: true,
+                    width: '100%'
+                });
+
                 // Project filter
                 $('#projectFilter').select2({
                     theme: 'bootstrap-5',
@@ -1822,10 +1837,10 @@
                     width: '100%'
                 });
 
-                // Action filter
-                $('#actionFilter').select2({
+                // Location filter
+                $('#locationFilter').select2({
                     theme: 'bootstrap-5',
-                    placeholder: 'All Actions',
+                    placeholder: 'All Locations',
                     allowClear: true,
                     width: '100%'
                 });
@@ -1835,28 +1850,56 @@
                 console.error('Error initializing filter Select2:', error);
             }
 
-            // Handle contributing factor change to filter actions
-            $('#contributingFilter').on('change', function() {
-                const contributingId = $(this).val();
-                const actionFilter = $('#actionFilter');
+            // Handle category change to filter contributing factors
+            $('#categoryFilter').on('change', function() {
+                const categoryId = $(this).val();
+                const contributingFilter = $('#contributingFilter');
 
-                // Reset action filter
-                actionFilter.val('').trigger('change');
+                // Reset contributing filter
+                contributingFilter.val('').trigger('change');
 
-                // Rebuild action options based on contributing factor
-                const allActions = @json($filterOptions['actions'] ?? []);
-                actionFilter.empty().append('<option value="">All Actions</option>');
+                // Rebuild contributing factor options based on category
+                const allContributingFactors = @json($filterOptions['contributing_factors'] ?? []);
+                contributingFilter.empty().append('<option value="">All Contributing Factors</option>');
 
-                allActions.forEach(function(action) {
-                    if (!contributingId || action.contributing_id == contributingId) {
-                        actionFilter.append(`<option value="${action.id}">${action.name}</option>`);
+                allContributingFactors.forEach(function(contributing) {
+                    if (!categoryId || contributing.category_id == categoryId) {
+                        contributingFilter.append(`<option value="${contributing.id}">${contributing.name}</option>`);
                     }
                 });
 
                 // Reinitialize Select2
-                actionFilter.select2('destroy').select2({
+                contributingFilter.select2('destroy').select2({
                     theme: 'bootstrap-5',
-                    placeholder: 'All Actions',
+                    placeholder: 'All Contributing Factors',
+                    allowClear: true,
+                    width: '100%'
+                });
+            });
+
+            // Handle project status change to filter projects
+            $('#projectStatusFilter').on('change', function() {
+                const projectStatus = $(this).val();
+                const projectFilter = $('#projectFilter');
+
+                // Reset project filter
+                projectFilter.val('').trigger('change');
+
+                // Rebuild project options based on project status
+                const allProjects = @json($filterOptions['projects'] ?? []);
+                projectFilter.empty().append('<option value="">All Projects</option>');
+
+                allProjects.forEach(function(project) {
+                    if (!projectStatus || project.status == projectStatus) {
+                        const statusLabel = project.status.charAt(0).toUpperCase() + project.status.slice(1);
+                        projectFilter.append(`<option value="${project.id}" data-status="${project.status}">${project.project_name} (${statusLabel})</option>`);
+                    }
+                });
+
+                // Reinitialize Select2
+                projectFilter.select2('destroy').select2({
+                    theme: 'bootstrap-5',
+                    placeholder: 'All Projects',
                     allowClear: true,
                     width: '100%'
                 });

@@ -15,9 +15,9 @@
             </div>
             <div class="card-body collapse" id="analyticsFilters">
                 <form id="analyticsFilterForm" onsubmit="applyAnalyticsFilters(event)">
-                    <div class="row">
+                    <div class="row g-3">
                         <!-- Date Range Filter -->
-                        <div class="col-xl-4 col-md-4">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="ri-calendar-line text-primary me-1"></i>Date Range
                             </label>
@@ -32,7 +32,7 @@
                         </div>
 
                         <!-- Quick Date Presets -->
-                        <div class="col-xl-4 col-md-4">
+                        <div class="col-xl-4 col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="ri-time-line text-success me-1"></i>Quick Presets
                             </label>
@@ -50,8 +50,26 @@
                             </select>
                             <small class="text-muted">Quick date range selection</small>
                         </div>
-                        <div class="col-xl-4 col-md-4">
-                            <div class="d-flex gap-2 justify-content-center" style="margin-top: 1.7rem;">
+
+                        <!-- Project Filter -->
+                        <div class="col-xl-4 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-building-line text-dark me-1"></i>Project
+                            </label>
+                            <select class="form-select" id="filter_project" name="project_id">
+                                <option value="">All Projects</option>
+                                @if (isset($additionalData['filter_options']['projects']))
+                                    @foreach ($additionalData['filter_options']['projects'] as $project)
+                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                                    @endforeach
+                                @endif
+                            </select>
+                            <small class="text-muted">Filter by project</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="col-12">
+                            <div class="d-flex gap-2 justify-content-center">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="ri-search-line me-1"></i>Apply Filters
                                 </button>
@@ -107,8 +125,8 @@
                         </div> --}}
                     </div>
 
-                    <div class="row g-3 mt-2">
-                        {{-- <!-- Location Filter -->
+                    {{-- <div class="row g-3 mt-2">
+                        <!-- Location Filter -->
                         <div class="col-xl-3 col-md-6">
                             <label class="form-label fw-bold">
                                 <i class="ri-map-pin-line text-secondary me-1"></i>Location
@@ -122,22 +140,6 @@
                                 @endif
                             </select>
                             <small class="text-muted">Filter by location</small>
-                        </div>
-
-                        <!-- Project Filter -->
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label fw-bold">
-                                <i class="ri-building-line text-dark me-1"></i>Project
-                            </label>
-                            <select class="form-select" id="filter_project" name="project_id">
-                                <option value="">All Projects</option>
-                                @if (isset($additionalData['filter_options']['projects']))
-                                    @foreach ($additionalData['filter_options']['projects'] as $project)
-                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                            <small class="text-muted">Filter by project</small>
                         </div>
 
                         <!-- HSE Staff Filter -->
@@ -154,7 +156,7 @@
                                 @endif
                             </select>
                             <small class="text-muted">Filter by assigned staff</small>
-                        </div> --}}
+                        </div>
 
                         <!-- Action Buttons -->
                         {{-- <div class="col-xl-12 col-md-12">
@@ -389,7 +391,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <div class="chart-container chart-small">
+                <div class="chart-container" style="height: 400px;">
                     <canvas id="severityChart"></canvas>
                 </div>
             </div>
@@ -1189,8 +1191,16 @@
 <!-- Include Chart.js and jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script>
+    // Disable datalabels plugin globally by default
+    if (typeof Chart !== 'undefined' && typeof Chart.defaults !== 'undefined') {
+        Chart.defaults.plugins.datalabels = {
+            display: false
+        };
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize charts with actual data
         initAnalyticsCharts();
@@ -1296,6 +1306,7 @@
         if (severityCtx && severityData.length > 0) {
             window.severityChartInstance = new Chart(severityCtx, {
                 type: 'doughnut',
+                plugins: [ChartDataLabels],
                 data: {
                     labels: severityData.map(item => {
                         const severity = item.severity_rating || 'unknown';
@@ -1306,7 +1317,7 @@
                         backgroundColor: [
                             '#28a745', // low - green
                             '#ffc107', // medium - yellow
-                            '#fd7e14', // high - orange  
+                            '#fd7e14', // high - orange
                             '#dc3545' // critical - red
                         ],
                         borderWidth: 2,
@@ -1316,12 +1327,27 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 10,
+                            bottom: 40,
+                            left: 40,
+                            right: 40
+                        }
+                    },
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
                                 usePointStyle: true,
-                                padding: 20
+                                padding: 10,
+                                font: {
+                                    size: 11
+                                },
+                                boxWidth: 10
+                            },
+                            padding: {
+                                top: 40
                             }
                         },
                         tooltip: {
@@ -1336,6 +1362,23 @@
                                     return `${context.label}: ${context.parsed} (${percentage}%)`;
                                 }
                             }
+                        },
+                        datalabels: {
+                            display: true,
+                            color: '#000',
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            borderRadius: 4,
+                            padding: 6,
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            formatter: function(value, context) {
+                                return value;
+                            },
+                            anchor: 'end',
+                            align: 'end',
+                            offset: 5
                         }
                     },
                     cutout: '60%'
@@ -2201,6 +2244,7 @@
                 try {
                     window.severityChartInstance = new Chart(severityCtx, {
                         type: 'doughnut',
+                        plugins: [ChartDataLabels],
                         data: {
                             labels: data.severity_analysis.map(item => {
                                 const severity = item.severity_rating || 'unknown';
@@ -2221,13 +2265,58 @@
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
+                            layout: {
+                                padding: {
+                                    top: 40,
+                                    bottom: 40,
+                                    left: 40,
+                                    right: 40
+                                }
+                            },
                             plugins: {
                                 legend: {
                                     position: 'bottom',
                                     labels: {
                                         usePointStyle: true,
-                                        padding: 20
+                                        padding: 10,
+                                        font: {
+                                            size: 11
+                                        },
+                                        boxWidth: 10
+                                    },
+                                    padding: {
+                                        top: 40
                                     }
+                                },
+                                tooltip: {
+                                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                    titleColor: '#fff',
+                                    bodyColor: '#fff',
+                                    callbacks: {
+                                        label: function(context) {
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(
+                                                1) : 0;
+                                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                        }
+                                    }
+                                },
+                                datalabels: {
+                                    display: true,
+                                    color: '#000',
+                                    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                                    borderRadius: 4,
+                                    padding: 6,
+                                    font: {
+                                        weight: 'bold',
+                                        size: 12
+                                    },
+                                    formatter: function(value, context) {
+                                        return value;
+                                    },
+                                    anchor: 'end',
+                                    align: 'end',
+                                    offset: 5
                                 }
                             },
                             cutout: '60%'

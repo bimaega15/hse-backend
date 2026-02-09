@@ -168,7 +168,7 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="showFilters()">
                         <i class="ri-filter-line me-1"></i>Advanced Filters
                     </button>
-                    <button type="button" class="btn btn-outline-success btn-sm" onclick="exportObservationExcel()">
+                    <button type="button" class="btn btn-success btn-sm" onclick="exportObservationExcel()">
                         <i class="ri-file-excel-2-line me-1"></i>Export Excel
                     </button>
                     <button type="button" class="btn btn-primary" onclick="createObservation()">
@@ -589,8 +589,116 @@
 
         // Export Excel functionality for observations
         function exportObservationExcel() {
-            // Show export modal first
-            showExportModal();
+            // Export all data directly without showing modal
+            exportAllObservations();
+        }
+
+        function exportAllObservations() {
+            // Get the button element
+            const exportButton = $('button[onclick="exportObservationExcel()"]');
+
+            // Show loading indicator
+            const originalText = exportButton.html();
+            exportButton.html('<i class="ri-loader-2-line spinner-border spinner-border-sm me-1"></i>Exporting...');
+            exportButton.prop('disabled', true);
+
+            // First, get all available user-project-location combinations
+            $.ajax({
+                url: "{{ route('admin.observations.export.grouped-data') }}",
+                type: 'GET',
+                data: {},
+                success: function(response) {
+                    if (response.success && response.data) {
+                        // Build array of all combinations
+                        const allSelectedItems = [];
+
+                        response.data.forEach(user => {
+                            user.projects.forEach(project => {
+                                project.locations.forEach(location => {
+                                    // Format: user_id_project_id_location_id
+                                    allSelectedItems.push(`${user.user_id}_${project.project_id}_${location.location_id}`);
+                                });
+                            });
+                        });
+
+                        if (allSelectedItems.length === 0) {
+                            showAlert('warning', 'No Data', 'No observation data available to export');
+                            exportButton.html(originalText);
+                            exportButton.prop('disabled', false);
+                            return;
+                        }
+
+                        // Proceed with export using all items
+                        const filters = {
+                            selected_items: allSelectedItems
+                        };
+
+                        // Add URL status filter if exists
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const urlStatus = urlParams.get('status');
+                        if (urlStatus) {
+                            filters.url_status = urlStatus;
+                        }
+
+                        // Build query string
+                        const params = new URLSearchParams();
+                        Object.keys(filters).forEach(key => {
+                            if (filters[key]) {
+                                if (Array.isArray(filters[key])) {
+                                    filters[key].forEach(item => params.append(key + '[]', item));
+                                } else {
+                                    params.append(key, filters[key]);
+                                }
+                            }
+                        });
+
+                        // Create temporary link and trigger download
+                        const exportUrl = `{{ route('admin.observations.export.excel') }}?${params.toString()}`;
+
+                        // Use fetch to handle the download properly
+                        fetch(exportUrl)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Export failed');
+                                }
+                                return response.blob();
+                            })
+                            .then(blob => {
+                                // Create download link
+                                const url = window.URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `observations_export_${new Date().toISOString().slice(0,19).replace(/[:.]/g, '-')}.xlsx`;
+                                document.body.appendChild(a);
+                                a.click();
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+
+                                // Show success message
+                                showAlert('success', 'Success!', 'All observations exported successfully');
+                            })
+                            .catch(error => {
+                                console.error('Export error:', error);
+                                showAlert('error', 'Export Failed', 'Failed to export observations. Please try again.');
+                            })
+                            .finally(() => {
+                                // Restore button state
+                                exportButton.html(originalText);
+                                exportButton.prop('disabled', false);
+                            });
+                    } else {
+                        showAlert('error', 'Error', 'Failed to load export data');
+                        exportButton.html(originalText);
+                        exportButton.prop('disabled', false);
+                    }
+                },
+                error: function(xhr) {
+                    console.error('Failed to load grouped data:', xhr);
+                    showAlert('error', 'Error', 'Failed to load export data');
+                    exportButton.html(originalText);
+                    exportButton.prop('disabled', false);
+                }
+            });
         }
 
         function showExportModal() {

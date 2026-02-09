@@ -545,6 +545,22 @@ class ReportController extends Controller
             }
 
             // NEW: Additional filter options
+            if ($request->filled('project_status') && in_array($request->project_status, ['open', 'closed'])) {
+                if ($request->project_status === 'open') {
+                    // For 'open': include reports with open projects OR reports without projects
+                    $query->where(function($q) use ($request) {
+                        $q->whereHas('project', function($subQ) use ($request) {
+                            $subQ->where('status', 'open');
+                        })->orWhereNull('project_id');
+                    });
+                } else {
+                    // For 'closed': only include reports with closed projects
+                    $query->whereHas('project', function($q) use ($request) {
+                        $q->where('status', 'closed');
+                    });
+                }
+            }
+
             if ($request->filled('project_id') && is_numeric($request->project_id)) {
                 $query->where('project_id', $request->project_id);
             }
@@ -557,8 +573,8 @@ class ReportController extends Controller
                 $query->where('contributing_id', $request->contributing_id);
             }
 
-            if ($request->filled('action_id') && is_numeric($request->action_id)) {
-                $query->where('action_id', $request->action_id);
+            if ($request->filled('location_id') && is_numeric($request->location_id)) {
+                $query->where('location_id', $request->location_id);
             }
 
             // NEW: Handle URL filters (like from sidebar)
@@ -671,7 +687,8 @@ class ReportController extends Controller
                         }
 
                         $closedDetails = $report->reportDetails()->where('status_car', 'closed')->count();
-                        $openDetails = $report->reportDetails()->where('status_car', 'open')->count();
+                        // Open includes both 'open' and 'in_progress' status
+                        $openDetails = $report->reportDetails()->whereIn('status_car', ['open', 'in_progress'])->count();
 
                         $completionPercentage = $totalDetails > 0 ? round(($closedDetails / $totalDetails) * 100, 2) : 0;
                         $progressClass = $completionPercentage >= 80 ? 'success' : ($completionPercentage >= 50 ? 'warning' : 'danger');
@@ -1032,6 +1049,22 @@ class ReportController extends Controller
             }
 
             // NEW: Additional filter options for export
+            if ($request->filled('project_status') && in_array($request->project_status, ['open', 'closed'])) {
+                if ($request->project_status === 'open') {
+                    // For 'open': include reports with open projects OR reports without projects
+                    $query->where(function($q) use ($request) {
+                        $q->whereHas('project', function($subQ) use ($request) {
+                            $subQ->where('status', 'open');
+                        })->orWhereNull('project_id');
+                    });
+                } else {
+                    // For 'closed': only include reports with closed projects
+                    $query->whereHas('project', function($q) use ($request) {
+                        $q->where('status', 'closed');
+                    });
+                }
+            }
+
             if ($request->filled('project_id') && is_numeric($request->project_id)) {
                 $query->where('project_id', $request->project_id);
             }
@@ -1044,8 +1077,8 @@ class ReportController extends Controller
                 $query->where('contributing_id', $request->contributing_id);
             }
 
-            if ($request->filled('action_id') && is_numeric($request->action_id)) {
-                $query->where('action_id', $request->action_id);
+            if ($request->filled('location_id') && is_numeric($request->location_id)) {
+                $query->where('location_id', $request->location_id);
             }
 
             $reports = $query->orderBy('created_at', 'desc')->get();
@@ -1759,10 +1792,10 @@ class ReportController extends Controller
     {
         try {
             return [
-                'projects' => Project::where('status', 'open')->orderBy('project_name')->get(['id', 'project_name']),
+                'projects' => Project::orderBy('project_name')->get(['id', 'project_name', 'status']),
                 'categories' => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-                'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-                'actions' => Action::where('is_active', true)->orderBy('name')->get(['id', 'name', 'contributing_id']),
+                'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name', 'category_id']),
+                'locations' => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             ];
         } catch (\Exception $e) {
             Log::error('Failed to get report filter options: ' . $e->getMessage());
@@ -1770,7 +1803,7 @@ class ReportController extends Controller
                 'projects' => collect(),
                 'categories' => collect(),
                 'contributing_factors' => collect(),
-                'actions' => collect(),
+                'locations' => collect(),
             ];
         }
     }

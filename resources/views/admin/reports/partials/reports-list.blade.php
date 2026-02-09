@@ -165,7 +165,7 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="showFilters()">
                         <i class="ri-filter-line me-1"></i>Advanced Filters
                     </button>
-                    <button type="button" class="btn btn-outline-success btn-sm" onclick="exportExcel()">
+                    <button type="button" class="btn btn-success btn-sm" onclick="exportExcel()">
                         <i class="ri-file-excel-2-line me-1"></i>Export Excel
                     </button>
                     <button type="button" class="btn btn-primary" onclick="createReport()">
@@ -210,12 +210,22 @@
 
                         <!-- Row 2: New Filters -->
                         <div class="col-md-3">
+                            <label for="projectStatusFilter" class="form-label fw-medium">Project Status</label>
+                            <select class="form-select filter-select2" id="projectStatusFilter" name="project_status">
+                                <option value="">All Projects</option>
+                                <option value="open" selected>Open</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label for="projectFilter" class="form-label fw-medium">Project</label>
                             <select class="form-select filter-select2" id="projectFilter" name="project_id">
                                 <option value="">All Projects</option>
                                 @if(isset($filterOptions['projects']))
                                     @foreach($filterOptions['projects'] as $project)
-                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                                        <option value="{{ $project->id }}" data-status="{{ $project->status }}">
+                                            {{ $project->project_name }} ({{ ucfirst($project->status) }})
+                                        </option>
                                     @endforeach
                                 @endif
                             </select>
@@ -243,12 +253,12 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="actionFilter" class="form-label fw-medium">Action</label>
-                            <select class="form-select filter-select2" id="actionFilter" name="action_id">
-                                <option value="">All Actions</option>
-                                @if(isset($filterOptions['actions']))
-                                    @foreach($filterOptions['actions'] as $action)
-                                        <option value="{{ $action->id }}" data-contributing="{{ $action->contributing_id }}">{{ $action->name }}</option>
+                            <label for="locationFilter" class="form-label fw-medium">Location</label>
+                            <select class="form-select filter-select2" id="locationFilter" name="location_id">
+                                <option value="">All Locations</option>
+                                @if(isset($filterOptions['locations']))
+                                    @foreach($filterOptions['locations'] as $location)
+                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
                                     @endforeach
                                 @endif
                             </select>
@@ -546,10 +556,11 @@
                 start_date: $('#startDateFilter').val(),
                 end_date: $('#endDateFilter').val(),
                 // NEW: Additional filter parameters
+                project_status: $('#projectStatusFilter').val(),
                 project_id: $('#projectFilter').val(),
                 category_id: $('#categoryFilter').val(),
                 contributing_id: $('#contributingFilter').val(),
-                action_id: $('#actionFilter').val()
+                location_id: $('#locationFilter').val()
             };
 
             // Add URL status filter if exists
