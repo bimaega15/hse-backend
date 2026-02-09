@@ -545,21 +545,20 @@ class ReportController extends Controller
             }
 
             // NEW: Additional filter options
-            if ($request->filled('project_status') && in_array($request->project_status, ['open', 'closed'])) {
-                if ($request->project_status === 'open') {
-                    // For 'open': include reports with open projects OR reports without projects
-                    $query->where(function($q) use ($request) {
-                        $q->whereHas('project', function($subQ) use ($request) {
-                            $subQ->where('status', 'open');
-                        })->orWhereNull('project_id');
-                    });
+            // Default to 'open' projects if not explicitly set
+            // If project_status is explicitly set to empty string, show all projects
+            $projectStatus = $request->has('project_status') ? $request->project_status : 'open';
+
+            if ($projectStatus && in_array($projectStatus, ['open', 'closed'])) {
+                if ($projectStatus === 'open') {
+                    // For 'open': show reports with status 'waiting' or 'in-progress' (not completed)
+                    $query->whereIn('status', ['waiting', 'in-progress']);
                 } else {
-                    // For 'closed': only include reports with closed projects
-                    $query->whereHas('project', function($q) use ($request) {
-                        $q->where('status', 'closed');
-                    });
+                    // For 'closed': show reports with status 'done' (completed, typically with 100% CAR progress)
+                    $query->where('status', 'done');
                 }
             }
+            // If $projectStatus is empty (All Projects), don't apply any filter
 
             if ($request->filled('project_id') && is_numeric($request->project_id)) {
                 $query->where('project_id', $request->project_id);
@@ -1049,21 +1048,20 @@ class ReportController extends Controller
             }
 
             // NEW: Additional filter options for export
-            if ($request->filled('project_status') && in_array($request->project_status, ['open', 'closed'])) {
-                if ($request->project_status === 'open') {
-                    // For 'open': include reports with open projects OR reports without projects
-                    $query->where(function($q) use ($request) {
-                        $q->whereHas('project', function($subQ) use ($request) {
-                            $subQ->where('status', 'open');
-                        })->orWhereNull('project_id');
-                    });
+            // Default to 'open' projects if not explicitly set
+            // If project_status is explicitly set to empty string, show all projects
+            $projectStatus = $request->has('project_status') ? $request->project_status : 'open';
+
+            if ($projectStatus && in_array($projectStatus, ['open', 'closed'])) {
+                if ($projectStatus === 'open') {
+                    // For 'open': show reports with status 'waiting' or 'in-progress' (not completed)
+                    $query->whereIn('status', ['waiting', 'in-progress']);
                 } else {
-                    // For 'closed': only include reports with closed projects
-                    $query->whereHas('project', function($q) use ($request) {
-                        $q->where('status', 'closed');
-                    });
+                    // For 'closed': show reports with status 'done' (completed, typically with 100% CAR progress)
+                    $query->where('status', 'done');
                 }
             }
+            // If $projectStatus is empty (All Projects), don't apply any filter
 
             if ($request->filled('project_id') && is_numeric($request->project_id)) {
                 $query->where('project_id', $request->project_id);
