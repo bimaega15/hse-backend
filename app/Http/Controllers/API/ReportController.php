@@ -68,6 +68,11 @@ class ReportController extends Controller
             $query->where('contributing_id', $request->contributing_id);
         }
 
+        // Filter by project
+        if ($request->has('project_id') && $request->project_id !== 'all') {
+            $query->where('project_id', $request->project_id);
+        }
+
         // Search functionality
         if ($request->has('search')) {
             $search = $request->search;
@@ -88,6 +93,9 @@ class ReportController extends Controller
                     })
                     ->orWhereHas('actionMaster', function ($q) use ($search) {
                         $q->where('name', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('project', function ($q) use ($search) {
+                        $q->where('project_name', 'like', "%{$search}%");
                     });
             });
         }

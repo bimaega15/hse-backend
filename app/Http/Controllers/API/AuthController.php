@@ -165,15 +165,82 @@ class AuthController extends Controller
     public function uploadProfileImage(Request $request)
     {
         try {
+            // Log incoming request with extensive details
+            Log::info('Profile image upload requested', [
+                'user_id' => $request->user()->id,
+                'has_file' => $request->hasFile('profile_image'),
+                'all_files' => $request->allFiles(),
+                'input_keys' => array_keys($request->all()),
+                'content_type' => $request->header('Content-Type'),
+                'content_length' => $request->header('Content-Length'),
+                'method' => $request->method(),
+                'is_multipart' => str_contains($request->header('Content-Type', ''), 'multipart/form-data'),
+            ]);
+
+            // Debug: Log file details if exists
+            if ($request->hasFile('profile_image')) {
+                $file = $request->file('profile_image');
+                Log::info('File details', [
+                    'original_name' => $file->getClientOriginalName(),
+                    'mime_type' => $file->getClientMimeType(),
+                    'size' => $file->getSize(),
+                    'error' => $file->getError(),
+                    'is_valid' => $file->isValid(),
+                    'path' => $file->getRealPath(),
+                    'extension' => $file->getClientOriginalExtension(),
+                ]);
+            } else {
+                Log::warning('No file found in request', [
+                    'all_input' => $request->all(),
+                    'files_count' => count($request->allFiles()),
+                ]);
+            }
+
+            // Check if file exists in request
+            if (!$request->hasFile('profile_image')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No file uploaded. Please select a file.',
+                    'errors' => ['profile_image' => ['The profile image field is required.']],
+                ], 422);
+            }
+
             $validator = Validator::make($request->all(), [
                 'profile_image' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120', // 5MB max
             ]);
 
             if ($validator->fails()) {
+                Log::warning('Profile image validation failed', [
+                    'errors' => $validator->errors(),
+                ]);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation Error',
                     'errors' => $validator->errors(),
+                ], 422);
+            }
+
+            $file = $request->file('profile_image');
+
+            // Additional file validation
+            if (!$file->isValid()) {
+                Log::error('Uploaded file is not valid', [
+                    'error' => $file->getError(),
+                    'error_message' => $file->getErrorMessage(),
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'File upload error: ' . $file->getErrorMessage(),
+                ], 422);
+            }
+
+            // Check file size
+            if ($file->getSize() === false || $file->getSize() === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Uploaded file is empty or corrupted',
                 ], 422);
             }
 

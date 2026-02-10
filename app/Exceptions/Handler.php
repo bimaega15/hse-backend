@@ -122,17 +122,33 @@ class Handler extends ExceptionHandler
         $statusCode = method_exists($e, 'getStatusCode') ? $e->getStatusCode() : 500;
         $message = $e->getMessage() ?: 'Internal server error';
 
-        // Don't expose sensitive info in production
-        if (app()->environment('production')) {
-            $message = $statusCode === 500 ? 'Internal server error' : $message;
-        }
-
-        return response()->json([
+        $response = [
             'success' => false,
             'message' => $message,
             'error_code' => 'INTERNAL_SERVER_ERROR',
             'timestamp' => now()->toISOString()
-        ], $statusCode);
+        ];
+
+        // Add debug info in non-production environments
+        if (!app()->environment('production')) {
+            $response['debug'] = [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => collect($e->getTrace())->take(5)->map(function ($trace) {
+                    return [
+                        'file' => $trace['file'] ?? 'unknown',
+                        'line' => $trace['line'] ?? 0,
+                        'function' => $trace['function'] ?? 'unknown',
+                    ];
+                })->toArray(),
+            ];
+        } else {
+            // Don't expose sensitive info in production
+            $response['message'] = $statusCode === 500 ? 'Internal server error' : $message;
+        }
+
+        return response()->json($response, $statusCode);
     }
 
     /**

@@ -17,35 +17,161 @@ class ImageUploadService
     public function uploadImage(UploadedFile $file, string $directory = 'images', ?int $userId = null): string
     {
         try {
+            // Validate file is uploaded correctly
+            if (!$file->isValid()) {
+                throw new Exception('File upload error: ' . $file->getErrorMessage());
+            }
+
+            // Validate file exists and is readable
+            if (!$file->isReadable()) {
+                throw new Exception('File is not readable');
+            }
+
+            // Validate file size
+            if ($file->getSize() === false || $file->getSize() === 0) {
+                throw new Exception('File size is invalid or zero');
+            }
+
             // Generate unique filename
             $filename = $this->generateUniqueFilename($file, $directory, $userId);
+
+            // Validate generated filename
+            if (empty($filename)) {
+                throw new Exception('Generated filename is empty');
+            }
+
+            // Validate directory
+            if (empty($directory)) {
+                throw new Exception('Directory parameter is empty');
+            }
 
             // Create directory if not exists
             $fullDirectory = $directory;
             if (!Storage::disk('public')->exists($fullDirectory)) {
-                Storage::disk('public')->makeDirectory($fullDirectory);
+                try {
+                    Storage::disk('public')->makeDirectory($fullDirectory);
+                } catch (Exception $e) {
+                    throw new Exception('Gagal membuat direktori: ' . $e->getMessage());
+                }
             }
 
-            // Store original image
-            $imagePath = $file->storeAs($fullDirectory, $filename, 'public');
+            // Try multiple methods to get temp file path (Windows compatibility)
+            $realPath = $file->getRealPath();
+            $useDirectMove = false;
 
-            // Optimize image if it's a profile image
-            if ($directory === 'profile_images') {
-                $this->optimizeProfileImage($imagePath);
+            if ($realPath === false || empty($realPath)) {
+                // getRealPath() failed - need to use direct move
+                $useDirectMove = true;
+                $tempPath = $file->path();
+                Log::warning('getRealPath() failed, trying path()', ['path' => $tempPath]);
+
+                if ($tempPath === false || empty($tempPath)) {
+                    $tempPath = $file->getPathname();
+                    Log::warning('path() failed, trying getPathname()', ['pathname' => $tempPath]);
+                }
+            } else {
+                $tempPath = $realPath;
+            }
+
+            Log::info('Attempting to store image', [
+                'directory' => $fullDirectory,
+                'filename' => $filename,
+                'file_size' => $file->getSize(),
+                'mime_type' => $file->getMimeType(),
+                'real_path' => $realPath,
+                'temp_path' => $tempPath,
+                'path_exists' => !empty($tempPath) ? file_exists($tempPath) : false,
+                'will_use_direct_move' => $useDirectMove,
+                'file_class' => get_class($file),
+            ]);
+
+            // Save file info before move (temp file will be gone after move)
+            $originalName = $file->getClientOriginalName();
+            $fileSize = $file->getSize();
+            $mimeType = $file->getMimeType();
+
+            // Use direct move if getRealPath() failed or temp file doesn't exist
+            if ($useDirectMove || empty($tempPath) || !file_exists($tempPath)) {
+                Log::info('Using direct move() method for Windows compatibility');
+
+                try {
+                    // Use move() method directly - this works better on Windows
+                    $destinationPath = Storage::disk('public')->path($fullDirectory);
+
+                    // Ensure directory exists
+                    if (!is_dir($destinationPath)) {
+                        mkdir($destinationPath, 0755, true);
+                    }
+
+                    $fullFilePath = $destinationPath . DIRECTORY_SEPARATOR . $filename;
+
+                    Log::info('Moving file', [
+                        'from' => $tempPath,
+                        'to' => $fullFilePath,
+                    ]);
+
+                    // Move uploaded file
+                    $file->move($destinationPath, $filename);
+
+                    if (!file_exists($fullFilePath)) {
+                        throw new Exception('File move succeeded but file not found at destination');
+                    }
+
+                    $imagePath = $fullDirectory . '/' . $filename;
+
+                    Log::info('File moved successfully using direct move()', [
+                        'destination' => $fullFilePath,
+                        'relative_path' => $imagePath,
+                    ]);
+                } catch (Exception $e) {
+                    Log::error('Direct move failed', [
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString(),
+                    ]);
+                    throw new Exception('Failed to move uploaded file: ' . $e->getMessage());
+                }
+            } else {
+                // Normal storeAs method (only if getRealPath() worked)
+                Log::info('Using Laravel storeAs() method');
+                $imagePath = $file->storeAs($fullDirectory, $filename, 'public');
+            }
+
+            if (!$imagePath) {
+                throw new Exception('Gagal menyimpan file ke storage');
+            }
+
+            // Verify file was stored
+            if (!Storage::disk('public')->exists($imagePath)) {
+                throw new Exception('File berhasil diupload tapi tidak ditemukan di storage');
             }
 
             Log::info('Image uploaded successfully', [
                 'path' => $imagePath,
-                'original_name' => $file->getClientOriginalName(),
-                'size' => $file->getSize(),
-                'mime_type' => $file->getMimeType(),
+                'original_name' => $originalName,
+                'size' => $fileSize,
+                'mime_type' => $mimeType,
             ]);
+
+            // Optimize image if it's a profile image (non-blocking)
+            if ($directory === 'profile_images') {
+                try {
+                    $this->optimizeProfileImage($imagePath);
+                } catch (Exception $e) {
+                    Log::warning('Image optimization failed but upload succeeded', [
+                        'path' => $imagePath,
+                        'error' => $e->getMessage(),
+                    ]);
+                    // Don't throw, optimization is optional
+                }
+            }
 
             return $imagePath;
         } catch (Exception $e) {
             Log::error('Image upload failed', [
                 'error' => $e->getMessage(),
-                'file_name' => $file->getClientOriginalName(),
+                'trace' => $e->getTraceAsString(),
+                'file_name' => $file->getClientOriginalName() ?? 'unknown',
+                'directory' => $directory,
             ]);
             throw new Exception('Gagal mengupload gambar: ' . $e->getMessage());
         }
@@ -108,11 +234,23 @@ class ImageUploadService
     private function optimizeProfileImage(string $imagePath): void
     {
         try {
+            // Check if file exists first
+            if (!Storage::disk('public')->exists($imagePath)) {
+                Log::warning('Image file not found for optimization', ['path' => $imagePath]);
+                return;
+            }
+
             $fullPath = Storage::disk('public')->path($imagePath);
 
             // Check if Intervention Image is available
             if (!class_exists('Intervention\Image\Laravel\Facades\Image')) {
                 Log::info('Intervention Image not available, skipping optimization');
+                return;
+            }
+
+            // Check if file is readable
+            if (!is_readable($fullPath)) {
+                Log::warning('Image file not readable, skipping optimization', ['path' => $fullPath]);
                 return;
             }
 
@@ -139,11 +277,13 @@ class ImageUploadService
                 'thumbnail_path' => $thumbnailPath,
             ]);
         } catch (Exception $e) {
-            Log::warning('Image optimization failed', [
+            Log::warning('Image optimization failed (non-critical)', [
                 'path' => $imagePath,
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
             // Don't throw exception, optimization is optional
+            // Image was already uploaded, optimization failure should not break the upload
         }
     }
 
