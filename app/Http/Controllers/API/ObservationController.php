@@ -65,6 +65,11 @@ class ObservationController extends Controller
             });
         }
 
+        // Filter by project
+        if ($request->has('project_id') && $request->project_id !== 'all') {
+            $query->where('project_id', $request->project_id);
+        }
+
         // Search functionality
         if ($request->has('search') && $request->search) {
             $search = $request->search;
@@ -72,6 +77,9 @@ class ObservationController extends Controller
                 $q->where('notes', 'like', "%{$search}%")
                     ->orWhereHas('details', function ($detailQuery) use ($search) {
                         $detailQuery->where('description', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('project', function ($q) use ($search) {
+                        $q->where('project_name', 'like', "%{$search}%");
                     });
             });
         }
