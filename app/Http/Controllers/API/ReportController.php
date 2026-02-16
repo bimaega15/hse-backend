@@ -202,7 +202,7 @@ class ReportController extends Controller
             'actionMaster',
             'project',
             'reportDetails' => function ($query) {
-                $query->with(['approvedBy', 'createdBy'])
+                $query->with(['approvedBy', 'createdBy', 'assignedUser'])
                     ->orderBy('due_date', 'asc')
                     ->orderBy('created_at', 'desc');
             }
@@ -493,11 +493,24 @@ class ReportController extends Controller
      */
     public function complete(Request $request, $id)
     {
+        Log::info('Complete report request received', [
+            'report_id' => $id,
+            'user_id' => $request->user()->id,
+            'user_role' => $request->user()->role,
+            'action_taken' => $request->action_taken ? 'Provided' : 'Not provided'
+        ]);
+
         $validator = Validator::make($request->all(), [
-            'action_taken' => 'required|string|max:1000',
+            'action_taken' => 'max:1000',
         ]);
 
         if ($validator->fails()) {
+            Log::warning('Complete report validation failed', [
+                'report_id' => $id,
+                'user_id' => $request->user()->id,
+                'errors' => $validator->errors()->toArray()
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Validation Error',
@@ -508,14 +521,35 @@ class ReportController extends Controller
         $report = Report::find($id);
 
         if (!$report) {
+            Log::error('Report not found for completion', [
+                'report_id' => $id,
+                'user_id' => $request->user()->id
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Laporan tidak ditemukan',
             ], 404);
         }
 
+        Log::info('Report found, checking completion eligibility', [
+            'report_id' => $id,
+            'report_status' => $report->status,
+            'report_employee_id' => $report->employee_id,
+            'current_user_id' => $request->user()->id,
+            'user_role' => $request->user()->role
+        ]);
+
         // Skip status check if HSE staff is completing their own report
         if ($report->status !== 'in-progress' && $report->employee_id !== $request->user()->id) {
+            Log::warning('Report completion blocked - invalid status', [
+                'report_id' => $id,
+                'current_status' => $report->status,
+                'expected_status' => 'in-progress',
+                'report_employee_id' => $report->employee_id,
+                'user_id' => $request->user()->id
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Laporan harus dalam status in-progress',
@@ -524,17 +558,32 @@ class ReportController extends Controller
 
         // Skip role check if HSE staff is completing their own report
         if ($request->user()->role !== 'hse_staff' && $report->employee_id !== $request->user()->id) {
+            Log::warning('Report completion blocked - invalid role', [
+                'report_id' => $id,
+                'user_role' => $request->user()->role,
+                'required_role' => 'hse_staff',
+                'report_employee_id' => $report->employee_id,
+                'user_id' => $request->user()->id
+            ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Hanya HSE staff yang dapat menyelesaikan laporan',
             ], 403);
         }
 
+        Log::info('Updating report status to done', [
+            'report_id' => $id,
+            'old_status' => $report->status,
+            'new_status' => 'done',
+            'completed_by' => $request->user()->id
+        ]);
+
         // Update report status and action taken
         $report->update([
             'status' => 'done',
             'completed_at' => now(),
-            'action_taken' => $request->action_taken,
+            'action_taken' => $request->action_taken ?? null,
         ]);
 
         $report->load([
@@ -546,10 +595,15 @@ class ReportController extends Controller
             'actionMaster'
         ]);
 
-        Log::info('Report completed', [
+        Log::info('Report completed successfully', [
             'report_id' => $report->id,
             'hse_staff_id' => $request->user()->id,
-            'completion_time_hours' => $report->processing_time_hours
+            'completion_time_hours' => $report->processing_time_hours,
+            'start_process_at' => $report->start_process_at,
+            'completed_at' => $report->completed_at,
+            'employee_id' => $report->employee_id,
+            'category' => $report->categoryMaster?->name,
+            'severity_rating' => $report->severity_rating
         ]);
 
         return response()->json([
@@ -1184,7 +1238,7 @@ class ReportController extends Controller
      */
     private function extractFilters(Request $request)
     {
-        return [
+        $filters = [
             'start_date' => $request->get('start_date'),
             'end_date' => $request->get('end_date'),
             'status' => $request->get('status'),
@@ -1194,8 +1248,18 @@ class ReportController extends Controller
             'location_id' => $request->get('location_id'),
             'project_id' => $request->get('project_id'),
             'hse_staff_id' => $request->get('hse_staff_id'),
-            'employee_id' => auth()->id(),
         ];
+
+        // Only add employee_id filter if user is employee role
+        // HSE staff and admin can see all data
+        if (auth()->check() && auth()->user()->role === 'employee') {
+            $filters['employee_id'] = auth()->id();
+        } else if ($request->has('employee_id')) {
+            // Allow filtering by employee_id if explicitly requested
+            $filters['employee_id'] = $request->get('employee_id');
+        }
+
+        return $filters;
     }
 
     /**

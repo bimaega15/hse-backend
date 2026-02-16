@@ -173,7 +173,8 @@ class ReportController extends Controller
                 'locationMaster:id,name',
                 'project:id,project_name',
                 'reportDetails.approvedBy:id,name',
-                'reportDetails.createdBy:id,name'
+                'reportDetails.createdBy:id,name',
+                'reportDetails.assignedUser:id,name'
             ])->findOrFail($id);
 
             // Get actions for the selected contributing factor
@@ -1027,7 +1028,8 @@ class ReportController extends Controller
                 'locationMaster:id,name',
                 'project:id,project_name',
                 'reportDetails.createdBy:id,name',
-                'reportDetails.approvedBy:id,name'
+                'reportDetails.approvedBy:id,name',
+                'reportDetails.assignedUser:id,name'
             ]);
 
             // Apply same filters as DataTables
@@ -1269,7 +1271,7 @@ class ReportController extends Controller
                             $carNo++,
                             $this->cleanTextForExcel($detail->correction_action),
                             $detail->due_date ? \Carbon\Carbon::parse($detail->due_date)->format('d/m/Y') : 'N/A',
-                            $this->cleanTextForExcel(optional($detail->createdBy)->name),
+                            $this->cleanTextForExcel(optional($detail->assignedUser)->name),
                             strtoupper($detail->status_car ?? 'OPEN'),
                             count($detail->evidences ?? []) > 0 ? 'FOTO' : 'N/A',
                             $this->cleanTextForExcel(optional($detail->approvedBy)->name)

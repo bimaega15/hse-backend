@@ -29,7 +29,7 @@ class ReportDetail extends Model
         'approved_by' => 'integer',  // TAMBAHKAN
         'created_by' => 'integer',   // TAMBAHKAN
         'evidences' => 'array',
-        'due_date' => 'date',
+        'due_date' => 'date:Y-m-d',  // Format tanggal saja tanpa timestamp
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
         'deleted_at' => 'datetime',
