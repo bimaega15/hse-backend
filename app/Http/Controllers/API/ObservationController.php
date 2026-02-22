@@ -102,7 +102,7 @@ class ObservationController extends Controller
         $validator = Validator::make($request->all(), [
             'waktu_observasi' => 'required|date_format:H:i:s',
             'waktu_mulai' => 'required|date_format:H:i:s',
-            'waktu_selesai' => 'required|date_format:H:i:s|after:waktu_mulai',
+            'waktu_selesai' => 'required|date_format:H:i:s|after_or_equal:waktu_mulai',
             'notes' => 'nullable|string|max:1000',
             'location_id' => 'nullable|exists:locations,id',
             'project_id' => 'nullable|exists:projects,id',
@@ -121,7 +121,7 @@ class ObservationController extends Controller
             'details.*.images' => 'nullable|array',
             'details.*.images.*.name' => 'required_with:details.*.images.*|string',
             'details.*.images.*.type' => 'required_with:details.*.images.*|string',
-            'details.*.images.*.size' => 'required_with:details.*.images.*|integer|max:2097152',
+            'details.*.images.*.size' => 'required_with:details.*.images.*|numeric|max:10485760',
             'details.*.images.*.data' => 'required_with:details.*.images.*|string',
         ]);
 
@@ -298,7 +298,7 @@ class ObservationController extends Controller
         $validator = Validator::make($request->all(), [
             'waktu_observasi' => 'sometimes|required|date_format:H:i:s',
             'waktu_mulai' => 'sometimes|required|date_format:H:i:s',
-            'waktu_selesai' => 'sometimes|required|date_format:H:i:s|after:waktu_mulai',
+            'waktu_selesai' => 'sometimes|required|date_format:H:i:s|after_or_equal:waktu_mulai',
             'notes' => 'nullable|string|max:1000',
             'location_id' => 'nullable|exists:locations,id',
             'project_id' => 'nullable|exists:projects,id',
