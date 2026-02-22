@@ -965,83 +965,80 @@
                 'reviewed': 'success'
             };
 
+            const typeLabels = {
+                'at_risk_behavior': 'At Risk Behavior',
+                'nearmiss_incident': 'Near Miss Incident',
+                'informal_risk_mgmt': 'Informal Risk Management',
+                'sim_k3': 'SIM K3'
+            };
+
+            const severityColors = {
+                'low': 'success',
+                'medium': 'warning',
+                'high': 'danger',
+                'critical': 'dark'
+            };
+
             let detailsHtml = '';
             if (observation.details && observation.details.length > 0) {
-                detailsHtml = '<div class="row">';
+                detailsHtml = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>Type</th>
+                                    <th>Category</th>
+                                    <th>Contributing Factor</th>
+                                    <th>Action</th>
+                                    <th>Severity</th>
+                                    <th>Location</th>
+                                    <th>Project</th>
+                                    <th>Description</th>
+                                    <th>Images</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
                 observation.details.forEach(function(detail, index) {
-                    const typeLabels = {
-                        'at_risk_behavior': 'At Risk Behavior',
-                        'nearmiss_incident': 'Near Miss Incident',
-                        'informal_risk_mgmt': 'Informal Risk Management',
-                        'sim_k3': 'SIM K3'
-                    };
-
-                    const severityColors = {
-                        'low': 'success',
-                        'medium': 'warning',
-                        'high': 'danger',
-                        'critical': 'dark'
-                    };
-
                     detailsHtml += `
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100">
-                                <div class="card-header d-flex justify-content-between align-items-center">
-                                    <span class="badge bg-primary">${typeLabels[detail.observation_type] || detail.observation_type}</span>
-                                    <span class="badge bg-${severityColors[detail.severity]}">${detail.severity}</span>
-                                </div>
-                                <div class="card-body">
-                                    <h6 class="card-title">Category: ${detail.category ? detail.category.name : 'N/A'}</h6>
+                                <tr>
+                                    <td class="text-center fw-bold">${index + 1}</td>
+                                    <td><span class="badge bg-primary">${typeLabels[detail.observation_type] || detail.observation_type}</span></td>
+                                    <td>${detail.category ? detail.category.name : '-'}</td>
+                                    <td>${detail.contributing ? detail.contributing.name : '-'}</td>
+                                    <td>${detail.action ? detail.action.name : '-'}</td>
+                                    <td><span class="badge bg-${severityColors[detail.severity]}">${detail.severity}</span></td>
+                                    <td>${detail.location ? detail.location.name : '-'}</td>
+                                    <td>${detail.project ? detail.project.project_name : '-'}</td>
+                                    <td>
+                                        <div style="max-width: 250px;">
+                                            <p class="mb-1" style="white-space: pre-line;">${detail.description}</p>
+                                            ${detail.action_taken ? `<small class="text-muted"><strong>Action Taken:</strong> ${detail.action_taken}</small>` : ''}
+                                            ${detail.activator && detail.observation_type === 'at_risk_behavior' ? `<br><small class="text-muted"><strong>Activator:</strong> ${detail.activator.name}</small>` : ''}
+                                            ${detail.report_date ? `<br><small class="text-muted"><strong>Date:</strong> ${new Date(detail.report_date).toLocaleDateString()}</small>` : ''}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        ${detail.image_urls && detail.image_urls.length > 0 ? `
+                                            <div class="d-flex flex-wrap gap-1">
+                                                ${detail.image_urls.map(url => `
+                                                    <img src="${url}" class="img-thumbnail" style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;" onclick="showImageModal('${url}')">
+                                                `).join('')}
+                                            </div>
+                                        ` : '<span class="text-muted">-</span>'}
+                                    </td>
+                                </tr>`;
+                });
 
-                                    ${detail.contributing ? `<p class="card-text"><small class="text-muted"><strong>Contributing Factor:</strong> ${detail.contributing.name}</small></p>` : ''}
-                                    ${detail.action ? `<p class="card-text"><small class="text-muted"><strong>Action:</strong> ${detail.action.name}</small></p>` : ''}
-                                    ${detail.location ? `<p class="card-text"><small class="text-muted"><strong>Location:</strong> ${detail.location.name}</small></p>` : ''}
-                                    ${detail.project ? `<p class="card-text"><small class="text-muted"><strong>Project:</strong> ${detail.project.project_name}</small></p>` : ''}
-                                    ${detail.activator && detail.observation_type === 'at_risk_behavior' ? `<p class="card-text"><small class="text-muted"><strong>Activator:</strong> ${detail.activator.name}</small></p>` : ''}
-                                    ${detail.report_date ? `<p class="card-text"><small class="text-muted"><strong>Report Date:</strong> ${new Date(detail.report_date).toLocaleDateString()}</small></p>` : ''}
-
-                                    <p class="card-text">${detail.description}</p>
-                                    ${detail.action_taken ? `<p class="card-text"><small class="text-muted"><strong>Action Taken:</strong> ${detail.action_taken}</small></p>` : ''}
-
-                                    ${detail.images && detail.images !== '[]' ? `
-                                                <div class="mt-2">
-                                                    <small class="text-muted fw-bold">Images:</small>
-                                                    <div class="row mt-1">
-                                                        ${(() => {
-                                                            let parsedImages;
-                                                            try {
-                                                                parsedImages = typeof detail.images === 'string' ? JSON.parse(detail.images) : detail.images;
-                                                            } catch (e) {
-                                                                parsedImages = [];
-                                                            }
-
-                                                            if (!Array.isArray(parsedImages)) {
-                                                                parsedImages = [];
-                                                            }
-
-                                                            return parsedImages.map(image => {
-                                                                const imgSrc = typeof image === 'object' ? image.data : image;
-                                                                return `
-                                                            <div class="col-4 mb-2">
-                                                                <img src="${imgSrc}" class="img-thumbnail" style="max-height: 100px; cursor: pointer;" onclick="showImageModal('${imgSrc}')">
-                                                            </div>
-                                                        `;
-                }).join('');
-            })()
-        } <
-        /div> < /
-        div >
-            ` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-        });
-        detailsHtml += '</div>';
-        }
-        else {
-            detailsHtml = '<p class="text-muted">No observation details available</p>';
-        }
+                detailsHtml += `
+                            </tbody>
+                        </table>
+                    </div>`;
+            }
+            else {
+                detailsHtml = '<p class="text-muted">No observation details available</p>';
+            }
 
         const html = `
                 <div class="row">
@@ -1586,41 +1583,24 @@
                         <div class="invalid-feedback"></div>
 
                         <!-- Existing Images -->
-                        ${existingDetail && existingDetail.images && existingDetail.images !== '[]' ? `
+                        ${existingDetail && existingDetail.image_urls && existingDetail.image_urls.length > 0 ? `
                                     <div class="mt-2">
                                         <small class="text-muted">Existing Images:</small>
                                         <div class="row mt-1" id="existing-images-${detailId}">
-                                            ${(() => {
-                                                let parsedImages;
-                                                try {
-                                                    parsedImages = typeof existingDetail.images === 'string' ? JSON.parse(existingDetail.images) : existingDetail.images;
-                                                } catch (e) {
-                                                    parsedImages = [];
-                                                }
-
-                                                if (!Array.isArray(parsedImages)) {
-                                                    parsedImages = [];
-                                                }
-
-                                                return parsedImages.map((image, index) => {
-                                                    const imgSrc = typeof image === 'object' ? image.data : image;
-                                                    return `
+                                            ${existingDetail.image_urls.map((url, index) => `
                                                 <div class="col-3 mb-3 px-2">
                                                     <div class="position-relative" style="margin: 10px;">
-                                                        <img src="${imgSrc}" class="img-thumbnail" style="max-height: 100px; cursor: pointer; width: 100%;" onclick="showImageModal('${imgSrc}')">
+                                                        <img src="${url}" class="img-thumbnail" style="max-height: 100px; cursor: pointer; width: 100%;" onclick="showImageModal('${url}')">
                                                         <button type="button" class="btn btn-danger btn-sm position-absolute" style="top: -8px; right: -8px; width: 24px; height: 24px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center;" onclick="removeExistingImage('${detailId}', ${index})">
                                                             <i class="ri-close-line" style="font-size: 12px;"></i>
                                                         </button>
-                                                        <input type="hidden" name="details[${detailCounter}][existing_images][]" value="${btoa(imgSrc)}">
+                                                        <input type="hidden" name="details[${detailCounter}][existing_images][]" value="${url}">
                                                     </div>
                                                 </div>
-                                            `;
-        }).join('');
-        })()
-        } <
-        /div> < /
-        div >
-            ` : ''}
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : ''}
 
                         <!-- New Images Preview -->
                         <div class="image-preview mt-2" id="image-preview-${detailId}"></div>

@@ -83,19 +83,25 @@ class ObservationController extends Controller
                 $query->whereDate('created_at', '<=', $request->date_to);
             }
 
-            // Filter by location
+            // Filter by location (check both observations table and details table)
             if ($request->filled('location_id') && $request->location_id !== '') {
                 Log::info('Applying location filter: ' . $request->location_id);
-                $query->whereHas('details', function ($detailQuery) use ($request) {
-                    $detailQuery->where('location_id', $request->location_id);
+                $query->where(function ($q) use ($request) {
+                    $q->where('observations.location_id', $request->location_id)
+                        ->orWhereHas('details', function ($detailQuery) use ($request) {
+                            $detailQuery->where('location_id', $request->location_id);
+                        });
                 });
             }
 
-            // Filter by project
+            // Filter by project (check both observations table and details table)
             if ($request->filled('project_id') && $request->project_id !== '') {
                 Log::info('Applying project filter: ' . $request->project_id);
-                $query->whereHas('details', function ($detailQuery) use ($request) {
-                    $detailQuery->where('project_id', $request->project_id);
+                $query->where(function ($q) use ($request) {
+                    $q->where('observations.project_id', $request->project_id)
+                        ->orWhereHas('details', function ($detailQuery) use ($request) {
+                            $detailQuery->where('project_id', $request->project_id);
+                        });
                 });
             }
 

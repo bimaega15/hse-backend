@@ -10,7 +10,9 @@
       "Bash(php:*)",
       "Bash(findstr:*)",
       "Bash(ren:*)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(/c/laragon/bin/php/php-8.2.24-Win32-vs16-x64/php.exe /c/laragon/www/hse-backend/artisan config:clear)",
+      "Bash(/c/laragon/bin/php/php-8.2.0-nts-Win32-vs16-x64/php.exe:*)"
     ],
     "deny": [],
     "ask": []

@@ -16,6 +16,8 @@ use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class ObservationController extends Controller
@@ -176,20 +178,8 @@ class ObservationController extends Controller
             // Only process details if array is not empty
             if (!empty($request->details)) {
                 foreach ($request->details as $detail) {
-                    // Process and save images as base64
-                    $images = null;
-                    if (isset($detail['images']) && is_array($detail['images'])) {
-                        $imageArray = [];
-                        foreach ($detail['images'] as $imageData) {
-                            $imageArray[] = [
-                                'name' => $imageData['name'],
-                                'type' => $imageData['type'],
-                                'size' => $imageData['size'],
-                                'data' => $imageData['data']
-                            ];
-                        }
-                        $images = json_encode($imageArray);
-                    }
+                    // Process and save images to disk storage
+                    $imagePaths = $this->handleObservationImages($detail['images'] ?? []);
 
                     ObservationDetail::create([
                         'observation_id' => $observation->id,
@@ -204,7 +194,7 @@ class ObservationController extends Controller
                         'description' => $detail['description'],
                         'severity' => $detail['severity'],
                         'action_taken' => $detail['action_taken'] ?? null,
-                        'images' => $images,
+                        'images' => !empty($imagePaths) ? $imagePaths : null,
                     ]);
 
                     $counters[$detail['observation_type']]++;
@@ -213,6 +203,17 @@ class ObservationController extends Controller
 
             // Update counters and total observations
             $counters['total_observations'] = !empty($request->details) ? count($request->details) : 0;
+
+            // Auto-fill location_id and project_id from first detail if not provided
+            if (empty($observation->location_id) && !empty($request->details)) {
+                $firstDetail = $request->details[0];
+                $counters['location_id'] = $firstDetail['location_id'] ?? null;
+            }
+            if (empty($observation->project_id) && !empty($request->details)) {
+                $firstDetail = $request->details[0];
+                $counters['project_id'] = $firstDetail['project_id'] ?? null;
+            }
+
             $observation->update($counters);
 
             DB::commit();
@@ -349,7 +350,10 @@ class ObservationController extends Controller
             // Update observation basic info
             $observation->update($updateData);
 
-            // Delete existing details and recreate
+            // Delete existing details (and their image files) then recreate
+            foreach ($observation->details as $existingDetail) {
+                $this->deleteObservationDetailImages($existingDetail);
+            }
             $observation->details()->delete();
 
             $counters = [
@@ -362,20 +366,8 @@ class ObservationController extends Controller
             // Only process details if array is not empty
             if (!empty($request->details)) {
                 foreach ($request->details as $detail) {
-                    // Process and save images as base64
-                    $images = null;
-                    if (isset($detail['images']) && is_array($detail['images'])) {
-                        $imageArray = [];
-                        foreach ($detail['images'] as $imageData) {
-                            $imageArray[] = [
-                                'name' => $imageData['name'],
-                                'type' => $imageData['type'],
-                                'size' => $imageData['size'],
-                                'data' => $imageData['data']
-                            ];
-                        }
-                        $images = json_encode($imageArray);
-                    }
+                    // Process and save images to disk storage
+                    $imagePaths = $this->handleObservationImages($detail['images'] ?? []);
 
                     ObservationDetail::create([
                         'observation_id' => $observation->id,
@@ -390,7 +382,7 @@ class ObservationController extends Controller
                         'description' => $detail['description'],
                         'severity' => $detail['severity'],
                         'action_taken' => $detail['action_taken'] ?? null,
-                        'images' => $images,
+                        'images' => !empty($imagePaths) ? $imagePaths : null,
                     ]);
 
                     $counters[$detail['observation_type']]++;
@@ -399,6 +391,17 @@ class ObservationController extends Controller
 
             // Update counters and total observations
             $counters['total_observations'] = !empty($request->details) ? count($request->details) : 0;
+
+            // Auto-fill location_id and project_id from first detail if not provided
+            if (empty($observation->location_id) && !empty($request->details)) {
+                $firstDetail = $request->details[0];
+                $counters['location_id'] = $firstDetail['location_id'] ?? null;
+            }
+            if (empty($observation->project_id) && !empty($request->details)) {
+                $firstDetail = $request->details[0];
+                $counters['project_id'] = $firstDetail['project_id'] ?? null;
+            }
+
             $observation->update($counters);
 
             DB::commit();
@@ -448,6 +451,11 @@ class ObservationController extends Controller
         }
 
         try {
+            // Delete image files from storage before deleting observation
+            foreach ($observation->details as $detail) {
+                $this->deleteObservationDetailImages($detail);
+            }
+
             $observation->delete();
             return $this->successResponse(null, 'Observation deleted successfully');
         } catch (\Exception $e) {
@@ -622,5 +630,140 @@ class ObservationController extends Controller
             'recent_observations' => $recentObservations,
             'statistics' => $statistics,
         ], 'Dashboard data retrieved successfully');
+    }
+
+    /**
+     * Handle observation images - save base64 images to disk storage
+     */
+    private function handleObservationImages(array $images): array
+    {
+        $imagePaths = [];
+
+        if (empty($images)) {
+            return $imagePaths;
+        }
+
+        foreach ($images as $index => $imageData) {
+            try {
+                if (is_string($imageData)) {
+                    // Handle plain base64 string
+                    $path = $this->saveObservationBase64Image($imageData);
+                    if ($path) {
+                        $imagePaths[] = $path;
+                    }
+                } elseif (is_array($imageData) && isset($imageData['data'])) {
+                    // Handle object with {name, type, size, data} format from frontend
+                    $path = $this->saveObservationBase64Image($imageData['data'], $imageData['name'] ?? null);
+                    if ($path) {
+                        $imagePaths[] = $path;
+                    }
+                } elseif ($imageData instanceof \Illuminate\Http\UploadedFile) {
+                    // Handle file upload
+                    if ($imageData->isValid()) {
+                        $path = $this->saveObservationUploadedFile($imageData);
+                        if ($path) {
+                            $imagePaths[] = $path;
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to process observation image', [
+                    'index' => $index,
+                    'error' => $e->getMessage()
+                ]);
+            }
+        }
+
+        return $imagePaths;
+    }
+
+    /**
+     * Save base64 image to observation_images storage
+     */
+    private function saveObservationBase64Image(string $base64Data, ?string $originalName = null): ?string
+    {
+        try {
+            // Remove data:image/...;base64, prefix if present
+            if (strpos($base64Data, ',') !== false) {
+                $base64Data = explode(',', $base64Data)[1];
+            }
+
+            $imageData = base64_decode($base64Data);
+
+            if ($imageData === false) {
+                throw new \Exception('Invalid base64 data');
+            }
+
+            // Validate image
+            $imageInfo = getimagesizefromstring($imageData);
+            if ($imageInfo === false) {
+                throw new \Exception('Invalid image data');
+            }
+
+            $allowedMimes = [
+                'image/jpeg' => 'jpg',
+                'image/png' => 'png',
+                'image/gif' => 'gif',
+                'image/jpg' => 'jpg',
+            ];
+
+            if (!isset($allowedMimes[$imageInfo['mime']])) {
+                throw new \Exception('Unsupported image type: ' . $imageInfo['mime']);
+            }
+
+            // Check file size (max 5MB)
+            if (strlen($imageData) > 5242880) {
+                throw new \Exception('Image exceeds maximum size of 5MB');
+            }
+
+            $extension = $allowedMimes[$imageInfo['mime']];
+            $filename = 'observation_' . time() . '_' . uniqid() . '.' . $extension;
+            $path = 'observation_images/' . $filename;
+
+            if (Storage::disk('public')->put($path, $imageData)) {
+                return $path;
+            }
+
+            throw new \Exception('Failed to save image to storage');
+        } catch (\Exception $e) {
+            Log::error('Failed to save observation base64 image', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Save uploaded file to observation_images storage
+     */
+    private function saveObservationUploadedFile(\Illuminate\Http\UploadedFile $file): ?string
+    {
+        try {
+            $filename = 'observation_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+            return $file->storeAs('observation_images', $filename, 'public');
+        } catch (\Exception $e) {
+            Log::error('Failed to save observation uploaded file', [
+                'error' => $e->getMessage()
+            ]);
+            return null;
+        }
+    }
+
+    /**
+     * Delete image files for a specific observation detail
+     */
+    private function deleteObservationDetailImages(ObservationDetail $detail): void
+    {
+        $images = $detail->images;
+
+        if (empty($images)) {
+            return;
+        }
+
+        foreach ($images as $imagePath) {
+            if (is_string($imagePath) && Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+        }
     }
 }

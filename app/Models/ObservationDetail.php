@@ -41,6 +41,42 @@ class ObservationDetail extends Model
         'updated_at' => 'datetime',
     ];
 
+    protected $appends = ['image_urls'];
+    protected $hidden = ['images'];
+
+    /**
+     * Get full URLs for stored image paths
+     */
+    public function getImageUrlsAttribute(): array
+    {
+        $images = $this->images;
+
+        if (empty($images)) {
+            return [];
+        }
+
+        // Handle double-encoded JSON from old data (string instead of array)
+        if (is_string($images)) {
+            $decoded = json_decode($images, true);
+            $images = is_array($decoded) ? $decoded : [];
+        }
+
+        if (!is_array($images)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(function ($image) {
+            if (is_string($image) && strpos($image, 'observation_images/') === 0) {
+                return asset('storage/' . $image);
+            }
+            // Old base64 data objects - skip
+            if (is_array($image)) {
+                return null;
+            }
+            return null;
+        }, $images)));
+    }
+
     // Constants for observation types
     const OBSERVATION_TYPES = [
         'at_risk_behavior' => 'At Risk Behavior',
