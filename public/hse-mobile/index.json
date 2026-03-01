@@ -2,10 +2,16 @@
   "app_name": "HSE Mobile App",
   "platform": "Flutter",
   "versions": [
+    {
+      "version": "1.0.3",
+      "date": "2026-03-01",
+      "type": "latest",
+      "description": "Fix issue login and update about page"
+    },
      {
       "version": "1.0.2",
       "date": "2026-03-01",
-      "type": "latest",
+      "type": "stable",
       "description": "Update api endpoint, penambahan fitur notifikasi, perbaikan bug minor, optimasi performa"
     },
     {
