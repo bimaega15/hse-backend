@@ -36,7 +36,7 @@
                             <label class="form-label fw-bold">
                                 <i class="ri-time-line text-success me-1"></i>Quick Presets
                             </label>
-                            <select class="form-select" id="filter_date_preset" onchange="applyDatePreset(this.value)">
+                            <select class="form-select report-analytics-select" id="filter_date_preset" onchange="applyDatePreset(this.value)">
                                 <option value="">Select Period</option>
                                 <option value="today">Today</option>
                                 <option value="yesterday">Yesterday</option>
@@ -56,15 +56,55 @@
                             <label class="form-label fw-bold">
                                 <i class="ri-building-line text-dark me-1"></i>Project
                             </label>
-                            <select class="form-select" id="filter_project" name="project_id">
+                            <select class="form-select report-analytics-select" id="filter_project" name="project_id">
                                 <option value="">All Projects</option>
-                                @if (isset($additionalData['filter_options']['projects']))
-                                    @foreach ($additionalData['filter_options']['projects'] as $project)
-                                        <option value="{{ $project->id }}">{{ $project->project_name }}</option>
-                                    @endforeach
-                                @endif
+                                @foreach ($filterOptions['projects'] ?? [] as $project)
+                                    <option value="{{ $project->id }}">{{ $project->project_name }}</option>
+                                @endforeach
                             </select>
                             <small class="text-muted">Filter by project</small>
+                        </div>
+
+                        <!-- Employee / User Filter -->
+                        <div class="col-xl-4 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-user-line text-info me-1"></i>Employee / User
+                            </label>
+                            <select class="form-select report-analytics-select" id="filter_employee" name="employee_id">
+                                <option value="">All Employees</option>
+                                @foreach ($filterOptions['employees'] ?? [] as $emp)
+                                    <option value="{{ $emp->id }}">{{ $emp->name }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Filter by employee who reported</small>
+                        </div>
+
+                        <!-- Location Filter -->
+                        <div class="col-xl-4 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-map-pin-line text-secondary me-1"></i>Location
+                            </label>
+                            <select class="form-select report-analytics-select" id="filter_location" name="location_id">
+                                <option value="">All Locations</option>
+                                @foreach ($filterOptions['locations'] ?? [] as $location)
+                                    <option value="{{ $location->id }}">{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Filter by location</small>
+                        </div>
+
+                        <!-- HSE Staff Filter -->
+                        <div class="col-xl-4 col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="ri-user-settings-line text-primary me-1"></i>BAIK Staff
+                            </label>
+                            <select class="form-select report-analytics-select" id="filter_hse_staff" name="hse_staff_id">
+                                <option value="">All BAIK Staff</option>
+                                @foreach ($filterOptions['hse_staff'] ?? [] as $staff)
+                                    <option value="{{ $staff->id }}">{{ $staff->name }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-muted">Filter by assigned staff</small>
                         </div>
 
                         <!-- Action Buttons -->
@@ -78,98 +118,6 @@
                                 </button>
                             </div>
                         </div>
-
-                        {{-- <!-- Status Filter -->
-                        <div class="col-xl-2 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="ri-flag-line text-warning me-1"></i>Status
-                            </label>
-                            <select class="form-select" id="filter_status" name="status">
-                                <option value="">All Status</option>
-                                <option value="waiting">Waiting</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="done">Completed</option>
-                            </select>
-                            <small class="text-muted">Filter by report status</small>
-                        </div>
-
-                        <!-- Severity Filter -->
-                        <div class="col-xl-2 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="ri-alarm-warning-line text-danger me-1"></i>Severity
-                            </label>
-                            <select class="form-select" id="filter_severity" name="severity">
-                                <option value="">All Severity</option>
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
-                            </select>
-                            <small class="text-muted">Filter by severity level</small>
-                        </div>
-
-                        <!-- Category Filter -->
-                        <div class="col-xl-2 col-md-4">
-                            <label class="form-label fw-bold">
-                                <i class="ri-list-check-line text-info me-1"></i>Category
-                            </label>
-                            <select class="form-select" id="filter_category" name="category_id">
-                                <option value="">All Categories</option>
-                                @if (isset($additionalData['filter_options']['categories']))
-                                    @foreach ($additionalData['filter_options']['categories'] as $category)
-                                        <option value="{{ $category->id }}">{{ $category->name }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                            <small class="text-muted">Filter by category type</small>
-                        </div> --}}
-                    </div>
-
-                    {{-- <div class="row g-3 mt-2">
-                        <!-- Location Filter -->
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label fw-bold">
-                                <i class="ri-map-pin-line text-secondary me-1"></i>Location
-                            </label>
-                            <select class="form-select" id="filter_location" name="location_id">
-                                <option value="">All Locations</option>
-                                @if (isset($additionalData['filter_options']['locations']))
-                                    @foreach ($additionalData['filter_options']['locations'] as $location)
-                                        <option value="{{ $location->id }}">{{ $location->name }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                            <small class="text-muted">Filter by location</small>
-                        </div>
-
-                        <!-- HSE Staff Filter -->
-                        <div class="col-xl-3 col-md-6">
-                            <label class="form-label fw-bold">
-                                <i class="ri-user-settings-line text-primary me-1"></i>BAIK Staff
-                            </label>
-                            <select class="form-select" id="filter_hse_staff" name="hse_staff_id">
-                                <option value="">All BAIK Staff</option>
-                                @if (isset($additionalData['filter_options']['hse_staff']))
-                                    @foreach ($additionalData['filter_options']['hse_staff'] as $staff)
-                                        <option value="{{ $staff->id }}">{{ $staff->name }}</option>
-                                    @endforeach
-                                @endif
-                            </select>
-                            <small class="text-muted">Filter by assigned staff</small>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        {{-- <div class="col-xl-12 col-md-12">
-                            <label class="form-label fw-bold text-transparent">Actions</label>
-                            <div class="d-flex gap-2 justify-content-center">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="ri-search-line me-1"></i>Apply Filters
-                                </button>
-                                <button type="button" class="btn btn-outline-secondary" onclick="clearAllFilters()">
-                                    <i class="ri-refresh-line me-1"></i>Reset
-                                </button>
-                            </div>
-                        </div> --}}
                     </div>
 
                     <!-- Active Filters Display -->
@@ -1202,6 +1150,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2 on analytics filter dropdowns
+        $('.report-analytics-select').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            dropdownParent: $('#analyticsFilterForm'),
+        });
+
         // Initialize charts with actual data
         initAnalyticsCharts();
     });
@@ -1689,14 +1644,15 @@
         const activeFiltersDiv = document.getElementById('activeFiltersDisplay');
         const activeFilterTags = document.getElementById('activeFilterTags');
         const filterLabels = {
-            'start_date': 'Start Date',
-            'end_date': 'End Date',
-            'status': 'Status',
-            'severity': 'Severity',
-            'category_id': 'Category',
-            'location_id': 'Location',
-            'project_id': 'Project',
-            'hse_staff_id': 'BAIK Staff'
+            'start_date'   : 'Start Date',
+            'end_date'     : 'End Date',
+            'status'       : 'Status',
+            'severity'     : 'Severity',
+            'category_id'  : 'Category',
+            'location_id'  : 'Location',
+            'project_id'   : 'Project',
+            'hse_staff_id' : 'BAIK Staff',
+            'employee_id'  : 'Employee',
         };
 
         let hasActiveFilters = false;
@@ -1736,11 +1692,18 @@
         const element = document.getElementById('filter_' + filterKey.replace('_id', ''));
         if (element) {
             element.value = '';
+            if ($(element).hasClass('select2-hidden-accessible')) {
+                $(element).val('').trigger('change');
+            }
         }
 
         // Special handling for date preset
         if (filterKey === 'start_date' || filterKey === 'end_date') {
-            document.getElementById('filter_date_preset').value = '';
+            const preset = document.getElementById('filter_date_preset');
+            preset.value = '';
+            if ($(preset).hasClass('select2-hidden-accessible')) {
+                $(preset).val('').trigger('change');
+            }
         }
 
         // Reapply filters
@@ -1752,8 +1715,14 @@
         const inputs = form.querySelectorAll('input, select');
 
         inputs.forEach(input => {
-            if (input.type === 'date' || input.tagName === 'SELECT') {
+            if (input.type === 'date') {
                 input.value = '';
+            } else if (input.tagName === 'SELECT') {
+                input.value = '';
+                // Sync Select2 if initialized
+                if ($(input).hasClass('select2-hidden-accessible')) {
+                    $(input).val('').trigger('change');
+                }
             }
         });
 

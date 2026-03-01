@@ -1,3 +1,141 @@
+<!-- Analytics Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <h6 class="card-title mb-0">
+                    <i class="ri-filter-3-line me-2"></i>Analytics Filters
+                </h6>
+                <button class="btn btn-sm btn-outline-secondary" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#analyticsFilterBody" aria-expanded="true">
+                    <i class="ri-equalizer-line"></i>
+                </button>
+            </div>
+            <div class="collapse show" id="analyticsFilterBody">
+                <div class="card-body pb-2">
+                    <form method="GET" action="{{ route('admin.observations.index') }}" id="analyticsFilterForm">
+                        <input type="hidden" name="view" value="analytics">
+                        <div class="row g-2">
+                            <!-- Observer -->
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label form-label-sm mb-1">Observer / User</label>
+                                <select name="user_id" class="form-select form-select-sm analytics-filter-select">
+                                    <option value="">All Users</option>
+                                    @foreach ($filterOptions['users'] ?? [] as $u)
+                                        <option value="{{ $u->id }}"
+                                            {{ ($filters['user_id'] ?? '') == $u->id ? 'selected' : '' }}>
+                                            {{ $u->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Project -->
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label form-label-sm mb-1">Project</label>
+                                <select name="project_id" class="form-select form-select-sm analytics-filter-select">
+                                    <option value="">All Projects</option>
+                                    @foreach ($filterOptions['projects'] ?? [] as $p)
+                                        <option value="{{ $p->id }}"
+                                            {{ ($filters['project_id'] ?? '') == $p->id ? 'selected' : '' }}>
+                                            {{ $p->project_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label form-label-sm mb-1">Location</label>
+                                <select name="location_id" class="form-select form-select-sm analytics-filter-select">
+                                    <option value="">All Locations</option>
+                                    @foreach ($filterOptions['locations'] ?? [] as $l)
+                                        <option value="{{ $l->id }}"
+                                            {{ ($filters['location_id'] ?? '') == $l->id ? 'selected' : '' }}>
+                                            {{ $l->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Trend Period -->
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label form-label-sm mb-1">Trend Period</label>
+                                <select name="period" class="form-select form-select-sm analytics-filter-select">
+                                    @foreach ([3 => 'Last 3 Months', 6 => 'Last 6 Months', 12 => 'Last 12 Months', 24 => 'Last 24 Months'] as $val => $label)
+                                        <option value="{{ $val }}"
+                                            {{ ($filters['period'] ?? '12') == $val ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <!-- Date From -->
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label form-label-sm mb-1">Date From</label>
+                                <input type="date" name="date_from" class="form-control form-control-sm"
+                                    value="{{ $filters['date_from'] ?? '' }}">
+                            </div>
+
+                            <!-- Date To -->
+                            <div class="col-md-3 col-sm-6">
+                                <label class="form-label form-label-sm mb-1">Date To</label>
+                                <input type="date" name="date_to" class="form-control form-control-sm"
+                                    value="{{ $filters['date_to'] ?? '' }}">
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="col-md-6 col-sm-12 d-flex align-items-end gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="ri-search-line me-1"></i>Apply Filter
+                                </button>
+                                <a href="{{ route('admin.observations.index') }}?view=analytics"
+                                    class="btn btn-outline-secondary btn-sm">
+                                    <i class="ri-refresh-line me-1"></i>Reset
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+
+                    @php
+                        $hasActiveFilters =
+                            !empty($filters['user_id']) ||
+                            !empty($filters['project_id']) ||
+                            !empty($filters['location_id']) ||
+                            !empty($filters['date_from']) ||
+                            !empty($filters['date_to']);
+                    @endphp
+
+                    @if ($hasActiveFilters)
+                        <div class="mt-2 d-flex flex-wrap align-items-center gap-2">
+                            <small class="text-muted">Active:</small>
+                            @if (!empty($filters['user_id']))
+                                @php $su = collect($filterOptions['users'] ?? [])->firstWhere('id', $filters['user_id']); @endphp
+                                <span class="badge bg-primary">User: {{ $su->name ?? $filters['user_id'] }}</span>
+                            @endif
+                            @if (!empty($filters['project_id']))
+                                @php $sp = collect($filterOptions['projects'] ?? [])->firstWhere('id', $filters['project_id']); @endphp
+                                <span class="badge bg-info">Project: {{ $sp->project_name ?? $filters['project_id'] }}</span>
+                            @endif
+                            @if (!empty($filters['location_id']))
+                                @php $sl = collect($filterOptions['locations'] ?? [])->firstWhere('id', $filters['location_id']); @endphp
+                                <span class="badge bg-success">Location: {{ $sl->name ?? $filters['location_id'] }}</span>
+                            @endif
+                            @if (!empty($filters['date_from']))
+                                <span class="badge bg-warning text-dark">From: {{ $filters['date_from'] }}</span>
+                            @endif
+                            @if (!empty($filters['date_to']))
+                                <span class="badge bg-warning text-dark">To: {{ $filters['date_to'] }}</span>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Analytics Dashboard -->
 <div class="row mb-4">
     <!-- Summary Cards -->
@@ -335,6 +473,13 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Select2 on filter dropdowns
+        $('.analytics-filter-select').select2({
+            theme: 'bootstrap-5',
+            width: '100%',
+            dropdownParent: $('#analyticsFilterForm'),
+        });
+
         // Initialize charts with actual data
         initObservationAnalyticsCharts();
     });

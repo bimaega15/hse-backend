@@ -924,7 +924,7 @@ class ReportController extends Controller
 
     private function getHSEPerformance($filters = [])
     {
-        // Build constraints for assigned reports based on filters
+        // Build constraints applied to each withCount sub-query
         $constraints = [];
         if (!empty($filters['start_date'])) {
             $constraints[] = ['created_at', '>=', $filters['start_date']];
@@ -950,27 +950,35 @@ class ReportController extends Controller
         if (!empty($filters['project_id'])) {
             $constraints[] = ['project_id', '=', $filters['project_id']];
         }
+        // Filter counts to only include reports from a specific employee
+        if (!empty($filters['employee_id'])) {
+            $constraints[] = ['employee_id', '=', $filters['employee_id']];
+        }
 
-        return User::where('role', 'hse_staff')
-            ->where('is_active', true)
-            ->withCount([
-                'assignedReports' => function ($query) use ($constraints) {
-                    foreach ($constraints as $constraint) {
-                        $query->where($constraint[0], $constraint[1], $constraint[2]);
+        // Base user query — narrow to a specific HSE staff when filter is applied
+        $userQuery = User::where('role', 'hse_staff')->where('is_active', true);
+        if (!empty($filters['hse_staff_id'])) {
+            $userQuery->where('id', $filters['hse_staff_id']);
+        }
+
+        return $userQuery->withCount([
+                'assignedReports as assigned_reports_count' => function ($query) use ($constraints) {
+                    foreach ($constraints as $c) {
+                        $query->where($c[0], $c[1], $c[2]);
                     }
                 },
                 'assignedReports as completed_reports_count' => function ($query) use ($constraints) {
                     $query->where('status', 'done');
-                    foreach ($constraints as $constraint) {
-                        $query->where($constraint[0], $constraint[1], $constraint[2]);
+                    foreach ($constraints as $c) {
+                        $query->where($c[0], $c[1], $c[2]);
                     }
                 },
                 'assignedReports as this_month_reports_count' => function ($query) use ($constraints) {
-                    $query->whereMonth('created_at', now()->month);
-                    foreach ($constraints as $constraint) {
-                        $query->where($constraint[0], $constraint[1], $constraint[2]);
+                    $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
+                    foreach ($constraints as $c) {
+                        $query->where($c[0], $c[1], $c[2]);
                     }
-                }
+                },
             ])
             ->get()
             ->map(function ($staff) {
@@ -1616,15 +1624,16 @@ class ReportController extends Controller
     private function extractFilters(Request $request)
     {
         return [
-            'start_date' => $request->get('start_date'),
-            'end_date' => $request->get('end_date'),
-            'status' => $request->get('status'),
-            'severity' => $request->get('severity'),
-            'category_id' => $request->get('category_id'),
-            'contributing_id' => $request->get('contributing_id'),
-            'location_id' => $request->get('location_id'),
-            'project_id' => $request->get('project_id'),
-            'hse_staff_id' => $request->get('hse_staff_id'),
+            'start_date'     => $request->get('start_date'),
+            'end_date'       => $request->get('end_date'),
+            'status'         => $request->get('status'),
+            'severity'       => $request->get('severity'),
+            'category_id'    => $request->get('category_id'),
+            'contributing_id'=> $request->get('contributing_id'),
+            'location_id'    => $request->get('location_id'),
+            'project_id'     => $request->get('project_id'),
+            'hse_staff_id'   => $request->get('hse_staff_id'),
+            'employee_id'    => $request->get('employee_id'),
         ];
     }
 
@@ -1668,6 +1677,10 @@ class ReportController extends Controller
 
         if (!empty($filters['hse_staff_id'])) {
             $query->where('hse_staff_id', $filters['hse_staff_id']);
+        }
+
+        if (!empty($filters['employee_id'])) {
+            $query->where('employee_id', $filters['employee_id']);
         }
 
         // Special filters for summary calculations (these take precedence over date range)
@@ -1792,18 +1805,22 @@ class ReportController extends Controller
     {
         try {
             return [
-                'projects' => Project::orderBy('project_name')->get(['id', 'project_name', 'status']),
-                'categories' => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'projects'             => Project::orderBy('project_name')->get(['id', 'project_name', 'status']),
+                'categories'           => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name', 'category_id']),
-                'locations' => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'locations'            => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'employees'            => User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']),
+                'hse_staff'            => User::where('role', 'hse_staff')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             ];
         } catch (\Exception $e) {
             Log::error('Failed to get report filter options: ' . $e->getMessage());
             return [
-                'projects' => collect(),
-                'categories' => collect(),
+                'projects'             => collect(),
+                'categories'           => collect(),
                 'contributing_factors' => collect(),
-                'locations' => collect(),
+                'locations'            => collect(),
+                'employees'            => collect(),
+                'hse_staff'            => collect(),
             ];
         }
     }

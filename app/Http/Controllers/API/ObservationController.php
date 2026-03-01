@@ -12,6 +12,7 @@ use App\Models\Action;
 use App\Models\Location;
 use App\Models\Project;
 use App\Models\Activator;
+use App\Models\User;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -549,59 +550,58 @@ class ObservationController extends Controller
     }
 
     /**
-     * Get observation statistics
+     * Get observation statistics dashboard — mirrors the admin analytics view.
+     *
+     * Accepted query parameters:
+     *   project_id, location_id, date_from, date_to, period (months, default 12)
+     *   user_id — admin/hse_staff only; employees are always locked to their own data
      */
     public function statistics(Request $request): JsonResponse
     {
-        $user = $request->user();
-        $query = Observation::query();
+        try {
+            $user = $request->user();
 
-        // Filter by user role
-        if ($user->role === 'employee') {
-            $query->where('user_id', $user->id);
+            // Employees are always scoped to their own data
+            $filters = [
+                'user_id'     => $user->role === 'employee' ? $user->id : $request->get('user_id'),
+                'project_id'  => $request->get('project_id'),
+                'location_id' => $request->get('location_id'),
+                'date_from'   => $request->get('date_from'),
+                'date_to'     => $request->get('date_to'),
+                'period'      => $request->get('period', '12'),
+            ];
+
+            $lastMonth = now()->subMonth()->startOfMonth();
+            $total    = $this->buildObsQuery($filters)->count();
+            $reviewed = $this->buildObsQuery($filters)->where('status', 'reviewed')->count();
+
+            $summary = [
+                'total_observations'  => $total,
+                'this_month'          => $this->buildObsQuery($filters)
+                    ->whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)
+                    ->count(),
+                'last_month'          => $this->buildObsQuery($filters)
+                    ->whereBetween('created_at', [$lastMonth, $lastMonth->copy()->endOfMonth()])
+                    ->count(),
+                'pending_review'      => $this->buildObsQuery($filters)->where('status', 'submitted')->count(),
+                'high_severity_count' => $this->buildObsDetailQuery($filters)
+                    ->whereIn('observation_details.severity', ['high', 'critical'])
+                    ->count(),
+                'review_rate'         => $total > 0 ? round(($reviewed / $total) * 100, 1) : 0,
+            ];
+
+            return $this->successResponse([
+                'summary'              => $summary,
+                'trends'               => $this->getObsTrends($filters),
+                'type_analysis'        => $this->getObsTypeAnalysis($filters),
+                'severity_analysis'    => $this->getObsSeverityAnalysis($filters),
+                'observer_performance' => $this->getObsPerformance($filters, $user),
+            ], 'Statistics dashboard retrieved successfully');
+        } catch (\Exception $e) {
+            Log::error('Observation statistics dashboard error: ' . $e->getMessage());
+            return $this->errorResponse('Failed to retrieve statistics', $e->getMessage(), 500);
         }
-
-        $totalObservations = $query->count();
-        $draftObservations = (clone $query)->where('status', 'draft')->count();
-        $submittedObservations = (clone $query)->where('status', 'submitted')->count();
-        $reviewedObservations = (clone $query)->where('status', 'reviewed')->count();
-
-        // Type statistics
-        $typeStats = [
-            'at_risk_behavior' => (clone $query)->sum('at_risk_behavior'),
-            'nearmiss_incident' => (clone $query)->sum('nearmiss_incident'),
-            'informal_risk_mgmt' => (clone $query)->sum('informal_risk_mgmt'),
-            'sim_k3' => (clone $query)->sum('sim_k3'),
-        ];
-
-        // Severity statistics
-        $severityStats = ObservationDetail::query()
-            ->whereHas('observation', function ($q) use ($user) {
-                if ($user->role === 'employee') {
-                    $q->where('user_id', $user->id);
-                }
-            })
-            ->selectRaw('severity, COUNT(*) as count')
-            ->groupBy('severity')
-            ->pluck('count', 'severity')
-            ->toArray();
-
-        // Today's statistics
-        $todayStats = [
-            'total' => (clone $query)->whereDate('created_at', today())->count(),
-            'submitted' => (clone $query)->whereDate('created_at', today())->where('status', 'submitted')->count(),
-        ];
-
-        return $this->successResponse([
-            'total_observations' => $totalObservations,
-            'draft_observations' => $draftObservations,
-            'submitted_observations' => $submittedObservations,
-            'reviewed_observations' => $reviewedObservations,
-            'completion_rate' => $totalObservations > 0 ? round(($reviewedObservations / $totalObservations) * 100, 1) : 0,
-            'type_statistics' => $typeStats,
-            'severity_statistics' => $severityStats,
-            'today_statistics' => $todayStats,
-        ], 'Statistics retrieved successfully');
     }
 
     /**
@@ -630,6 +630,182 @@ class ObservationController extends Controller
             'recent_observations' => $recentObservations,
             'statistics' => $statistics,
         ], 'Dashboard data retrieved successfully');
+    }
+
+    // -------------------------------------------------------------------------
+    // Analytics helper methods (mirrors Admin\ObservationController logic)
+    // -------------------------------------------------------------------------
+
+    /** Base Observation query with optional filters applied. */
+    private function buildObsQuery(array $filters = [])
+    {
+        $query = Observation::query();
+
+        if (!empty($filters['user_id'])) {
+            $query->where('user_id', $filters['user_id']);
+        }
+        if (!empty($filters['project_id'])) {
+            $query->where('project_id', $filters['project_id']);
+        }
+        if (!empty($filters['location_id'])) {
+            $query->where('location_id', $filters['location_id']);
+        }
+        if (!empty($filters['date_from'])) {
+            $query->whereDate('created_at', '>=', $filters['date_from']);
+        }
+        if (!empty($filters['date_to'])) {
+            $query->whereDate('created_at', '<=', $filters['date_to']);
+        }
+
+        return $query;
+    }
+
+    /** Base observation_details query, joining observations when filters require it. */
+    private function buildObsDetailQuery(array $filters = [])
+    {
+        $query = DB::table('observation_details');
+
+        $needsJoin = !empty($filters['user_id']) || !empty($filters['project_id'])
+            || !empty($filters['location_id']) || !empty($filters['date_from'])
+            || !empty($filters['date_to']);
+
+        if ($needsJoin) {
+            $query->join('observations', function ($join) {
+                $join->on('observation_details.observation_id', '=', 'observations.id')
+                     ->whereNull('observations.deleted_at');
+            });
+
+            if (!empty($filters['user_id'])) {
+                $query->where('observations.user_id', $filters['user_id']);
+            }
+            if (!empty($filters['project_id'])) {
+                $query->where('observations.project_id', $filters['project_id']);
+            }
+            if (!empty($filters['location_id'])) {
+                $query->where('observations.location_id', $filters['location_id']);
+            }
+            if (!empty($filters['date_from'])) {
+                $query->whereDate('observations.created_at', '>=', $filters['date_from']);
+            }
+            if (!empty($filters['date_to'])) {
+                $query->whereDate('observations.created_at', '<=', $filters['date_to']);
+            }
+        }
+
+        return $query;
+    }
+
+    /** Monthly trend data grouped by year/month. */
+    private function getObsTrends(array $filters = [])
+    {
+        $query = $this->buildObsQuery($filters);
+
+        if (empty($filters['date_from']) && empty($filters['date_to'])) {
+            $period = max(1, min(24, (int) ($filters['period'] ?? 12)));
+            $query->where('created_at', '>=', now()->subMonths($period));
+        }
+
+        return $query->selectRaw('
+                YEAR(created_at)  as year,
+                MONTH(created_at) as month,
+                COUNT(*) as total,
+                SUM(CASE WHEN status = "reviewed" THEN 1 ELSE 0 END) as reviewed,
+                SUM(at_risk_behavior + nearmiss_incident + informal_risk_mgmt + sim_k3) as total_details
+            ')
+            ->groupBy('year', 'month')
+            ->orderBy('year', 'asc')
+            ->orderBy('month', 'asc')
+            ->get()
+            ->map(function ($item) {
+                $item->month_name  = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
+                $item->review_rate = $item->total > 0
+                    ? round(($item->reviewed / $item->total) * 100, 1)
+                    : 0;
+                return $item;
+            });
+    }
+
+    /** Observation type analysis with avg severity score. */
+    private function getObsTypeAnalysis(array $filters = [])
+    {
+        return $this->buildObsDetailQuery($filters)
+            ->selectRaw('
+                observation_details.observation_type,
+                COUNT(*) as count,
+                AVG(CASE WHEN observation_details.severity = "critical" THEN 4
+                         WHEN observation_details.severity = "high"     THEN 3
+                         WHEN observation_details.severity = "medium"   THEN 2
+                         ELSE 1 END) as avg_severity_score
+            ')
+            ->groupBy('observation_details.observation_type')
+            ->get();
+    }
+
+    /** Severity analysis grouped by severity level, with type breakdown. */
+    private function getObsSeverityAnalysis(array $filters = [])
+    {
+        return $this->buildObsDetailQuery($filters)
+            ->selectRaw('
+                observation_details.severity,
+                COUNT(*) as count,
+                observation_details.observation_type
+            ')
+            ->groupBy('observation_details.severity', 'observation_details.observation_type')
+            ->get()
+            ->groupBy('severity');
+    }
+
+    /** Per-observer performance counts. Employees only see their own row. */
+    private function getObsPerformance(array $filters = [], $authUser = null)
+    {
+        $userQuery = User::where('is_active', true);
+
+        if ($authUser && $authUser->role === 'employee') {
+            // Employee: only their own row
+            $userQuery->where('id', $authUser->id);
+        } elseif (!empty($filters['user_id'])) {
+            $userQuery->where('id', $filters['user_id']);
+        } else {
+            $userQuery->whereIn('role', ['employee', 'hse_staff']);
+        }
+
+        return $userQuery->withCount([
+            'observations as observations_count' => function ($query) use ($filters) {
+                if (!empty($filters['project_id']))  $query->where('project_id', $filters['project_id']);
+                if (!empty($filters['location_id'])) $query->where('location_id', $filters['location_id']);
+                if (!empty($filters['date_from']))   $query->whereDate('created_at', '>=', $filters['date_from']);
+                if (!empty($filters['date_to']))     $query->whereDate('created_at', '<=', $filters['date_to']);
+            },
+            'observations as reviewed_observations_count' => function ($query) use ($filters) {
+                $query->where('status', 'reviewed');
+                if (!empty($filters['project_id']))  $query->where('project_id', $filters['project_id']);
+                if (!empty($filters['location_id'])) $query->where('location_id', $filters['location_id']);
+                if (!empty($filters['date_from']))   $query->whereDate('created_at', '>=', $filters['date_from']);
+                if (!empty($filters['date_to']))     $query->whereDate('created_at', '<=', $filters['date_to']);
+            },
+            'observations as this_month_observations_count' => function ($query) use ($filters) {
+                $query->whereMonth('created_at', now()->month)->whereYear('created_at', now()->year);
+                if (!empty($filters['project_id']))  $query->where('project_id', $filters['project_id']);
+                if (!empty($filters['location_id'])) $query->where('location_id', $filters['location_id']);
+            },
+        ])
+        ->having('observations_count', '>', 0)
+        ->get()
+        ->map(function ($user) {
+            return [
+                'id'                            => $user->id,
+                'name'                          => $user->name,
+                'email'                         => $user->email,
+                'role'                          => $user->role,
+                'department'                    => $user->department ?? null,
+                'observations_count'            => $user->observations_count,
+                'reviewed_observations_count'   => $user->reviewed_observations_count,
+                'this_month_observations_count' => $user->this_month_observations_count,
+                'review_rate'                   => $user->observations_count > 0
+                    ? round(($user->reviewed_observations_count / $user->observations_count) * 100, 1)
+                    : 0,
+            ];
+        });
     }
 
     /**
