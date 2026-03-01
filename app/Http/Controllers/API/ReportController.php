@@ -1239,24 +1239,24 @@ class ReportController extends Controller
     private function extractFilters(Request $request)
     {
         $filters = [
-            'start_date' => $request->get('start_date'),
-            'end_date' => $request->get('end_date'),
-            'status' => $request->get('status'),
-            'severity' => $request->get('severity'),
-            'category_id' => $request->get('category_id'),
+            'start_date'      => $request->get('start_date'),
+            'end_date'        => $request->get('end_date'),
+            'status'          => $request->get('status'),
+            'severity'        => $request->get('severity'),
+            'category_id'     => $request->get('category_id'),
             'contributing_id' => $request->get('contributing_id'),
-            'location_id' => $request->get('location_id'),
-            'project_id' => $request->get('project_id'),
-            'hse_staff_id' => $request->get('hse_staff_id'),
+            'location_id'     => $request->get('location_id'),
+            'project_id'      => $request->get('project_id'),
         ];
 
-        // Only add employee_id filter if user is employee role
-        // HSE staff and admin can see all data
-        if (auth()->check() && auth()->user()->role === 'employee') {
-            $filters['employee_id'] = auth()->id();
-        } else if ($request->has('employee_id')) {
-            // Allow filtering by employee_id if explicitly requested
-            $filters['employee_id'] = $request->get('employee_id');
+        // Scope analytics to the logged-in user based on their role:
+        // - employee: sees only reports they submitted (employee_id)
+        // - hse_staff: sees only reports assigned to them (hse_staff_id)
+        $user = auth()->user();
+        if ($user->role === 'employee') {
+            $filters['employee_id'] = $user->id;
+        } else {
+            $filters['hse_staff_id'] = $user->id;
         }
 
         return $filters;
@@ -1559,11 +1559,19 @@ class ReportController extends Controller
         if (!empty($filters['project_id'])) {
             $constraints[] = ['project_id', '=', $filters['project_id']];
         }
+        $userQuery = User::where('role', 'hse_staff')->where('is_active', true);
+        if (!empty($filters['hse_staff_id'])) {
+            // hse_staff login: show only their own performance (no employee_id constraint on counts)
+            $userQuery->where('id', $filters['hse_staff_id']);
+        } else {
+            // employee login: scope counts to this employee's reports
+            if (!empty($filters['employee_id'])) {
+                $constraints[] = ['employee_id', '=', $filters['employee_id']];
+            }
+        }
 
-        return User::where('role', 'hse_staff')
-            ->where('is_active', true)
-            ->withCount([
-                'assignedReports' => function ($query) use ($constraints) {
+        return $userQuery->withCount([
+                'assignedReports as assigned_reports_count' => function ($query) use ($constraints) {
                     foreach ($constraints as $constraint) {
                         $query->where($constraint[0], $constraint[1], $constraint[2]);
                     }
@@ -1583,13 +1591,20 @@ class ReportController extends Controller
             ])
             ->get()
             ->map(function ($staff) {
-                $staff->completion_rate = $staff->assigned_reports_count > 0
+                $completionRate = $staff->assigned_reports_count > 0
                     ? floatval(round(($staff->completed_reports_count / $staff->assigned_reports_count) * 100, 1))
                     : 0.0;
-                $staff->assigned_reports_count = intval($staff->assigned_reports_count);
-                $staff->completed_reports_count = intval($staff->completed_reports_count);
-                $staff->this_month_reports_count = intval($staff->this_month_reports_count);
-                return $staff;
+                return [
+                    'id'                       => intval($staff->id),
+                    'name'                     => $staff->name,
+                    'email'                    => $staff->email,
+                    'role'                     => $staff->role,
+                    'department'               => $staff->department,
+                    'assigned_reports_count'   => intval($staff->assigned_reports_count),
+                    'completed_reports_count'  => intval($staff->completed_reports_count),
+                    'this_month_reports_count' => intval($staff->this_month_reports_count),
+                    'completion_rate'          => $completionRate,
+                ];
             });
     }
 

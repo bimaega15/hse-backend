@@ -561,9 +561,9 @@ class ObservationController extends Controller
         try {
             $user = $request->user();
 
-            // Employees are always scoped to their own data
+            // Always scope to the logged-in user's own data
             $filters = [
-                'user_id'     => $user->role === 'employee' ? $user->id : $request->get('user_id'),
+                'user_id'     => $user->id,
                 'project_id'  => $request->get('project_id'),
                 'location_id' => $request->get('location_id'),
                 'date_from'   => $request->get('date_from'),
@@ -755,19 +755,12 @@ class ObservationController extends Controller
             ->groupBy('severity');
     }
 
-    /** Per-observer performance counts. Employees only see their own row. */
+    /** Per-observer performance counts. Always shows only the logged-in user's row. */
     private function getObsPerformance(array $filters = [], $authUser = null)
     {
-        $userQuery = User::where('is_active', true);
-
-        if ($authUser && $authUser->role === 'employee') {
-            // Employee: only their own row
-            $userQuery->where('id', $authUser->id);
-        } elseif (!empty($filters['user_id'])) {
-            $userQuery->where('id', $filters['user_id']);
-        } else {
-            $userQuery->whereIn('role', ['employee', 'hse_staff']);
-        }
+        // user_id is always set (locked to the logged-in user), so just scope to them
+        $userQuery = User::where('is_active', true)
+            ->where('id', $filters['user_id']);
 
         return $userQuery->withCount([
             'observations as observations_count' => function ($query) use ($filters) {

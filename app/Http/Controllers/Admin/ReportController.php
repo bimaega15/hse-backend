@@ -1809,7 +1809,7 @@ class ReportController extends Controller
                 'categories'           => Category::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'contributing_factors' => Contributing::where('is_active', true)->orderBy('name')->get(['id', 'name', 'category_id']),
                 'locations'            => Location::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-                'employees'            => User::where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']),
+                'employees'            => User::where('role', 'employee')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'email']),
                 'hse_staff'            => User::where('role', 'hse_staff')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             ];
         } catch (\Exception $e) {
