@@ -1,0 +1,12 @@
+{
+  "app_name": "HSE Mobile App",
+  "platform": "Flutter",
+  "versions": [
+    {
+      "version": "1.0.1",
+      "date": "2026-03-01",
+      "type": "latest",
+      "description": "Perbaikan performa, optimasi cache image, fix login timeout, perbaruan UI design"
+    }
+  ]
+}
