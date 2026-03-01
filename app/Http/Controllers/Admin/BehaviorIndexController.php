@@ -24,6 +24,7 @@ class BehaviorIndexController extends Controller
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
         $locationId = $request->get('location_id');
+        $projectId = $request->get('project_id');
 
         // Base query for observation details with date filter
         $baseQuery = ObservationDetail::query()
@@ -33,6 +34,10 @@ class BehaviorIndexController extends Controller
 
         if ($locationId) {
             $baseQuery->where('observation_details.location_id', $locationId);
+        }
+
+        if ($projectId) {
+            $baseQuery->where('observation_details.project_id', $projectId);
         }
 
         // 1. Klasifikasi berdasarkan observation_type (sebagai pengganti klasifikasi insiden)
@@ -158,8 +163,9 @@ class BehaviorIndexController extends Controller
             $item['persen'] = $totalTempat > 0 ? round(($item['jumlah'] / $totalTempat) * 100) . '%' : '0%';
         }
 
-        // Get locations for filter dropdown
+        // Get locations and projects for filter dropdowns
         $locations = Location::active()->orderBy('name')->get();
+        $projects = Project::orderBy('project_name')->get();
 
         return view('admin.behavior-index.index-trend', compact(
             'klasifikasiInsiden',
@@ -171,9 +177,11 @@ class BehaviorIndexController extends Controller
             'tempatKejadian',
             'totalTempat',
             'locations',
+            'projects',
             'startDate',
             'endDate',
-            'locationId'
+            'locationId',
+            'projectId'
         ));
     }
 
@@ -186,26 +194,35 @@ class BehaviorIndexController extends Controller
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
         $activeTab = $request->get('tab', 'index-behavior');
+        $projectId = $request->get('project_id');
+        $viewType = $request->get('view_type', 'harian'); // 'harian' or 'mingguan'
 
-        // Get all Index Behavior data grouped by observer, project, location
-        $indexBehaviorList = $this->getAllIndexBehaviorData($startDate, $endDate);
+        if ($viewType === 'mingguan') {
+            $indexBehaviorList = $this->getAllIndexBehaviorDataWeekly($startDate, $endDate, $projectId);
+            $trendData = $this->getAllTrendDataWeekly($startDate, $endDate, $projectId);
+        } else {
+            $indexBehaviorList = $this->getAllIndexBehaviorData($startDate, $endDate, $projectId);
+            $trendData = $this->getAllTrendData($startDate, $endDate, $projectId);
+        }
 
-        // Trend Data for Tab 2 & 3
-        $trendData = $this->getAllTrendData($startDate, $endDate);
+        $projects = Project::orderBy('project_name')->get();
 
         return view('admin.behavior-index.index-behavior', compact(
             'startDate',
             'endDate',
             'activeTab',
             'indexBehaviorList',
-            'trendData'
+            'trendData',
+            'projects',
+            'projectId',
+            'viewType'
         ));
     }
 
     /**
      * Get all Index Behavior data grouped by date
      */
-    private function getAllIndexBehaviorData($startDate, $endDate)
+    private function getAllIndexBehaviorData($startDate, $endDate, $projectId = null)
     {
         $result = [];
 
@@ -217,9 +234,13 @@ class BehaviorIndexController extends Controller
             $dayStr = $date->format('Y-m-d');
 
             // Get all observations for this date
-            $observations = Observation::with(['details'])
-                ->whereDate('created_at', $dayStr)
-                ->get();
+            $query = Observation::with([
+                'details' => fn($q) => $projectId ? $q->where('project_id', $projectId) : $q
+            ])->whereDate('created_at', $dayStr);
+            if ($projectId) {
+                $query->whereHas('details', fn($q) => $q->where('project_id', $projectId));
+            }
+            $observations = $query->get();
 
             $dayAtRisk = 0;
             $dayMinutes = 0;
@@ -233,7 +254,7 @@ class BehaviorIndexController extends Controller
                     $duration = ($endTime - $startTime) / 60;
                 }
 
-                // Count at_risk from details
+                // details sudah terfilter by project di eager load
                 $dayAtRisk += $observation->details->where('observation_type', 'at_risk_behavior')->count();
                 $dayMinutes += $duration;
             }
@@ -272,7 +293,7 @@ class BehaviorIndexController extends Controller
     /**
      * Get all trend data for Tab 2 & 3
      */
-    private function getAllTrendData($startDate, $endDate)
+    private function getAllTrendData($startDate, $endDate, $projectId = null)
     {
         $trendData = [
             'labels' => [],
@@ -289,9 +310,13 @@ class BehaviorIndexController extends Controller
             $dayStr = $date->format('Y-m-d');
 
             // Get all observations for this day
-            $observations = Observation::with(['details'])
-                ->whereDate('created_at', $dayStr)
-                ->get();
+            $query = Observation::with([
+                'details' => fn($q) => $projectId ? $q->where('project_id', $projectId) : $q
+            ])->whereDate('created_at', $dayStr);
+            if ($projectId) {
+                $query->whereHas('details', fn($q) => $q->where('project_id', $projectId));
+            }
+            $observations = $query->get();
 
             $dayAtRisk = 0;
             $dayMinutes = 0;
@@ -304,6 +329,7 @@ class BehaviorIndexController extends Controller
                     $duration = ($endTime - $startTime) / 60;
                 }
 
+                // details sudah terfilter by project di eager load
                 $dayAtRisk += $observation->details->where('observation_type', 'at_risk_behavior')->count();
                 $dayMinutes += $duration;
             }
@@ -330,6 +356,156 @@ class BehaviorIndexController extends Controller
                 'color' => $category['color'],
                 'bg_color' => $category['bg_color'],
             ];
+        }
+
+        return $trendData;
+    }
+
+    /**
+     * Get Index Behavior data grouped by week (Minggu 1, 2, 3, ...)
+     */
+    private function getAllIndexBehaviorDataWeekly($startDate, $endDate, $projectId = null)
+    {
+        $result = [];
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        $weekNumber = 1;
+        $weekStart = $start->copy();
+
+        while ($weekStart->lte($end)) {
+            $weekEnd = $weekStart->copy()->addDays(6);
+            if ($weekEnd->gt($end)) {
+                $weekEnd = $end->copy();
+            }
+
+            $query = Observation::with([
+                'details' => fn($q) => $projectId ? $q->where('project_id', $projectId) : $q
+            ])->whereDate('created_at', '>=', $weekStart->format('Y-m-d'))
+              ->whereDate('created_at', '<=', $weekEnd->format('Y-m-d'));
+
+            if ($projectId) {
+                $query->whereHas('details', fn($q) => $q->where('project_id', $projectId));
+            }
+
+            $observations = $query->get();
+
+            $weekAtRisk = 0;
+            $weekMinutes = 0;
+
+            foreach ($observations as $observation) {
+                $duration = 0;
+                if ($observation->waktu_mulai && $observation->waktu_selesai) {
+                    $startTime = strtotime($observation->waktu_mulai);
+                    $endTime = strtotime($observation->waktu_selesai);
+                    $duration = ($endTime - $startTime) / 60;
+                }
+                $weekAtRisk += $observation->details->where('observation_type', 'at_risk_behavior')->count();
+                $weekMinutes += $duration;
+            }
+
+            $totalWaktuJam = $weekMinutes > 0 ? round(60 / $weekMinutes, 3) : 0;
+            $atRiskPerJam = round($totalWaktuJam * $weekAtRisk, 3);
+            $atRiskPerHari = round($atRiskPerJam * 8, 3);
+            $atRiskPerTahun = round($atRiskPerHari * 350, 3);
+
+            $category = $this->getIndexBehaviorCategory($atRiskPerTahun);
+
+            $result[] = [
+                'date'             => $weekStart->format('Y-m-d'),
+                'date_formatted'   => 'Minggu ' . $weekNumber . ' (' . $weekStart->format('d M') . ' - ' . $weekEnd->format('d M Y') . ')',
+                'day_name'         => 'Minggu ' . $weekNumber,
+                'at_risk'          => $weekAtRisk,
+                'total_minutes'    => $weekMinutes,
+                'observation_count'=> $observations->count(),
+                'index_behavior'   => $atRiskPerTahun,
+                'tingkat_risiko'   => $category['tingkat'],
+                'zone'             => $category['zone'],
+                'color'            => $category['color'],
+                'bg_color'         => $category['bg_color'],
+            ];
+
+            $weekNumber++;
+            $weekStart->addDays(7);
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get trend data grouped by week (Minggu 1, 2, 3, ...)
+     */
+    private function getAllTrendDataWeekly($startDate, $endDate, $projectId = null)
+    {
+        $trendData = [
+            'labels'        => [],
+            'index_values'  => [],
+            'at_risk_counts'=> [],
+            'colors'        => [],
+            'daily_details' => [],
+        ];
+
+        $start = Carbon::parse($startDate);
+        $end = Carbon::parse($endDate);
+
+        $weekNumber = 1;
+        $weekStart = $start->copy();
+
+        while ($weekStart->lte($end)) {
+            $weekEnd = $weekStart->copy()->addDays(6);
+            if ($weekEnd->gt($end)) {
+                $weekEnd = $end->copy();
+            }
+
+            $query = Observation::with([
+                'details' => fn($q) => $projectId ? $q->where('project_id', $projectId) : $q
+            ])->whereDate('created_at', '>=', $weekStart->format('Y-m-d'))
+              ->whereDate('created_at', '<=', $weekEnd->format('Y-m-d'));
+
+            if ($projectId) {
+                $query->whereHas('details', fn($q) => $q->where('project_id', $projectId));
+            }
+
+            $observations = $query->get();
+
+            $weekAtRisk = 0;
+            $weekMinutes = 0;
+
+            foreach ($observations as $observation) {
+                $duration = 0;
+                if ($observation->waktu_mulai && $observation->waktu_selesai) {
+                    $startTime = strtotime($observation->waktu_mulai);
+                    $endTime = strtotime($observation->waktu_selesai);
+                    $duration = ($endTime - $startTime) / 60;
+                }
+                $weekAtRisk += $observation->details->where('observation_type', 'at_risk_behavior')->count();
+                $weekMinutes += $duration;
+            }
+
+            $totalWaktuJam = $weekMinutes > 0 ? round(60 / $weekMinutes, 3) : 0;
+            $atRiskPerJam = round($totalWaktuJam * $weekAtRisk, 3);
+            $atRiskPerHari = round($atRiskPerJam * 8, 3);
+            $atRiskPerTahun = round($atRiskPerHari * 350, 3);
+
+            $category = $this->getIndexBehaviorCategory($atRiskPerTahun);
+
+            $trendData['labels'][]         = 'Minggu ' . $weekNumber;
+            $trendData['index_values'][]   = $atRiskPerTahun;
+            $trendData['at_risk_counts'][] = $weekAtRisk;
+            $trendData['colors'][]         = $category['color'];
+            $trendData['daily_details'][]  = [
+                'date'          => $weekStart->format('Y-m-d'),
+                'date_formatted'=> 'Minggu ' . $weekNumber . ' (' . $weekStart->format('d M') . ' - ' . $weekEnd->format('d M Y') . ')',
+                'index_behavior'=> $atRiskPerTahun,
+                'at_risk_count' => $weekAtRisk,
+                'tingkat_risiko'=> $category['tingkat'],
+                'zone'          => $category['zone'],
+                'color'         => $category['color'],
+                'bg_color'      => $category['bg_color'],
+            ];
+
+            $weekNumber++;
+            $weekStart->addDays(7);
         }
 
         return $trendData;

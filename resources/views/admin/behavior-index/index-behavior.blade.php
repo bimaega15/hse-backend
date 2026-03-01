@@ -181,31 +181,63 @@
             <!-- Filter Section -->
             <div class="filter-card">
                 <form id="filterForm" method="GET" action="{{ route('admin.behavior-index.table') }}">
-                    <div class="row align-items-end">
-                        <div class="col-md-3">
+                    <div class="row align-items-end g-2">
+                        <div class="col-md-2">
                             <label class="form-label">Periode Awal</label>
                             <input type="date" class="form-control" name="start_date" id="startDate"
                                 value="{{ $startDate }}">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Periode Akhir</label>
                             <input type="date" class="form-control" name="end_date" id="endDate"
                                 value="{{ $endDate }}">
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i data-lucide="filter" class="me-1"></i> Terapkan Filter
-                            </button>
+                            <label class="form-label">Nama Project</label>
+                            <select class="form-select" name="project_id" id="projectFilter">
+                                <option value="">Semua Project</option>
+                                @foreach ($projects as $project)
+                                    <option value="{{ $project->id }}"
+                                        {{ $projectId == $project->id ? 'selected' : '' }}>
+                                        {{ $project->project_name }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
-                        <div class="col-md-3">
-                            <a href="{{ route('admin.behavior-index.table') }}" class="btn btn-outline-secondary w-100">
-                                <i data-lucide="refresh-cw" class="me-1"></i> Reset
+                        <div class="col-md-2">
+                            <label class="form-label">Tampilan</label>
+                            <div class="btn-group w-100" role="group">
+                                <button type="button"
+                                    class="btn {{ $viewType == 'harian' ? 'btn-primary' : 'btn-outline-primary' }}"
+                                    onclick="setViewType('harian')">
+                                    <i data-lucide="calendar" class="me-1"></i> Harian
+                                </button>
+                                <button type="button"
+                                    class="btn {{ $viewType == 'mingguan' ? 'btn-primary' : 'btn-outline-primary' }}"
+                                    onclick="setViewType('mingguan')">
+                                    <i data-lucide="calendar-range" class="me-1"></i> Mingguan
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i data-lucide="filter" class="me-1"></i> Filter
+                            </button>
+                            <a href="{{ route('admin.behavior-index.table') }}" class="btn btn-outline-secondary">
+                                <i data-lucide="refresh-cw"></i>
                             </a>
+                            <button type="button" id="btnDownload" class="btn btn-success">
+                                <i data-lucide="download" class="me-1"></i> Download
+                            </button>
                         </div>
                     </div>
                     <input type="hidden" name="tab" id="activeTabInput" value="{{ $activeTab }}">
+                    <input type="hidden" name="view_type" id="viewTypeInput" value="{{ $viewType }}">
                 </form>
             </div>
+
+            <!-- Capturable content for download -->
+            <div id="chartContent">
 
             <!-- Legend -->
             <div class="mb-4">
@@ -274,7 +306,7 @@
                                     <table class="table table-bordered index-table mb-0" id="indexBehaviorTable">
                                         <thead>
                                             <tr>
-                                                <th>TANGGAL</th>
+                                                <th>{{ $viewType === 'mingguan' ? 'MINGGU' : 'TANGGAL' }}</th>
                                                 <th>INDEX BEHAVIOR</th>
                                                 <th>TINGKAT RISIKO</th>
                                                 <th>ZONE</th>
@@ -368,17 +400,64 @@
                     </div>
                 </div>
             </div>
+
+            </div><!-- end #chartContent -->
         </div>
     </div>
 @endsection
 
 @push('jsSection')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize Lucide icons
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
+
+            // Harian / Mingguan toggle
+            window.setViewType = function(type) {
+                document.getElementById('viewTypeInput').value = type;
+                document.getElementById('filterForm').submit();
+            };
+
+            // Initialize Select2 for project filter
+            $('#projectFilter').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Semua Project',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Download button: capture active tab content as PNG
+            document.getElementById('btnDownload').addEventListener('click', function() {
+                const btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+
+                html2canvas(document.getElementById('chartContent'), {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: -window.scrollY
+                }).then(function(canvas) {
+                    const link = document.createElement('a');
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    link.download = 'tabel-index-behavior-' + dateStr + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="download" class="me-1"></i> Download';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }).catch(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="download" class="me-1"></i> Download';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            });
 
             // Track active tab
             const tabs = document.querySelectorAll('#behaviorTabs button[data-bs-toggle="tab"]');

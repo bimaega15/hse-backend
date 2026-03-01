@@ -111,19 +111,19 @@
 
             <!-- Filter Section -->
             <div class="filter-card">
-                <form method="GET" action="{{ route('admin.behavior-index.trend') }}">
-                    <div class="row align-items-end">
-                        <div class="col-md-3">
+                <form method="GET" action="{{ route('admin.behavior-index.trend') }}" id="filterForm">
+                    <div class="row align-items-end g-2">
+                        <div class="col-md-2">
                             <label class="form-label">Periode Awal</label>
                             <input type="date" class="form-control" name="start_date" value="{{ $startDate }}">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Periode Akhir</label>
                             <input type="date" class="form-control" name="end_date" value="{{ $endDate }}">
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-2">
                             <label class="form-label">Lokasi</label>
-                            <select class="form-select" name="location_id">
+                            <select class="form-select" name="location_id" id="locationFilter">
                                 <option value="">Semua Lokasi</option>
                                 @foreach ($locations as $location)
                                     <option value="{{ $location->id }}"
@@ -134,13 +134,31 @@
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <button type="submit" class="btn btn-primary w-100">
+                            <label class="form-label">Nama Project</label>
+                            <select class="form-select select2-project" name="project_id" id="projectFilter">
+                                <option value="">Semua Project</option>
+                                @foreach ($projects as $project)
+                                    <option value="{{ $project->id }}"
+                                        {{ $projectId == $project->id ? 'selected' : '' }}>
+                                        {{ $project->project_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-3 d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
                                 <i data-lucide="filter" class="me-1"></i> Terapkan Filter
+                            </button>
+                            <button type="button" id="btnDownload" class="btn btn-success flex-fill">
+                                <i data-lucide="download" class="me-1"></i> Download
                             </button>
                         </div>
                     </div>
                 </form>
             </div>
+
+            <!-- Chart Content (captured on download) -->
+            <div id="chartContent">
 
             <!-- Section 1: Klasifikasi Observasi -->
             <div class="row">
@@ -346,11 +364,14 @@
                 </div>
             </div>
 
+            </div><!-- end #chartContent -->
+
         </div>
     </div>
 @endsection
 
 @push('jsSection')
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize Lucide icons
@@ -615,6 +636,54 @@
             };
             var chartTempat = new ApexCharts(document.querySelector("#chartTempat"), optionsTempat);
             chartTempat.render();
+
+            // Initialize Select2 for location filter
+            $('#locationFilter').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Semua Lokasi',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Initialize Select2 for project filter
+            $('#projectFilter').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'Semua Project',
+                allowClear: true,
+                width: '100%'
+            });
+
+            // Download button: capture all charts as a single PNG image
+            document.getElementById('btnDownload').addEventListener('click', function() {
+                const btn = this;
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Memproses...';
+
+                const target = document.getElementById('chartContent');
+
+                html2canvas(target, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#f8f9fa',
+                    logging: false,
+                    scrollX: 0,
+                    scrollY: -window.scrollY
+                }).then(function(canvas) {
+                    const link = document.createElement('a');
+                    const dateStr = new Date().toISOString().slice(0, 10);
+                    link.download = 'grafik-observasi-' + dateStr + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="download" class="me-1"></i> Download';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }).catch(function() {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i data-lucide="download" class="me-1"></i> Download';
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                });
+            });
         });
     </script>
 @endpush
