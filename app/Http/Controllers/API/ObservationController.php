@@ -717,6 +717,11 @@ class ObservationController extends Controller
             ->orderBy('month', 'asc')
             ->get()
             ->map(function ($item) {
+                $item->year         = (int) $item->year;
+                $item->month        = (int) $item->month;
+                $item->total        = (int) $item->total;
+                $item->reviewed     = (int) $item->reviewed;
+                $item->total_details = (int) $item->total_details;
                 $item->month_name  = date('M Y', mktime(0, 0, 0, $item->month, 1, $item->year));
                 $item->review_rate = $item->total > 0
                     ? round(($item->reviewed / $item->total) * 100, 1)
@@ -738,7 +743,12 @@ class ObservationController extends Controller
                          ELSE 1 END) as avg_severity_score
             ')
             ->groupBy('observation_details.observation_type')
-            ->get();
+            ->get()
+            ->map(function ($item) {
+                $item->count             = (int) $item->count;
+                $item->avg_severity_score = (float) $item->avg_severity_score;
+                return $item;
+            });
     }
 
     /** Severity analysis grouped by severity level, with type breakdown. */
@@ -752,6 +762,10 @@ class ObservationController extends Controller
             ')
             ->groupBy('observation_details.severity', 'observation_details.observation_type')
             ->get()
+            ->map(function ($item) {
+                $item->count = (int) $item->count;
+                return $item;
+            })
             ->groupBy('severity');
     }
 
@@ -791,9 +805,9 @@ class ObservationController extends Controller
                 'email'                         => $user->email,
                 'role'                          => $user->role,
                 'department'                    => $user->department ?? null,
-                'observations_count'            => $user->observations_count,
-                'reviewed_observations_count'   => $user->reviewed_observations_count,
-                'this_month_observations_count' => $user->this_month_observations_count,
+                'observations_count'            => (int) $user->observations_count,
+                'reviewed_observations_count'   => (int) $user->reviewed_observations_count,
+                'this_month_observations_count' => (int) $user->this_month_observations_count,
                 'review_rate'                   => $user->observations_count > 0
                     ? round(($user->reviewed_observations_count / $user->observations_count) * 100, 1)
                     : 0,
