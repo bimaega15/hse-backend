@@ -264,12 +264,10 @@ class ObservationController extends Controller
                             </button>";
                     }
 
-                    if ($observation->status === 'draft') {
-                        $buttons .= "
+                    $buttons .= "
                             <button type='button' class='btn btn-outline-danger' onclick='deleteObservation({$observation->id})' title='Delete Observation'>
                                 <i class='ri-delete-bin-line'></i>
                             </button>";
-                    }
 
                     $buttons .= "</div>";
                     return $buttons;
@@ -673,13 +671,6 @@ class ObservationController extends Controller
     {
         try {
             $observation = Observation::findOrFail($id);
-
-            if (!$observation->canBeEdited()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Only draft observations can be deleted'
-                ], 400);
-            }
 
             $observation->delete();
 
