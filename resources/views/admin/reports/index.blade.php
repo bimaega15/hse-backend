@@ -1025,8 +1025,8 @@
             // Clear Select2 dropdowns
             $('#statusFilter, #severityFilter, #projectStatusFilter, #projectFilter, #categoryFilter, #contributingFilter, #locationFilter').val('').trigger('change');
 
-            // Reset project status to default 'open'
-            $('#projectStatusFilter').val('open').trigger('change');
+            // Reset project status to show all
+            $('#projectStatusFilter').val('').trigger('change');
 
             // Clear date inputs
             $('#startDateFilter, #endDateFilter').val('');

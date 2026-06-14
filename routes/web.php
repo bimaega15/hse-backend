@@ -22,6 +22,7 @@ Route::get('/login', function () {
     return redirect()->route('admin.login');
 })->name('login');
 
+
 // Auth Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     // Guest routes (tidak perlu login)

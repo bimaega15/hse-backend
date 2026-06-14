@@ -545,21 +545,16 @@ class ReportController extends Controller
                 $query->whereDate('created_at', '<=', $request->end_date);
             }
 
-            // NEW: Additional filter options
-            // Default to 'open' projects if not explicitly set
-            // If project_status is explicitly set to empty string, show all projects
-            $projectStatus = $request->has('project_status') ? $request->project_status : 'open';
+            // Filter project_status hanya aktif kalau eksplisit dikirim
+            $projectStatus = $request->filled('project_status') ? $request->project_status : '';
 
             if ($projectStatus && in_array($projectStatus, ['open', 'closed'])) {
                 if ($projectStatus === 'open') {
-                    // For 'open': show reports with status 'waiting' or 'in-progress' (not completed)
                     $query->whereIn('status', ['waiting', 'in-progress']);
                 } else {
-                    // For 'closed': show reports with status 'done' (completed, typically with 100% CAR progress)
                     $query->where('status', 'done');
                 }
             }
-            // If $projectStatus is empty (All Projects), don't apply any filter
 
             if ($request->filled('project_id') && is_numeric($request->project_id)) {
                 $query->where('project_id', $request->project_id);
@@ -1057,10 +1052,8 @@ class ReportController extends Controller
                 $query->whereDate('created_at', '<=', $request->end_date);
             }
 
-            // NEW: Additional filter options for export
-            // Default to 'open' projects if not explicitly set
-            // If project_status is explicitly set to empty string, show all projects
-            $projectStatus = $request->has('project_status') ? $request->project_status : 'open';
+            // Filter project_status hanya aktif kalau eksplisit dikirim dari form export
+            $projectStatus = $request->filled('project_status') ? $request->project_status : '';
 
             if ($projectStatus && in_array($projectStatus, ['open', 'closed'])) {
                 if ($projectStatus === 'open') {

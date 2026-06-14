@@ -212,8 +212,8 @@
                         <div class="col-md-3">
                             <label for="projectStatusFilter" class="form-label fw-medium">Project Status</label>
                             <select class="form-select filter-select2" id="projectStatusFilter" name="project_status">
-                                <option value="">All Projects</option>
-                                <option value="open" selected>Open</option>
+                                <option value="" selected>All Projects</option>
+                                <option value="open">Open</option>
                                 <option value="closed">Closed</option>
                             </select>
                         </div>

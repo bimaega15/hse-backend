@@ -5,6 +5,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\URL;
 use App\Services\ReportService;
 use App\Services\NotificationService;
 
@@ -30,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Force root URL to match APP_URL so asset() doesn't inherit /public from SCRIPT_NAME
+        URL::forceRootUrl(config('app.url'));
+
         // Set default string length for older MySQL versions
         Schema::defaultStringLength(191);
 
