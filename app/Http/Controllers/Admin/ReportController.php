@@ -22,7 +22,6 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
-use PhpOffice\PhpSpreadsheet\Shared\Drawing as SharedDrawing;
 
 class ReportController extends Controller
 {
@@ -1125,18 +1124,13 @@ class ReportController extends Controller
 
         // Kotak foto: setiap gambar dipaskan ke dalam batas ini (proporsi terjaga),
         // jadi tidak meluber ke samping (kolom) maupun ke bawah (baris).
-        $photoMaxWidthPx  = 120;
+        $photoMaxWidthPx  = 110;
         $photoMaxHeightPx = 80;
-        $photoRowHeightPx = 90; // tinggi baris > tinggi foto maks (margin atas/bawah)
+        $photoRowHeightPx = 95; // tinggi baris > tinggi foto maks (margin atas/bawah)
 
-        // Lebar kolom C = lebar foto maks + padding besar. Margin besar dipakai karena
-        // konversi pixel->lebar-kolom tidak persis sama dengan render Excel.
-        $photoColWidthPx = $photoMaxWidthPx + 55; // = 175px
-        $colWidthUnits = SharedDrawing::pixelsToCellDimension(
-            $photoColWidthPx,
-            $spreadsheet->getDefaultStyle()->getFont()
-        );
-        $sheet->getColumnDimension('C')->setWidth($colWidthUnits);
+        // Lebar kolom C dibuat sangat lega (margin besar) karena konversi
+        // pixel->lebar-kolom PhpSpreadsheet sering meleset dari render Excel asli.
+        $sheet->getColumnDimension('C')->setWidth(32); // ~230px di Excel
 
         $currentRow = 1;
 
