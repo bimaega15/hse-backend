@@ -1124,13 +1124,10 @@ class ReportController extends Controller
 
         // Kotak foto: setiap gambar dipaskan ke dalam batas ini (proporsi terjaga),
         // jadi tidak meluber ke samping (kolom) maupun ke bawah (baris).
+        // Lebar kolom C diatur di akhir method (setelah loop auto-size, agar tidak ditimpa).
         $photoMaxWidthPx  = 110;
         $photoMaxHeightPx = 80;
         $photoRowHeightPx = 95; // tinggi baris > tinggi foto maks (margin atas/bawah)
-
-        // Lebar kolom C dibuat sangat lega (margin besar) karena konversi
-        // pixel->lebar-kolom PhpSpreadsheet sering meleset dari render Excel asli.
-        $sheet->getColumnDimension('C')->setWidth(32); // ~230px di Excel
 
         $currentRow = 1;
 
@@ -1376,10 +1373,18 @@ class ReportController extends Controller
             }
         }
 
-        // Auto-size columns (including corrective action columns L-R)
+        // Auto-size columns (including corrective action columns L-R),
+        // KECUALI kolom C (Photo) yang lebarnya sudah diatur manual untuk gambar.
         foreach (range('A', 'R') as $col) {
+            if ($col === 'C') {
+                continue;
+            }
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
+
+        // Set lebar kolom C SETELAH auto-size agar tidak ditimpa (auto-size mengabaikan gambar)
+        $sheet->getColumnDimension('C')->setAutoSize(false);
+        $sheet->getColumnDimension('C')->setWidth(20);
 
         return $spreadsheet;
     }
