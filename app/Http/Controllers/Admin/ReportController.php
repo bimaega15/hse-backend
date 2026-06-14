@@ -22,6 +22,7 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
+use PhpOffice\PhpSpreadsheet\Shared\Drawing as SharedDrawing;
 
 class ReportController extends Controller
 {
@@ -1122,8 +1123,18 @@ class ReportController extends Controller
         // Set worksheet title
         $sheet->setTitle('Reports');
 
-        // Lebar kolom C untuk foto (20 unit ≈ 140px)
-        $sheet->getColumnDimension('C')->setWidth(20);
+        // Kotak foto: setiap gambar dipaskan ke dalam batas ini (proporsi terjaga),
+        // jadi tidak meluber ke samping (kolom) maupun ke bawah (baris).
+        $photoMaxWidthPx  = 120;
+        $photoMaxHeightPx = 80;
+        $photoRowHeightPx = 90; // tinggi baris > tinggi foto maks (margin atas/bawah)
+
+        // Lebar kolom C = lebar foto maks + padding, dikonversi ke satuan kolom Excel.
+        $colWidthUnits = SharedDrawing::pixelsToCellDimension(
+            $photoMaxWidthPx + 16,
+            $spreadsheet->getDefaultStyle()->getFont()
+        );
+        $sheet->getColumnDimension('C')->setWidth($colWidthUnits);
 
         $currentRow = 1;
 
@@ -1221,15 +1232,28 @@ class ReportController extends Controller
                     foreach ($candidates as $absPath) {
                         if (file_exists($absPath) && is_readable($absPath)) {
                             try {
-                                $sheet->getRowDimension($currentRow)->setRowHeight(90);
+                                // Hitung ukuran agar pas dalam kotak (proporsi terjaga)
+                                $size = @getimagesize($absPath);
+                                $origW = $size[0] ?? $photoMaxWidthPx;
+                                $origH = $size[1] ?? $photoMaxHeightPx;
+                                $scale = min(
+                                    $photoMaxWidthPx / max($origW, 1),
+                                    $photoMaxHeightPx / max($origH, 1)
+                                );
+                                $scale = min($scale, 1); // jangan perbesar foto kecil
+                                $drawW = (int) round($origW * $scale);
+                                $drawH = (int) round($origH * $scale);
+
+                                $sheet->getRowDimension($currentRow)->setRowHeight($photoRowHeightPx, 'px');
 
                                 $drawing = new Drawing();
                                 $drawing->setName('Photo');
                                 $drawing->setPath($absPath);
-                                $drawing->setResizeProportional(true); // proporsi terjaga
-                                $drawing->setWidth(120);               // batasi lebar agar tidak meluber
-                                $drawing->setOffsetX(3);
-                                $drawing->setOffsetY(3);
+                                $drawing->setResizeProportional(false);
+                                $drawing->setWidth($drawW);
+                                $drawing->setHeight($drawH);
+                                $drawing->setOffsetX(5);
+                                $drawing->setOffsetY(5);
                                 $drawing->setCoordinates('C' . $currentRow);
                                 $drawing->setWorksheet($sheet);
 
