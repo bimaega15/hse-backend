@@ -1129,9 +1129,11 @@ class ReportController extends Controller
         $photoMaxHeightPx = 80;
         $photoRowHeightPx = 90; // tinggi baris > tinggi foto maks (margin atas/bawah)
 
-        // Lebar kolom C = lebar foto maks + padding, dikonversi ke satuan kolom Excel.
+        // Lebar kolom C = lebar foto maks + padding besar. Margin besar dipakai karena
+        // konversi pixel->lebar-kolom tidak persis sama dengan render Excel.
+        $photoColWidthPx = $photoMaxWidthPx + 55; // = 175px
         $colWidthUnits = SharedDrawing::pixelsToCellDimension(
-            $photoMaxWidthPx + 16,
+            $photoColWidthPx,
             $spreadsheet->getDefaultStyle()->getFont()
         );
         $sheet->getColumnDimension('C')->setWidth($colWidthUnits);
