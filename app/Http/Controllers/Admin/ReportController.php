@@ -21,6 +21,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Worksheet\Drawing;
 
 class ReportController extends Controller
 {
@@ -1022,6 +1023,9 @@ class ReportController extends Controller
     public function exportExcel(Request $request)
     {
         try {
+            ini_set('memory_limit', '512M');
+            set_time_limit(300);
+
             $query = Report::with([
                 'employee:id,name,email',
                 'hseStaff:id,name,email',
@@ -1118,6 +1122,9 @@ class ReportController extends Controller
         // Set worksheet title
         $sheet->setTitle('Reports');
 
+        // Lebar kolom C untuk foto
+        $sheet->getColumnDimension('C')->setWidth(18);
+
         $currentRow = 1;
 
         // Title row
@@ -1180,10 +1187,13 @@ class ReportController extends Controller
         // Add data rows
         $no = 1;
         foreach ($reports as $report) {
+            $reportImages = array_values(array_filter($report->images ?? []));
+            $hasPhoto     = !empty($reportImages);
+
             $rowData = [
                 $no++,
                 $report->created_at ? $report->created_at->format('d/m/Y') : 'N/A',
-                count($report->images ?? []) > 0 ? 'Y' : 'N',
+                $hasPhoto ? '' : 'N',   // kosong jika ada foto (Drawing yang mengisi)
                 $this->cleanTextForExcel($report->description),
                 strtoupper($report->severity_rating ?? 'N/A'),
                 $this->cleanTextForExcel(optional($report->categoryMaster)->name),
@@ -1199,9 +1209,58 @@ class ReportController extends Controller
                 $col++;
             }
 
+            // Embed foto pertama ke kolom C
+            if ($hasPhoto) {
+                $embedded = false;
+                foreach ($reportImages as $imgRelPath) {
+                    // Coba kedua kemungkinan lokasi file
+                    $candidates = [
+                        public_path('storage/' . $imgRelPath),
+                        storage_path('app/public/' . $imgRelPath),
+                    ];
+                    foreach ($candidates as $absPath) {
+                        if (file_exists($absPath) && is_readable($absPath)) {
+                            try {
+                                $sheet->getRowDimension($currentRow)->setRowHeight(80);
+
+                                $drawing = new Drawing();
+                                $drawing->setName('Photo');
+                                $drawing->setPath($absPath);
+                                $drawing->setHeight(75);
+                                $drawing->setOffsetX(3);
+                                $drawing->setOffsetY(3);
+                                $drawing->setCoordinates('C' . $currentRow);
+                                $drawing->setWorksheet($sheet);
+
+                                // Jika lebih dari 1 foto, tambahkan keterangan jumlah
+                                if (count($reportImages) > 1) {
+                                    $sheet->setCellValue('C' . $currentRow, count($reportImages) . ' foto');
+                                    $sheet->getStyle('C' . $currentRow)->applyFromArray([
+                                        'font' => ['size' => 7, 'color' => ['rgb' => '666666']],
+                                        'alignment' => ['vertical' => Alignment::VERTICAL_BOTTOM],
+                                    ]);
+                                }
+
+                                $embedded = true;
+                            } catch (\Exception $e) {
+                                Log::warning('Gagal embed foto ke Excel: ' . $absPath . ' — ' . $e->getMessage());
+                            }
+                            break 2; // pakai file pertama yang ditemukan
+                        }
+                    }
+                }
+                if (!$embedded) {
+                    $sheet->setCellValue('C' . $currentRow, 'Y');
+                }
+            }
+
             // Style data row
             $sheet->getStyle('A' . $currentRow . ':J' . $currentRow)->applyFromArray([
-                'alignment' => ['horizontal' => Alignment::HORIZONTAL_LEFT],
+                'alignment' => [
+                    'horizontal' => Alignment::HORIZONTAL_LEFT,
+                    'vertical'   => Alignment::VERTICAL_CENTER,
+                    'wrapText'   => true,
+                ],
                 'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
             ]);
 
