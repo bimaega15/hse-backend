@@ -1122,8 +1122,8 @@ class ReportController extends Controller
         // Set worksheet title
         $sheet->setTitle('Reports');
 
-        // Lebar kolom C untuk foto
-        $sheet->getColumnDimension('C')->setWidth(18);
+        // Lebar kolom C untuk foto (20 unit ≈ 140px)
+        $sheet->getColumnDimension('C')->setWidth(20);
 
         $currentRow = 1;
 
@@ -1221,12 +1221,13 @@ class ReportController extends Controller
                     foreach ($candidates as $absPath) {
                         if (file_exists($absPath) && is_readable($absPath)) {
                             try {
-                                $sheet->getRowDimension($currentRow)->setRowHeight(80);
+                                $sheet->getRowDimension($currentRow)->setRowHeight(90);
 
                                 $drawing = new Drawing();
                                 $drawing->setName('Photo');
                                 $drawing->setPath($absPath);
-                                $drawing->setHeight(75);
+                                $drawing->setResizeProportional(true); // proporsi terjaga
+                                $drawing->setWidth(120);               // batasi lebar agar tidak meluber
                                 $drawing->setOffsetX(3);
                                 $drawing->setOffsetY(3);
                                 $drawing->setCoordinates('C' . $currentRow);
