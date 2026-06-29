@@ -6,6 +6,34 @@
     <style>
         .kpi-detail-table td { vertical-align: middle; }
         .kpi-detail-table input, .kpi-detail-table select { min-width: 90px; }
+
+        /* Pastikan modal body bisa di-scroll vertikal (override template) */
+        #hseKpiModal .modal-dialog,
+        #hseKpiViewModal .modal-dialog {
+            max-height: calc(100vh - 3.5rem);
+            margin-top: 1.75rem;
+            margin-bottom: 1.75rem;
+        }
+        #hseKpiModal .modal-content,
+        #hseKpiViewModal .modal-content {
+            max-height: calc(100vh - 3.5rem);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        #hseKpiModal .modal-header,
+        #hseKpiModal .modal-footer,
+        #hseKpiViewModal .modal-header,
+        #hseKpiViewModal .modal-footer {
+            flex: 0 0 auto;
+        }
+        #hseKpiModal .modal-body,
+        #hseKpiViewModal .modal-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 @endpush
 

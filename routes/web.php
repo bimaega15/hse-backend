@@ -165,6 +165,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::prefix('admin/daily-activities')->name('admin.daily-activities.')->group(function () {
         Route::get('/', [DailyActivityController::class, 'index'])->name('index');
         Route::get('/data', [DailyActivityController::class, 'getData'])->name('data');
+        Route::get('/export/excel', [DailyActivityController::class, 'exportExcel'])->name('export.excel');
         Route::get('/statistics/data', [DailyActivityController::class, 'getStatistics'])->name('statistics.data');
         Route::post('/', [DailyActivityController::class, 'store'])->name('store');
         Route::get('/{id}', [DailyActivityController::class, 'show'])->whereNumber('id')->name('show');

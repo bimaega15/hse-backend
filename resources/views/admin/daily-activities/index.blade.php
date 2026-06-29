@@ -171,9 +171,14 @@
             <div class="card">
                 <div class="card-header border-bottom border-dashed d-flex align-items-center justify-content-between">
                     <h4 class="header-title mb-0">Daftar Daily Activity</h4>
-                    <button type="button" class="btn btn-primary" onclick="createDailyActivity()">
-                        <i class="ri-add-line me-1"></i>Assign Daily Activity
-                    </button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-soft-success" onclick="exportDailyActivityExcel()">
+                            <i class="ri-file-excel-2-line me-1"></i>Export Excel
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="createDailyActivity()">
+                            <i class="ri-add-line me-1"></i>Assign Daily Activity
+                        </button>
+                    </div>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -429,6 +434,23 @@
                     $('#statPersonel').text(res.data.personel);
                 }
             });
+        }
+
+        function exportDailyActivityExcel() {
+            const map = {
+                date_from: $('#filterDateFrom').val(),
+                date_to: $('#filterDateTo').val(),
+                month: $('#filterMonth').val(),
+                user_id: $('#filterUser').val(),
+                project_id: $('#filterProject').val(),
+                location_id: $('#filterLocation').val()
+            };
+            const params = new URLSearchParams();
+            Object.keys(map).forEach(k => {
+                if (map[k]) params.append(k, map[k]);
+            });
+            const qs = params.toString();
+            window.location.href = "{{ route('admin.daily-activities.export.excel') }}" + (qs ? ('?' + qs) : '');
         }
 
         function createDailyActivity() {
