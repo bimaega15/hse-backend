@@ -8,30 +8,39 @@
         .kpi-detail-table input, .kpi-detail-table select { min-width: 90px; }
 
         /* Pastikan modal body bisa di-scroll vertikal (override template) */
+        #hseKpiModal,
+        #hseKpiViewModal {
+            overflow-y: hidden !important;
+        }
         #hseKpiModal .modal-dialog,
         #hseKpiViewModal .modal-dialog {
-            max-height: calc(100vh - 3.5rem);
-            margin-top: 1.75rem;
-            margin-bottom: 1.75rem;
+            height: calc(100vh - 3.5rem) !important;
+            max-height: calc(100vh - 3.5rem) !important;
+            margin-top: 1.75rem !important;
+            margin-bottom: 1.75rem !important;
+            display: flex !important;
+            flex-direction: column !important;
         }
         #hseKpiModal .modal-content,
         #hseKpiViewModal .modal-content {
-            max-height: calc(100vh - 3.5rem);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            height: 100% !important;
+            max-height: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
         }
         #hseKpiModal .modal-header,
         #hseKpiModal .modal-footer,
         #hseKpiViewModal .modal-header,
         #hseKpiViewModal .modal-footer {
-            flex: 0 0 auto;
+            flex: 0 0 auto !important;
         }
         #hseKpiModal .modal-body,
         #hseKpiViewModal .modal-body {
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow-y: auto;
+            flex: 1 1 auto !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
         }
     </style>

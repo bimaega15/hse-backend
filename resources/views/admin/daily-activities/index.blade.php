@@ -172,7 +172,7 @@
                 <div class="card-header border-bottom border-dashed d-flex align-items-center justify-content-between">
                     <h4 class="header-title mb-0">Daftar Daily Activity</h4>
                     <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-soft-success" onclick="exportDailyActivityExcel()">
+                        <button type="button" class="btn btn-success" onclick="exportDailyActivityExcel()">
                             <i class="ri-file-excel-2-line me-1"></i>Export Excel
                         </button>
                         <button type="button" class="btn btn-primary" onclick="createDailyActivity()">
