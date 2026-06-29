@@ -7,38 +7,13 @@
         .kpi-detail-table td { vertical-align: middle; }
         .kpi-detail-table input, .kpi-detail-table select { min-width: 90px; }
 
-        /* Pastikan modal body bisa di-scroll vertikal (override template) */
+        /* Modal scroll fix – JS calculates height, CSS just prevents outer scroll */
         #hseKpiModal,
         #hseKpiViewModal {
-            overflow-y: hidden !important;
-        }
-        #hseKpiModal .modal-dialog,
-        #hseKpiViewModal .modal-dialog {
-            height: calc(100vh - 3.5rem) !important;
-            max-height: calc(100vh - 3.5rem) !important;
-            margin-top: 1.75rem !important;
-            margin-bottom: 1.75rem !important;
-            display: flex !important;
-            flex-direction: column !important;
-        }
-        #hseKpiModal .modal-content,
-        #hseKpiViewModal .modal-content {
-            height: 100% !important;
-            max-height: 100% !important;
-            display: flex !important;
-            flex-direction: column !important;
             overflow: hidden !important;
-        }
-        #hseKpiModal .modal-header,
-        #hseKpiModal .modal-footer,
-        #hseKpiViewModal .modal-header,
-        #hseKpiViewModal .modal-footer {
-            flex: 0 0 auto !important;
         }
         #hseKpiModal .modal-body,
         #hseKpiViewModal .modal-body {
-            flex: 1 1 auto !important;
-            min-height: 0 !important;
             overflow-y: auto !important;
             overflow-x: hidden;
             -webkit-overflow-scrolling: touch;
@@ -208,15 +183,54 @@
                             </table>
                         </div>
 
-                        <!-- Rumus (advanced) -->
+                        <!-- Rumus Penilaian – input ramah pengguna -->
                         <div class="mt-3">
-                            <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#rumusBox">
-                                <i class="ri-code-s-slash-line me-1"></i>Rumus Penilaian (JSON) — advanced
-                            </button>
-                            <div class="collapse mt-2" id="rumusBox">
-                                <textarea class="form-control font-monospace" id="kpiRumus" rows="8" style="font-size:.8rem"></textarea>
-                                <div class="form-text">Range band nilai (sangat baik, baik, cukup, kurang, kurang baik). Otomatis terisi sesuai category; bisa diubah.</div>
+                            <p class="fw-semibold mb-2 text-muted" style="font-size:.85rem;">
+                                <i class="ri-bar-chart-grouped-line me-1"></i>Rumus Penilaian Band Nilai
+                                <span class="text-muted fw-normal ms-1">(otomatis terisi; bisa disesuaikan)</span>
+                            </p>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered align-middle mb-1" style="font-size:.85rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:40%">Band Nilai</th>
+                                            <th>Range / Kondisi</th>
+                                            <th style="width:80px" class="text-center">Skor</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php
+                                            $bands = [
+                                                ['key'=>'sangat baik',  'badge'=>'bg-success',            'score'=>5],
+                                                ['key'=>'baik',         'badge'=>'bg-primary',            'score'=>4],
+                                                ['key'=>'cukup',        'badge'=>'bg-info text-dark',     'score'=>3],
+                                                ['key'=>'kurang',       'badge'=>'bg-warning text-dark',  'score'=>2],
+                                                ['key'=>'kurang baik',  'badge'=>'bg-danger',             'score'=>1],
+                                            ];
+                                        @endphp
+                                        @foreach($bands as $b)
+                                        <tr>
+                                            <td>
+                                                <span class="badge {{ $b['badge'] }} px-2 py-1">{{ ucfirst($b['key']) }}</span>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm rumus-band-input"
+                                                       id="rumusBand_{{ str_replace(' ','_',$b['key']) }}"
+                                                       data-band="{{ $b['key'] }}"
+                                                       placeholder="cth: 90-100 atau >=90 atau 0"
+                                                       style="max-width:200px;">
+                                            </td>
+                                            <td class="text-center fw-semibold text-muted">{{ $b['score'] }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
+                            <div class="form-text">
+                                Format: angka tepat <code>0</code>, rentang <code>1-4</code>, atau kondisi <code>&gt;=90</code> / <code>&lt;=5</code> / <code>&gt;80</code> / <code>&lt;10</code>
+                            </div>
+                            {{-- hidden textarea tetap ada untuk kompatibilitas submit JS --}}
+                            <textarea id="kpiRumus" class="d-none"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -255,8 +269,41 @@
             'kurang': 'bg-warning text-dark', 'kurang baik': 'bg-danger'
         };
         let hseKpiTable, isEditMode = false;
+        let currentIndicatorKey = 'leading_indicator';
+        const BAND_KEYS = ['sangat baik', 'baik', 'cukup', 'kurang', 'kurang baik'];
+
+        // Load rumus array into the band input fields
+        function loadRumusToFields(rumusArr) {
+            if (!rumusArr || !rumusArr[0]) return;
+            const item = rumusArr[0];
+            currentIndicatorKey = item.category || 'leading_indicator';
+            const results = item.results || [];
+            $('.rumus-band-input').val('');
+            results.forEach(function(obj) {
+                const band = Object.keys(obj)[0];
+                const val  = obj[band];
+                $('#rumusBand_' + band.replace(/ /g, '_')).val(val !== undefined ? String(val) : '');
+            });
+            syncRumusHidden();
+        }
+
+        // Build rumus JSON from input fields → sync to hidden #kpiRumus
+        function syncRumusHidden() {
+            const results = [];
+            BAND_KEYS.forEach(function(band) {
+                const raw = $('#rumusBand_' + band.replace(/ /g, '_')).val().trim();
+                if (raw === '') return;
+                const obj = {};
+                const num = parseFloat(raw);
+                obj[band] = (!isNaN(num) && String(num) === raw) ? num : raw;
+                results.push(obj);
+            });
+            $('#kpiRumus').val(JSON.stringify([{ category: currentIndicatorKey, results: results }]));
+            recalcAllRows();
+        }
 
         $(document).ready(function() {
+            $(document).on('input', '.rumus-band-input', syncRumusHidden);
             $('#kpiProject, #kpiCategory').select2({ theme: 'bootstrap-5', width: '100%', dropdownParent: $('#hseKpiModal') });
             $('#kpiUsers').select2({ theme: 'bootstrap-5', width: '100%', dropdownParent: $('#hseKpiModal'), placeholder: 'Pilih personel (bisa lebih dari satu)' });
 
@@ -295,10 +342,7 @@
             const id = $('#kpiCategory').val();
             if (!id) return;
             $.get("{{ route('admin.kpi.hse.default-rumus') }}", { category_kpi_id: id }, function(res) {
-                if (res.success) {
-                    $('#kpiRumus').val(JSON.stringify(res.data.rumus, null, 2));
-                    recalcAllRows();
-                }
+                if (res.success) loadRumusToFields(res.data.rumus);
             });
         }
 
@@ -326,7 +370,7 @@
                 $('#kpiUsers').val(d.users_id).trigger('change.select2');
                 $('#kpiReportDate').val(d.report_date);
                 $('#kpiDescription').val(d.description);
-                $('#kpiRumus').val(JSON.stringify(d.rumus, null, 2));
+                loadRumusToFields(d.rumus);
                 $('#kpiDetailRows').empty();
                 (d.details || []).forEach(addKpiDetailRow);
                 if (!d.details || d.details.length === 0) addKpiDetailRow();
@@ -506,11 +550,31 @@
             $('#kpiCategory, #kpiProject').val('').trigger('change.select2');
             $('#kpiUsers').val(null).trigger('change.select2');
             $('#kpiRumus').val('');
+            $('.rumus-band-input').val('');
+            currentIndicatorKey = 'leading_indicator';
             $('#kpiDetailRows').empty();
         }
 
         function kpiAlert(type, title, message) {
             Swal.fire({ icon: type, title, text: message, timer: type === 'success' ? 2500 : null });
         }
+
+        // Fix scroll: set max-height on modal-body based on actual DOM sizes
+        function applyModalBodyScroll(modalEl) {
+            const header = modalEl.querySelector('.modal-header');
+            const footer = modalEl.querySelector('.modal-footer');
+            const body   = modalEl.querySelector('.modal-body');
+            if (!body) return;
+            const usedH = (header ? header.offsetHeight : 0)
+                        + (footer ? footer.offsetHeight : 0)
+                        + 56; // ~3.5rem margin
+            body.style.maxHeight = (window.innerHeight - usedH) + 'px';
+        }
+
+        ['hseKpiModal', 'hseKpiViewModal'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            el.addEventListener('shown.bs.modal', function() { applyModalBodyScroll(el); });
+        });
     </script>
 @endpush
