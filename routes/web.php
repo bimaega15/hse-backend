@@ -12,6 +12,12 @@ use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ObservationController; // Add this import
+use App\Http\Controllers\Admin\TbmController;
+use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\Admin\DailyActivityController;
+use App\Http\Controllers\Admin\CategoryKpiController;
+use App\Http\Controllers\Admin\HseKpiController;
+use App\Http\Controllers\Admin\HseKpiReportController;
 use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\ProjectController;
 use App\Http\Controllers\Admin\ActivatorController;
@@ -127,6 +133,67 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 
         // Recent observations for dashboard
         Route::get('/recent/graphic', [ObservationController::class, 'getRecent'])->name('recent');
+    });
+
+    // TBM / Safety Talk Routes (READ ONLY — reporting dashboard only)
+    Route::prefix('admin/tbm')->name('admin.tbm.')->group(function () {
+        // Main index page (default list view, or analytics/trending via ?view=analytics)
+        Route::get('/', [TbmController::class, 'index'])->name('index');
+
+        // DataTables data endpoint
+        Route::get('/data', [TbmController::class, 'getData'])->name('data');
+
+        // Statistics for the summary cards
+        Route::get('/statistics/data', [TbmController::class, 'getStatistics'])->name('statistics.data');
+
+        // Read-only detail (used by the view modal)
+        Route::get('/{id}', [TbmController::class, 'show'])->whereNumber('id')->name('show');
+    });
+
+    // Activity Data Routes (master data — full CRUD)
+    Route::prefix('admin/activities')->name('admin.activities.')->group(function () {
+        Route::get('/', [ActivityController::class, 'index'])->name('index');
+        Route::get('/data', [ActivityController::class, 'getData'])->name('data');
+        Route::post('/', [ActivityController::class, 'store'])->name('store');
+        Route::get('/{id}', [ActivityController::class, 'show'])->whereNumber('id')->name('show');
+        Route::put('/{id}', [ActivityController::class, 'update'])->whereNumber('id')->name('update');
+        Route::delete('/{id}', [ActivityController::class, 'destroy'])->whereNumber('id')->name('destroy');
+        Route::patch('/{id}/toggle-status', [ActivityController::class, 'toggleStatus'])->whereNumber('id')->name('toggle-status');
+    });
+
+    // Daily Activity Routes (header = admin CRUD; detail = read-only, filled via mobile)
+    Route::prefix('admin/daily-activities')->name('admin.daily-activities.')->group(function () {
+        Route::get('/', [DailyActivityController::class, 'index'])->name('index');
+        Route::get('/data', [DailyActivityController::class, 'getData'])->name('data');
+        Route::get('/statistics/data', [DailyActivityController::class, 'getStatistics'])->name('statistics.data');
+        Route::post('/', [DailyActivityController::class, 'store'])->name('store');
+        Route::get('/{id}', [DailyActivityController::class, 'show'])->whereNumber('id')->name('show');
+        Route::put('/{id}', [DailyActivityController::class, 'update'])->whereNumber('id')->name('update');
+        Route::delete('/{id}', [DailyActivityController::class, 'destroy'])->whereNumber('id')->name('destroy');
+    });
+
+    // HSE Program (KPI) Routes
+    Route::prefix('admin/kpi/categories')->name('admin.kpi.categories.')->group(function () {
+        Route::get('/', [CategoryKpiController::class, 'index'])->name('index');
+        Route::get('/data', [CategoryKpiController::class, 'getData'])->name('data');
+        Route::post('/', [CategoryKpiController::class, 'store'])->name('store');
+        Route::get('/{id}', [CategoryKpiController::class, 'show'])->whereNumber('id')->name('show');
+        Route::put('/{id}', [CategoryKpiController::class, 'update'])->whereNumber('id')->name('update');
+        Route::delete('/{id}', [CategoryKpiController::class, 'destroy'])->whereNumber('id')->name('destroy');
+    });
+
+    Route::prefix('admin/kpi/hse')->name('admin.kpi.hse.')->group(function () {
+        Route::get('/', [HseKpiController::class, 'index'])->name('index');
+        Route::get('/data', [HseKpiController::class, 'getData'])->name('data');
+        Route::get('/default-rumus', [HseKpiController::class, 'getDefaultRumus'])->name('default-rumus');
+        Route::post('/', [HseKpiController::class, 'store'])->name('store');
+        Route::get('/{id}', [HseKpiController::class, 'show'])->whereNumber('id')->name('show');
+        Route::put('/{id}', [HseKpiController::class, 'update'])->whereNumber('id')->name('update');
+        Route::delete('/{id}', [HseKpiController::class, 'destroy'])->whereNumber('id')->name('destroy');
+    });
+
+    Route::prefix('admin/kpi/report')->name('admin.kpi.report.')->group(function () {
+        Route::get('/', [HseKpiReportController::class, 'index'])->name('index');
     });
 
     // Categories Management Routes

@@ -8,6 +8,8 @@ use App\Http\Controllers\API\MasterDataController;
 use App\Http\Controllers\API\BannerController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\ObservationController;
+use App\Http\Controllers\API\TbmController;
+use App\Http\Controllers\API\DailyActivityController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -154,6 +156,45 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Dashboard data
         Route::get('/dashboard/data', [ObservationController::class, 'dashboard']);
+    });
+
+    // TBM / Safety Talk routes (full CRUD for mobile)
+    Route::prefix('tbm')->group(function () {
+        // List TBM / Safety Talks (filtering, search, pagination)
+        Route::get('/', [TbmController::class, 'index']);
+
+        // Create a new TBM / Safety Talk
+        Route::post('/', [TbmController::class, 'store']);
+
+        // Get a specific TBM / Safety Talk by ID
+        Route::get('/{id}', [TbmController::class, 'show']);
+
+        // Update a specific TBM / Safety Talk by ID
+        Route::put('/{id}', [TbmController::class, 'update']);
+        Route::post('/{id}', [TbmController::class, 'update']); // Method spoofing support for multipart uploads
+
+        // Delete a specific TBM / Safety Talk by ID
+        Route::delete('/{id}', [TbmController::class, 'destroy']);
+    });
+
+    // Daily Activity routes (mobile, for assigned hse_staff)
+    Route::prefix('daily-activities')->group(function () {
+        // List daily activities assigned to me
+        Route::get('/', [DailyActivityController::class, 'index']);
+
+        // Active activity master list (for the activity_id dropdown)
+        Route::get('/activities', [DailyActivityController::class, 'activities']);
+
+        // Show one assigned daily activity (with its to-do details)
+        Route::get('/{id}', [DailyActivityController::class, 'show'])->whereNumber('id');
+
+        // Insert a to-do detail under a daily activity assigned to me
+        Route::post('/{dailyActivityId}/details', [DailyActivityController::class, 'storeDetail'])->whereNumber('dailyActivityId');
+
+        // Update / delete a to-do detail I own
+        Route::put('/details/{detailId}', [DailyActivityController::class, 'updateDetail'])->whereNumber('detailId');
+        Route::post('/details/{detailId}', [DailyActivityController::class, 'updateDetail'])->whereNumber('detailId'); // multipart spoof
+        Route::delete('/details/{detailId}', [DailyActivityController::class, 'destroyDetail'])->whereNumber('detailId');
     });
 
     // Notifications routes

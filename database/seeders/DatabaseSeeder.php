@@ -35,6 +35,17 @@ class DatabaseSeeder extends Seeder
             ReportDetailSeeder::class,
 
             ObservationSeeder::class,
+
+            // Seed TBM / Safety Talk sample data (depends on users, projects, locations)
+            TbmSeeder::class,
+
+            // Seed Activity master data, then Daily Activity headers + details
+            ActivitySeeder::class,
+            DailyActivitySeeder::class,
+
+            // Seed HSE Program (KPI): categories then KPI + details
+            CategoryKpiSeeder::class,
+            HseKpiSeeder::class,
         ]);
     }
 }

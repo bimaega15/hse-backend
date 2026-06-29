@@ -104,6 +104,94 @@
             </li>
 
             <li class="side-nav-item">
+                <a data-bs-toggle="collapse" href="#sidebarTbm"
+                    aria-expanded="{{ request()->routeIs('admin.tbm.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarTbm"
+                    class="side-nav-link {{ request()->routeIs('admin.tbm.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="megaphone"></i></span>
+                    <span class="menu-text"> TBM / Safety Talk</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.tbm.*') ? 'show' : '' }}" id="sidebarTbm">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.tbm.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.tbm.index') && request()->get('view') != 'analytics' ? 'text-primary' : '' }}">
+                                <span class="menu-text">All TBM / Safety Talk</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.tbm.index') }}?view=analytics"
+                                class="side-nav-link {{ request()->routeIs('admin.tbm.index') && request()->get('view') == 'analytics' ? 'text-primary' : '' }}">
+                                <span class="menu-text">Trending Report</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="side-nav-item">
+                <a data-bs-toggle="collapse" href="#sidebarHseActivity"
+                    aria-expanded="{{ request()->routeIs('admin.activities.*') || request()->routeIs('admin.daily-activities.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarHseActivity"
+                    class="side-nav-link {{ request()->routeIs('admin.activities.*') || request()->routeIs('admin.daily-activities.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="clipboard-list"></i></span>
+                    <span class="menu-text"> HSE Activity</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.activities.*') || request()->routeIs('admin.daily-activities.*') ? 'show' : '' }}"
+                    id="sidebarHseActivity">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.activities.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.activities.*') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Activity Data</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.daily-activities.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.daily-activities.*') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Daily Activity</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="side-nav-item">
+                <a data-bs-toggle="collapse" href="#sidebarHseKpi"
+                    aria-expanded="{{ request()->routeIs('admin.kpi.*') ? 'true' : 'false' }}"
+                    aria-controls="sidebarHseKpi"
+                    class="side-nav-link {{ request()->routeIs('admin.kpi.*') ? 'active' : '' }}">
+                    <span class="menu-icon"><i data-lucide="target"></i></span>
+                    <span class="menu-text"> HSE Program (KPI)</span>
+                    <span class="menu-arrow"></span>
+                </a>
+                <div class="collapse {{ request()->routeIs('admin.kpi.*') ? 'show' : '' }}" id="sidebarHseKpi">
+                    <ul class="sub-menu">
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.kpi.categories.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.kpi.categories.*') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Category KPI</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.kpi.hse.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.kpi.hse.*') ? 'text-primary' : '' }}">
+                                <span class="menu-text">HSE</span>
+                            </a>
+                        </li>
+                        <li class="side-nav-item">
+                            <a href="{{ route('admin.kpi.report.index') }}"
+                                class="side-nav-link {{ request()->routeIs('admin.kpi.report.*') ? 'text-primary' : '' }}">
+                                <span class="menu-text">Report</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+
+            <li class="side-nav-item">
                 <a data-bs-toggle="collapse" href="#sidebarBehaviorIndex"
                     aria-expanded="{{ request()->routeIs('admin.behavior-index.*') ? 'true' : 'false' }}"
                     aria-controls="sidebarBehaviorIndex"

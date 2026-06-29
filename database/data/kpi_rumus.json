@@ -1,0 +1,32 @@
+{
+    "bands": ["sangat baik", "baik", "cukup", "kurang", "kurang baik"],
+    "scores": {
+        "sangat baik": 5,
+        "baik": 4,
+        "cukup": 3,
+        "kurang": 2,
+        "kurang baik": 1
+    },
+    "rumus": [
+        {
+            "category": "lagging_indicator",
+            "results": [
+                { "sangat baik": 0 },
+                { "baik": "1-4" },
+                { "cukup": "5-9" },
+                { "kurang": "10-19" },
+                { "kurang baik": ">=20" }
+            ]
+        },
+        {
+            "category": "leading_indicator",
+            "results": [
+                { "sangat baik": "90-100" },
+                { "baik": "75-89" },
+                { "cukup": "60-74" },
+                { "kurang": "40-59" },
+                { "kurang baik": "0-39" }
+            ]
+        }
+    ]
+}
