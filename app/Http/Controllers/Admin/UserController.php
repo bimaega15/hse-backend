@@ -58,8 +58,8 @@ class UserController extends Controller
                         ? url('storage/' . $user->profile_image)
                         : asset('admin/backend/dist/assets/images/users/avatar-1.jpg');
 
-                    return '<div class="avatar-sm">
-                        <img src="' . $avatarUrl . '" alt="' . $user->name . '" class="img-fluid rounded-circle">
+                    return '<div class="rounded-circle overflow-hidden" style="width:40px;height:40px;flex-shrink:0;">
+                        <img src="' . $avatarUrl . '" alt="' . $user->name . '" style="width:100%;height:100%;object-fit:cover;">
                     </div>';
                 })
                 ->addColumn('user_info', function ($user) {

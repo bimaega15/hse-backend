@@ -298,10 +298,10 @@
                                     <div class="card">
                                         <div class="card-body text-center">
                                             <div class="mb-3">
-                                                <div class="avatar-lg mx-auto">
+                                                <div class="rounded-circle overflow-hidden mx-auto" style="width:80px;height:80px;">
                                                     <img id="previewAvatar"
                                                         src="{{ asset('admin/backend/dist/assets/images/users/avatar-1.jpg') }}"
-                                                        alt="User Avatar" class="img-fluid rounded-circle">
+                                                        alt="User Avatar" style="width:100%;height:100%;object-fit:cover;">
                                                 </div>
                                             </div>
                                             <h5 id="previewName" class="mb-1">User Name</h5>
@@ -346,9 +346,9 @@
                     <div class="row">
                         <div class="col-md-4 text-center">
                             <div class="mb-3">
-                                <div class="avatar-lg mx-auto">
+                                <div class="rounded-circle overflow-hidden mx-auto" style="width:80px;height:80px;">
                                     <img id="viewUserAvatar" src="" alt="User Avatar"
-                                        class="img-fluid rounded-circle">
+                                        style="width:100%;height:100%;object-fit:cover;">
                                 </div>
                             </div>
                             <h5 id="viewUserName">-</h5>
